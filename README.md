@@ -206,8 +206,6 @@ git push origin v1.0.0
 
 后续可通过 `npm version patch` 创建版本提交和标签，再执行 `git push origin main --follow-tags`。在 [Actions 页面](https://github.com/SnowBeatRain/dsh-offwork/actions) 确认发布结果。本地发布和 Actions 发布任选一种，避免重复发布同一版本。
 
-## 致谢与许可
-
-交互设计参考了 [工资跳板](https://github.com/hulibuld/dsh-salary-flap) 和 [DoneAt](https://off.rainif.com/zh-CN)，包括首次引导、位置记忆、金额截断、作息设置与夜班输入等思路，未复制其源代码或素材。图标随包提供。
+## 许可与反馈
 
 本项目采用 [MIT License](https://github.com/SnowBeatRain/dsh-offwork/blob/main/LICENSE)。欢迎通过 [GitHub Issues](https://github.com/SnowBeatRain/dsh-offwork/issues) 反馈问题或建议；反馈时请说明 Harness 版本、浏览器和复现步骤，薪资信息可使用示例数值代替。
