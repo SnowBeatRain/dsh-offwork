@@ -1,0 +1,4 @@
+- insert:
+    - id: offwork-clock
+      name: 'dsh-offwork'
+      config: {}
