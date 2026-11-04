@@ -17,6 +17,18 @@
 - **中文 / English**：提供中英文界面，并响应系统的减少动态效果设置。
 - **代理工具**：可通过 Harness 命令或 `offwork_clock` 工具读取和更新配置。
 
+## 效果预览
+
+以下截图来自独立的 Harness 测试配置，使用示例月薪 12,000 元、月计薪 20 天及受控的浏览器时间。
+
+**页面内的小条**
+
+![Harness 页面内的下班倒计时小条](https://raw.githubusercontent.com/SnowBeatRain/dsh-offwork/main/assets/screenshot-compact.png)
+
+**展开详情与设置**
+
+<img src="https://raw.githubusercontent.com/SnowBeatRain/dsh-offwork/main/assets/screenshot-detail.png" alt="展开后的计薪进度、工资与班次详情" width="328"> <img src="https://raw.githubusercontent.com/SnowBeatRain/dsh-offwork/main/assets/screenshot-settings.png" alt="薪资、作息、时区和透明度设置" width="372">
+
 ## 运行环境
 
 - DeepSeek Harness：`>=0.2.1-rc.5 <0.3.0-0`。
@@ -175,7 +187,7 @@ npm run check
 | `index.js`         | Host 命令、代理工具、配置校验与保存  |
 | `tests/`           | 计算、持久化与界面辅助逻辑测试       |
 
-`npm run build` 将计算模块和界面辅助模块内联到 `client.js`。`npm test` 先检查生成物是否与源码一致，再运行测试，覆盖班次边界、夜班、休息、时区与夏令时、金额精度、磁盘持久化和命令 / 工具行为。浏览器外观、拖动与实际 Harness 安装体验仍需人工检查。
+`npm run build` 将计算模块和界面辅助模块内联到 `client.js`。`npm test` 先检查生成物是否与源码一致，再运行测试，覆盖班次边界、夜班、休息、时区与夏令时、金额精度、磁盘持久化和命令 / 工具行为。`1.0.1` 已在隔离的 Harness `0.2.1-rc.5` 与 Headless Chromium 中完成设置、拖动、刷新恢复及双标签页等浏览器验证，范围与限制见 [验证记录](https://github.com/SnowBeatRain/dsh-offwork/blob/main/docs/VALIDATION-1.0.1.md)。
 
 ## 发布到 npm（维护者）
 

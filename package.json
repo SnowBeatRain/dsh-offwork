@@ -1,6 +1,6 @@
 {
   "name": "dsh-offwork",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "下班倒计时与实时工资悬浮窗：可拖动、可调透明度、工资可隐藏。A draggable countdown and salary overlay for DeepSeek Harness.",
   "type": "module",
   "license": "MIT",
@@ -43,6 +43,7 @@
     "icon.svg",
     "LICENSE",
     "README.md",
+    "CHANGELOG.md",
     "tests/*.mjs",
     "tools/*.mjs"
   ],

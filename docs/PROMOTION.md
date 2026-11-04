@@ -1,6 +1,6 @@
 # 推广文案草稿
 
-以下内容可用于社区介绍或市场投稿。插入真实截图后再发布，市场收录状态以实际结果为准。
+以下内容可用于社区介绍或市场投稿，配图已准备。市场收录状态以实际结果为准。
 
 ## 社区介绍
 
@@ -38,7 +38,13 @@ dsh plugin --profile web add dsh-offwork
 
 欢迎试用，反馈时附上 Harness 版本、浏览器和复现步骤就很有帮助。后续计划加入喝水、远眺与起身提醒，当前已发布版本的功能以 README 为准。
 
-发布时配图顺序：小条全景、展开详情、设置页。
+发布时配图顺序：
+
+1. [小条全景](https://raw.githubusercontent.com/SnowBeatRain/dsh-offwork/main/assets/screenshot-compact.png)。
+2. [展开详情](https://raw.githubusercontent.com/SnowBeatRain/dsh-offwork/main/assets/screenshot-detail.png)。
+3. [设置页](https://raw.githubusercontent.com/SnowBeatRain/dsh-offwork/main/assets/screenshot-settings.png)。
+
+配图使用独立测试环境中的示例数据，未包含个人薪资或会话内容。
 
 ## 市场中文简介
 
