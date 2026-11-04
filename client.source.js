@@ -65,6 +65,38 @@ window.__ModuleLoader__.load({
         shiftDate: '班次',
         opacity: '背景透明度',
         opacityHint: '只影响背景，不影响文字。',
+        waterTitle: '喝水提醒',
+        waterEnable: '开启喝水提醒',
+        waterInterval: '间隔（工作分钟）',
+        waterApply: '应用间隔',
+        waterInvalid: '请输入 5–240 的整数。',
+        waterNext: '下次喝水',
+        waterDue: '该喝水啦',
+        waterDrink: '喝了',
+        waterSnooze: '工作 10 分钟后',
+        waterPause: '本班暂停',
+        waterResume: '恢复本班提醒',
+        waterCount: '本班打卡',
+        waterOff: '提醒已关闭',
+        waterWaiting: '等待工作时段',
+        waterBreak: '休息中，提醒计时暂停',
+        waterPaused: '本班已暂停',
+        waterFinished: '本班不再安排新提醒',
+        waterOther: '提醒已到期，等待可见标签页处理',
+        waterClear: '清除本班次数',
+        waterReset: '重置喝水提醒',
+        waterConfirm: '确认操作',
+        waterClearHint: '仅清零本班次数，保留下一次提醒和暂停状态。',
+        waterResetHint: '清除喝水提醒设置和记录，恢复默认关闭。',
+        waterLocal: '独立保存在当前浏览器，即时生效；不随薪资设置的保存或取消改变，不进入会话。',
+        waterRules: '按工作分钟计时，午休冻结。开启、修改间隔或作息后重新计时；关闭页面后不提醒。',
+        waterUnavailable:
+          '喝水提醒存储不可用或数据无效，自动提醒已停止。可重试；重置将清除原喝水数据。',
+        waterRetry: '重试读取',
+        waterSetup: '请先保存薪资与作息。',
+        waterLoading: '正在读取喝水提醒…',
+        waterChanged: '提醒设置已在本浏览器生效',
+        waterStale: '作息已变化，请点击“读取最新配置”后继续提醒。',
       },
       en: {
         title: 'Offwork Clock',
@@ -126,6 +158,40 @@ window.__ModuleLoader__.load({
         shiftDate: 'Shift',
         opacity: 'Surface opacity',
         opacityHint: 'Affects the background only.',
+        waterTitle: 'Water reminder',
+        waterEnable: 'Enable water reminders',
+        waterInterval: 'Interval (working minutes)',
+        waterApply: 'Apply interval',
+        waterInvalid: 'Enter a whole number from 5 to 240.',
+        waterNext: 'Next water break',
+        waterDue: 'Time for some water',
+        waterDrink: 'Drank water',
+        waterSnooze: 'In 10 working minutes',
+        waterPause: 'Pause this shift',
+        waterResume: 'Resume this shift',
+        waterCount: 'Drinks this shift',
+        waterOff: 'Reminders off',
+        waterWaiting: 'Waiting for working hours',
+        waterBreak: 'On break; reminder timer paused',
+        waterPaused: 'Paused for this shift',
+        waterFinished: 'No more reminders this shift',
+        waterOther: 'Reminder due; waiting for a visible tab',
+        waterClear: 'Clear shift count',
+        waterReset: 'Reset water reminders',
+        waterConfirm: 'Confirm',
+        waterClearHint: 'Clear the drink count only. Keep the next reminder and pause state.',
+        waterResetHint: 'Delete water preferences and records, then turn reminders off.',
+        waterLocal:
+          'Saved in this browser immediately, independently of salary Save or Cancel. Never sent to the conversation.',
+        waterRules:
+          'Counts working minutes; unpaid breaks pause the timer. Enabling or changing interval or schedule restarts it. The page must stay open.',
+        waterUnavailable:
+          'Water storage is unavailable or invalid; automatic reminders stopped. Retry, or reset to delete old water data.',
+        waterRetry: 'Retry loading',
+        waterSetup: 'Save your salary and schedule first.',
+        waterLoading: 'Loading water reminders…',
+        waterChanged: 'Reminder preferences saved in this browser',
+        waterStale: 'Schedule changed. Reload the latest settings to continue reminders.',
       },
     };
     const STYLE = `
@@ -212,9 +278,22 @@ window.__ModuleLoader__.load({
 @supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))){.owc-glass{opacity:1}}
 @media(prefers-reduced-transparency:reduce),(prefers-contrast:more){.owc-glass{opacity:1;-webkit-backdrop-filter:none;backdrop-filter:none}}
 @media(prefers-reduced-motion:reduce){.owc-v2 button,.owc-glass,.owc-progress>div{transition:none}}
+.owc-water{padding:10px 14px;border-top:1px solid color-mix(in srgb,var(--dsw-alias-label-primary) 12%,transparent);font-size:12px;cursor:default}
+.owc-water summary{cursor:pointer;font-weight:600;margin-bottom:8px}
+.owc-water p{margin:6px 0;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
+.owc-water-actions{display:flex;gap:4px;flex-wrap:wrap;margin-top:6px}
+.owc-water-actions button{white-space:normal;text-align:left;font-size:11px}
+.owc-water-due{background:color-mix(in srgb,var(--owc-accent) 9%,transparent);border-radius:0 0 18px 18px}
+.owc-water-summary{font-size:11px!important;text-align:left;white-space:normal}
+.owc-water input[type=number]{max-width:100px}
+.owc-water .owc-check{margin-top:8px}
+.owc-water-confirm{padding:8px;border:1px solid var(--owc-accent);border-radius:8px}
 @media(max-width:420px){.owc-pill{min-width:136px;padding:8px 8px 7px 12px}.owc-pill-status{display:none}.owc-pill-time{font-size:22px}.owc-main,.owc-form{padding-left:14px;padding-right:14px}.owc-time{font-size:31px}}
 `;
     const ICONS = {
+      water: [
+        ['path', { d: 'M8 1.5C6.6 4 3.5 7.1 3.5 10a4.5 4.5 0 0 0 9 0C12.5 7.1 9.4 4 8 1.5Z' }],
+      ],
       eye: [
         ['path', { d: 'M1.7 8S4.3 3.9 8 3.9 14.3 8 14.3 8 11.7 12.1 8 12.1 1.7 8 1.7 8Z' }],
         ['circle', { cx: 8, cy: 8, r: 2.05 }],
@@ -293,6 +372,26 @@ window.__ModuleLoader__.load({
           const generation = React.useRef(0);
           const requestBusy = React.useRef(false);
           const focusReturn = React.useRef(null);
+          const [water, setWater] = React.useState(defaultHydration);
+          const [waterReady, setWaterReady] = React.useState(false);
+          const [waterError, setWaterError] = React.useState(false);
+          const [waterBusy, setWaterBusy] = React.useState(false);
+          const [waterVisible, setWaterVisible] = React.useState(!document.hidden);
+          const [waterInterval, setWaterInterval] = React.useState('60');
+          const [waterInvalid, setWaterInvalid] = React.useState(false);
+          const [waterConfirm, setWaterConfirm] = React.useState(null);
+          const [waterNotice, setWaterNotice] = React.useState(false);
+          const waterRuntime = React.useRef(null);
+          const waterOwner = React.useRef(null);
+          if (!waterOwner.current)
+            waterOwner.current =
+              window.crypto?.randomUUID?.() || String(Math.random()) + Date.now();
+          const waterInputs = React.useRef(null);
+          const waterScheduleChange = React.useRef(null);
+          waterInputs.current = {
+            settings: data?.configured && !error ? data.settings : null,
+            editing,
+          };
 
           const settings = data?.settings;
           const workingDraft = draft || settings;
@@ -385,6 +484,187 @@ window.__ModuleLoader__.load({
           }, [ready, view]);
 
           React.useEffect(() => {
+            let active = true;
+            let running = false;
+            let failed = false;
+            let store;
+            let channel;
+            try {
+              store = createHydrationStore(window.indexedDB);
+            } catch {
+              store = createHydrationStore(null);
+            }
+            try {
+              channel = new BroadcastChannel('dsh.offwork-clock.hydration.v1');
+            } catch {}
+            const contextAt = (time) => {
+              const current = waterInputs.current.settings;
+              if (!current) return null;
+              try {
+                return hydrationContext(current, calculate(current, time));
+              } catch {
+                return null;
+              }
+            };
+            const update = async (action = { type: 'tick' }, automatic = false) => {
+              if (!active || (automatic && (running || failed))) return;
+              running = true;
+              try {
+                if (action.type === 'retry') {
+                  store.close();
+                  try {
+                    store = createHydrationStore(window.indexedDB);
+                  } catch {
+                    store = createHydrationStore(null);
+                  }
+                }
+                let changed = false;
+                let usedPermit = null;
+                const result = await store.update(
+                  (current) => {
+                    const time = Date.now();
+                    const context = contextAt(time);
+                    if (action.type === 'sync') return current;
+                    const permit = waterScheduleChange.current;
+                    const operation =
+                      permit && context && permit.schedule === context.schedule
+                        ? { ...action, baseSchedule: permit.baseSchedule }
+                        : action;
+                    let next = transitionHydration(
+                      current,
+                      context,
+                      operation,
+                      time,
+                      waterOwner.current,
+                    );
+                    if (automatic) {
+                      const allow = !document.hidden && !waterInputs.current.editing;
+                      next = transitionHydration(
+                        next,
+                        context,
+                        { type: allow ? 'claim' : 'release' },
+                        time,
+                        waterOwner.current,
+                      );
+                    }
+                    if (
+                      permit &&
+                      context &&
+                      permit.schedule === context.schedule &&
+                      next.shift?.schedule === context.schedule
+                    )
+                      usedPermit = permit;
+                    changed = JSON.stringify(next) !== JSON.stringify(current);
+                    return next;
+                  },
+                  { reset: action.type === 'reset' },
+                );
+                if (!active) return;
+                if (
+                  action.type === 'reset' ||
+                  (usedPermit && waterScheduleChange.current === usedPermit)
+                )
+                  waterScheduleChange.current = null;
+                failed = false;
+                setWater(result);
+                setWaterReady(true);
+                setWaterError(false);
+                if (changed || action.type === 'reset') channel?.postMessage('changed');
+                return result;
+              } catch (waterFailure) {
+                console.warn(
+                  'Water reminder storage failed:',
+                  waterFailure?.name,
+                  waterFailure?.message,
+                );
+                if (active) {
+                  failed = true;
+                  setWaterError(true);
+                  setWaterReady(true);
+                }
+              } finally {
+                running = false;
+              }
+            };
+            const tick = () => {
+              void update({ type: 'tick' }, true);
+            };
+            const visibility = () => {
+              setWaterVisible(!document.hidden);
+              setNow(Date.now());
+              if (document.hidden) void update({ type: 'release' });
+              else tick();
+            };
+            const pageHide = () => {
+              setWaterVisible(false);
+              void update({ type: 'release' });
+            };
+            waterRuntime.current = { update, tick };
+            if (channel)
+              channel.onmessage = () => {
+                void update({ type: 'sync' });
+              };
+            const timer = setInterval(tick, 2000);
+            document.addEventListener('visibilitychange', visibility);
+            window.addEventListener('pageshow', visibility);
+            window.addEventListener('pagehide', pageHide);
+            window.addEventListener('focus', tick);
+            tick();
+            return () => {
+              active = false;
+              waterRuntime.current = null;
+              clearInterval(timer);
+              document.removeEventListener('visibilitychange', visibility);
+              window.removeEventListener('pageshow', visibility);
+              window.removeEventListener('pagehide', pageHide);
+              window.removeEventListener('focus', tick);
+              channel?.close();
+              void store
+                .update((current) => {
+                  if (current.shift?.claim?.owner === waterOwner.current)
+                    current.shift.claim = null;
+                  return current;
+                })
+                .catch(() => {})
+                .finally(() => store.close());
+            };
+          }, []);
+
+          React.useEffect(() => {
+            waterRuntime.current?.tick();
+          }, [settings, editing, error]);
+
+          React.useEffect(() => {
+            setWaterInterval(String(water.interval));
+            setWaterInvalid(false);
+          }, [water.interval]);
+
+          async function waterAction(action) {
+            if (waterBusy) return;
+            setWaterBusy(true);
+            setWaterNotice(false);
+            const hadFocus = box.current
+              ?.querySelector('.owc-water-due')
+              ?.contains(document.activeElement);
+            try {
+              const result = await waterRuntime.current?.update(action);
+              if (result) {
+                setWaterConfirm(null);
+                setNow(Date.now());
+                if (action.type === 'preferences') setWaterNotice(true);
+                if (action.type === 'reset') {
+                  setWaterInterval('60');
+                  setWaterInvalid(false);
+                }
+                if (hadFocus) box.current?.querySelector('.owc-grip,.owc-title')?.focus();
+                waterRuntime.current?.tick();
+              }
+            } finally {
+              setWaterBusy(false);
+            }
+          }
+
+          React.useEffect(() => {
             if (sessionId) reload();
             else setError(t('noSession'));
             return () => {
@@ -457,8 +737,17 @@ window.__ModuleLoader__.load({
             setBusy(true);
             setError('');
             try {
+              const baseSchedule = (await waterRuntime.current?.update({ type: 'sync' }))?.shift
+                ?.schedule;
+              if (token !== generation.current) return;
               const next = await request('get');
               if (token !== generation.current) return;
+              if (next.configured)
+                waterScheduleChange.current = {
+                  baseSchedule,
+                  schedule: hydrationContext(next.settings, calculate(next.settings, Date.now()))
+                    .schedule,
+                };
               setData(next);
               if (!next.configured) {
                 setDraft({ ...next.settings });
@@ -480,8 +769,16 @@ window.__ModuleLoader__.load({
             setError('');
             const token = ++generation.current;
             try {
+              const baseSchedule = (await waterRuntime.current?.update({ type: 'sync' }))?.shift
+                ?.schedule;
+              if (token !== generation.current) return;
               const next = await request('set', changedSettings(settings, draft));
               if (token === generation.current) {
+                waterScheduleChange.current = {
+                  baseSchedule,
+                  schedule: hydrationContext(next.settings, calculate(next.settings, Date.now()))
+                    .schedule,
+                };
                 setData(next);
                 setEditing(false);
                 setDraft(null);
@@ -644,6 +941,222 @@ window.__ModuleLoader__.load({
               t(view.masked ? 'show' : 'hide'),
             );
 
+          const waterContext =
+            data?.configured && safeState && !error ? hydrationContext(settings, safeState) : null;
+          const waterState = hydrationView(water, waterContext);
+          const waterClaim = water.shift?.claim;
+          const waterPrompt =
+            waterReady &&
+            !waterError &&
+            !editing &&
+            waterVisible &&
+            !document.hidden &&
+            waterState.phase === 'due' &&
+            waterClaim?.owner === waterOwner.current &&
+            waterClaim.sequence === water.shift.sequence &&
+            waterClaim.until > Date.now() &&
+            waterClaim.until <= Date.now() + HYDRATION_LEASE_MS;
+          const waterSummary = () => {
+            if (!waterReady) return t('waterLoading');
+            if (waterError) return t('waterUnavailable');
+            if (
+              water.enabled &&
+              waterContext &&
+              water.shift &&
+              water.shift.config !== waterContext.config
+            )
+              return t('waterStale');
+            const labels = {
+              off: 'waterOff',
+              waiting: 'waterWaiting',
+              break: 'waterBreak',
+              paused: 'waterPaused',
+              finished: 'waterFinished',
+              due: waterPrompt ? 'waterDue' : 'waterOther',
+            };
+            return waterState.phase === 'countdown'
+              ? t('waterNext') + ' · ' + formatDuration(waterState.remaining / 1000)
+              : t(labels[waterState.phase]);
+          };
+          const waterSettings = () =>
+            h(
+              'div',
+              { className: 'owc-water', 'data-water-settings': true },
+              h(
+                'details',
+                null,
+                h('summary', null, t('waterTitle')),
+                h('p', null, t('waterLocal')),
+                h('p', null, t('waterRules')),
+                !data?.configured && h('p', null, t('waterSetup')),
+                h(
+                  'label',
+                  { className: 'owc-check' },
+                  h('input', {
+                    type: 'checkbox',
+                    checked: water.enabled,
+                    disabled: !waterReady || waterError || waterBusy || !data?.configured,
+                    onChange: (event) =>
+                      waterAction({
+                        type: 'preferences',
+                        enabled: event.target.checked,
+                      }),
+                  }),
+                  t('waterEnable'),
+                ),
+                h(
+                  'label',
+                  { className: 'owc-field' },
+                  h('span', null, t('waterInterval')),
+                  h('input', {
+                    type: 'number',
+                    name: 'waterInterval',
+                    min: '5',
+                    max: '240',
+                    step: '1',
+                    value: waterInterval,
+                    disabled: !waterReady || waterError || waterBusy || !data?.configured,
+                    onChange: (event) => {
+                      setWaterInterval(event.target.value);
+                      setWaterInvalid(false);
+                    },
+                  }),
+                ),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    disabled: !waterReady || waterError || waterBusy || !data?.configured,
+                    onClick: () => {
+                      const value = Number(waterInterval);
+                      if (!Number.isInteger(value) || value < 5 || value > 240) {
+                        setWaterInvalid(true);
+                        return;
+                      }
+                      void waterAction({
+                        type: 'preferences',
+                        interval: value,
+                      });
+                    },
+                  },
+                  t('waterApply'),
+                ),
+                waterInvalid && h('p', { role: 'alert' }, t('waterInvalid')),
+                h('p', { 'data-water-status': true }, waterSummary()),
+                h('p', { 'data-water-count': true }, t('waterCount') + ': ' + waterState.count),
+                h(
+                  'div',
+                  { className: 'owc-water-actions' },
+                  water.enabled &&
+                    h(
+                      'button',
+                      {
+                        type: 'button',
+                        disabled:
+                          waterError ||
+                          waterBusy ||
+                          !waterContext ||
+                          water.shift?.id !== waterContext.id,
+                        onClick: () =>
+                          waterAction({ type: water.shift?.paused ? 'resume' : 'pause' }),
+                      },
+                      t(water.shift?.paused ? 'waterResume' : 'waterPause'),
+                    ),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      disabled: waterError || waterBusy || !waterState.count,
+                      onClick: () => setWaterConfirm('clear-count'),
+                    },
+                    t('waterClear'),
+                  ),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      disabled: waterBusy || !waterReady,
+                      onClick: () => setWaterConfirm('reset'),
+                    },
+                    t('waterReset'),
+                  ),
+                  waterError &&
+                    h(
+                      'button',
+                      {
+                        type: 'button',
+                        disabled: waterBusy,
+                        onClick: () => waterAction({ type: 'retry' }),
+                      },
+                      t('waterRetry'),
+                    ),
+                ),
+                waterConfirm &&
+                  h(
+                    'div',
+                    { className: 'owc-water-confirm' },
+                    h('p', null, t(waterConfirm === 'reset' ? 'waterResetHint' : 'waterClearHint')),
+                    h(
+                      'div',
+                      { className: 'owc-water-actions' },
+                      h(
+                        'button',
+                        {
+                          type: 'button',
+                          disabled: waterBusy,
+                          onClick: () => waterAction({ type: waterConfirm }),
+                        },
+                        t('waterConfirm'),
+                      ),
+                      h(
+                        'button',
+                        { type: 'button', onClick: () => setWaterConfirm(null) },
+                        t('cancel'),
+                      ),
+                    ),
+                  ),
+                waterNotice && h('p', { role: 'status' }, t('waterChanged')),
+              ),
+            );
+          const waterReminder = () =>
+            waterPrompt &&
+            h(
+              'div',
+              { className: 'owc-water owc-water-due', 'data-water-event': waterState.eventId },
+              h('p', { role: 'status' }, iconSvg('water', 14), ' ' + t('waterDue')),
+              h(
+                'div',
+                { className: 'owc-water-actions' },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    disabled: waterBusy,
+                    onClick: () => waterAction({ type: 'drink', eventId: waterState.eventId }),
+                  },
+                  t('waterDrink'),
+                ),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    disabled: waterBusy,
+                    onClick: () => waterAction({ type: 'snooze', eventId: waterState.eventId }),
+                  },
+                  t('waterSnooze'),
+                ),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    disabled: waterBusy,
+                    onClick: () => waterAction({ type: 'pause' }),
+                  },
+                  t('waterPause'),
+                ),
+              ),
+            );
+
           const strip = () =>
             h(
               'div',
@@ -699,6 +1212,18 @@ window.__ModuleLoader__.load({
                   ),
                 ),
               ),
+              (water.enabled || waterError) &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-water-summary',
+                    onClick: () => setPreference({ mini: false }),
+                    'aria-label': t('waterTitle'),
+                  },
+                  iconSvg('water', 14),
+                  waterError ? t('waterTitle') + ' · !' : waterSummary(),
+                ),
             );
 
           const panelHead = () =>
@@ -1156,7 +1681,15 @@ window.__ModuleLoader__.load({
               { className: 'owc-content' },
               collapsed
                 ? strip()
-                : h(React.Fragment, null, panelHead(), editing ? editor() : panelBody(), notices()),
+                : h(
+                    React.Fragment,
+                    null,
+                    panelHead(),
+                    editing ? editor() : panelBody(),
+                    notices(),
+                    waterSettings(),
+                  ),
+              waterReminder(),
             ),
           );
         }

@@ -68,6 +68,8 @@ for (const path of [
   'package.json',
   'index.js',
   'client.js',
+  'hydration.js',
+  'hydration-store.js',
   'cordis.patch.yml',
   'icon.svg',
   'locale/zh.json',

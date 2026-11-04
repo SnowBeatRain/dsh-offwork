@@ -38,6 +38,8 @@
     "client.source.js",
     "clock.js",
     "ui-utils.js",
+    "hydration.js",
+    "hydration-store.js",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",
@@ -70,6 +72,7 @@
     }
   },
   "devDependencies": {
+    "fake-indexeddb": "6.2.7",
     "prettier": "3.9.10"
   }
 }

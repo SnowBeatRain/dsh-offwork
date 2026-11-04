@@ -1,5 +1,7 @@
 # 下班计时器 · Offwork Clock
 
+> 此开发分支包含待验收的喝水提醒，尚未推送或发布。版本标记保持 `1.0.1`；计划在验收后再决定 `1.0.2` 的版本与发布操作。功能规则和本地预览方式见 [喝水提醒验收说明](docs/HYDRATION-ACCEPTANCE.md)。npm 的现有版本不包含这项功能。
+
 在 DeepSeek Harness 中查看距离下班还有多久，以及本班已经赚了多少钱。
 
 `dsh-offwork` 提供可拖动的页面悬浮窗，支持月薪 / 日薪、跨午夜班次、无薪休息扣除和工资隐藏，工作时可以收起成小条。
@@ -166,7 +168,7 @@ plugin_manager → install_bundle → target: /绝对路径/dsh-offwork
 
 ## 开发
 
-建议使用 Node.js 22，与仓库 CI 保持一致。运行时无第三方依赖；开发依赖仅用于代码格式检查，通过锁文件固定版本。
+建议使用 Node.js 22，与仓库 CI 保持一致。运行时无第三方依赖；开发依赖用于格式检查和 IndexedDB 事务回归测试，通过锁文件固定版本。
 
 ```sh
 git clone https://github.com/SnowBeatRain/dsh-offwork.git
