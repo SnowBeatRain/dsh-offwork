@@ -1,0 +1,13 @@
+# Generated files
+client.js
+package-lock.json
+*.tgz
+
+# Local settings and credentials
+data.json
+.data-*.tmp
+.env
+.env.*
+.npmrc
+
+node_modules/

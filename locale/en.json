@@ -1,1 +1,6 @@
-{"meta":{"title":"Offwork Clock","description":"A draggable countdown to clock-out with live estimated earnings and salary settings."}}
+{
+  "meta": {
+    "title": "Offwork Clock",
+    "description": "A draggable countdown to clock-out with live estimated earnings and salary settings."
+  }
+}

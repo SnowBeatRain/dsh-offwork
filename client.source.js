@@ -7,34 +7,125 @@ window.__ModuleLoader__.load({
     /* PURE_MODULES */
     const messages = {
       zh: {
-        title:'下班计时器', working:'距离下班', before:'距离开工', lunch:'午休中', done:'本班已完成', rest:'今天休息',
-        earned:'本班已赚 · 税前', daily:'日薪', hourly:'有效时薪', progress:'计薪进度',
-        settings:'设置', collapse:'收起为小条', expand:'展开', hide:'隐藏工资', show:'显示工资',
-        save:'保存', cancel:'取消', monthlySalary:'税前月薪（元）', dailySalary:'税前日薪（元）',
-        workdaysPerMonth:'月计薪天数', start:'上班时间', end:'下班时间', breakStart:'休息开始', breakEnd:'休息结束',
-        timezone:'时区', weekdays:'班次开始日', payMode:'计薪方式', monthly:'月薪', dailyMode:'日薪',
-        loading:'正在读取设置…', retry:'重新读取', noSession:'请先打开或创建一个会话。', error:'操作失败，请重试。',
-        saved:'设置已保存', days:'日一二三四五六', privacy:'配置存本机；读写结果进入所选会话记录。',
-        drag:'按住可拖动；方向键微调，Home 复位', setup:'先设好你的作息', setupHint:'示例数值不是你的收入，保存后才开始计时。',
-        breakEnabled:'扣除无薪休息', noBreak:'不扣休息', nextDay:'次日', preview:'折算',
-        salaryGroup:'薪资', scheduleGroup:'作息', appearanceGroup:'外观', advanced:'高级设置', sessionHint:'仅用于记录配置读写操作，不是账本，不影响工资计算。', session:'操作记录会话', masked:'工资已隐藏', reset:'复位位置', synced:'已读取最新配置',
-        refresh:'读取最新配置', busy:'保存中…', storage:'浏览器禁止本地存储；位置与透明度本次有效。',
-        shiftDate:'班次', opacity:'背景透明度', opacityHint:'只影响背景，不影响文字。',
+        title: '下班计时器',
+        working: '距离下班',
+        before: '距离开工',
+        lunch: '午休中',
+        done: '本班已完成',
+        rest: '今天休息',
+        earned: '本班已赚 · 税前',
+        daily: '日薪',
+        hourly: '有效时薪',
+        progress: '计薪进度',
+        settings: '设置',
+        collapse: '收起为小条',
+        expand: '展开',
+        hide: '隐藏工资',
+        show: '显示工资',
+        save: '保存',
+        cancel: '取消',
+        monthlySalary: '税前月薪（元）',
+        dailySalary: '税前日薪（元）',
+        workdaysPerMonth: '月计薪天数',
+        start: '上班时间',
+        end: '下班时间',
+        breakStart: '休息开始',
+        breakEnd: '休息结束',
+        timezone: '时区',
+        weekdays: '班次开始日',
+        payMode: '计薪方式',
+        monthly: '月薪',
+        dailyMode: '日薪',
+        loading: '正在读取设置…',
+        retry: '重新读取',
+        noSession: '请先打开或创建一个会话。',
+        error: '操作失败，请重试。',
+        saved: '设置已保存',
+        days: '日一二三四五六',
+        privacy: '配置保存在 Harness 所在机器；读写结果进入所选会话记录。',
+        drag: '按住可拖动；方向键微调，Home 复位',
+        setup: '先设好你的作息',
+        setupHint: '示例数值不是你的收入，保存后才开始计时。',
+        breakEnabled: '扣除无薪休息',
+        noBreak: '不扣休息',
+        nextDay: '次日',
+        preview: '折算',
+        salaryGroup: '薪资',
+        scheduleGroup: '作息',
+        appearanceGroup: '外观',
+        advanced: '高级设置',
+        sessionHint: '仅用于记录配置读写操作，不是账本，不影响工资计算。',
+        session: '操作记录会话',
+        masked: '工资已隐藏',
+        reset: '复位位置',
+        synced: '已读取最新配置',
+        refresh: '读取最新配置',
+        busy: '保存中…',
+        storage: '浏览器禁止本地存储；位置与透明度本次有效。',
+        shiftDate: '班次',
+        opacity: '背景透明度',
+        opacityHint: '只影响背景，不影响文字。',
       },
       en: {
-        title:'Offwork Clock', working:'Until clock-out', before:'Until work starts', lunch:'On break', done:'Shift complete', rest:'Day off',
-        earned:'Earned this shift · gross', daily:'Shift pay', hourly:'Paid-hour rate', progress:'Paid progress',
-        settings:'Settings', collapse:'Minimize to strip', expand:'Expand', hide:'Hide salary', show:'Show salary',
-        save:'Save', cancel:'Cancel', monthlySalary:'Monthly gross (CNY)', dailySalary:'Daily gross (CNY)',
-        workdaysPerMonth:'Paid days / month', start:'Shift starts', end:'Shift ends', breakStart:'Break starts', breakEnd:'Break ends',
-        timezone:'Time zone', weekdays:'Shift starting days', payMode:'Pay basis', monthly:'Monthly', dailyMode:'Daily',
-        loading:'Loading settings…', retry:'Reload', noSession:'Open or create a session first.', error:'Operation failed. Please retry.',
-        saved:'Settings saved', days:'SMTWTFS', privacy:'Settings stay local; results enter the selected session log.',
-        drag:'Drag to move; arrow keys to adjust; Home resets', setup:'Set up your schedule', setupHint:'These are example values, not your income. Save to start.',
-        breakEnabled:'Deduct unpaid break', noBreak:'no break', nextDay:'next day', preview:'Preview',
-        salaryGroup:'Salary', scheduleGroup:'Schedule', appearanceGroup:'Appearance', advanced:'Advanced', sessionHint:'Logs configuration operations only; not a ledger and does not affect pay calculations.', session:'Action log session', masked:'Salary hidden', reset:'Reset position', synced:'Latest settings loaded',
-        refresh:'Reload latest settings', busy:'Saving…', storage:'Local storage is blocked; position and opacity last only for this visit.',
-        shiftDate:'Shift', opacity:'Surface opacity', opacityHint:'Affects the background only.',
+        title: 'Offwork Clock',
+        working: 'Until clock-out',
+        before: 'Until work starts',
+        lunch: 'On break',
+        done: 'Shift complete',
+        rest: 'Day off',
+        earned: 'Earned this shift · gross',
+        daily: 'Shift pay',
+        hourly: 'Paid-hour rate',
+        progress: 'Paid progress',
+        settings: 'Settings',
+        collapse: 'Minimize to strip',
+        expand: 'Expand',
+        hide: 'Hide salary',
+        show: 'Show salary',
+        save: 'Save',
+        cancel: 'Cancel',
+        monthlySalary: 'Monthly gross (CNY)',
+        dailySalary: 'Daily gross (CNY)',
+        workdaysPerMonth: 'Paid days / month',
+        start: 'Shift starts',
+        end: 'Shift ends',
+        breakStart: 'Break starts',
+        breakEnd: 'Break ends',
+        timezone: 'Time zone',
+        weekdays: 'Shift starting days',
+        payMode: 'Pay basis',
+        monthly: 'Monthly',
+        dailyMode: 'Daily',
+        loading: 'Loading settings…',
+        retry: 'Reload',
+        noSession: 'Open or create a session first.',
+        error: 'Operation failed. Please retry.',
+        saved: 'Settings saved',
+        days: 'SMTWTFS',
+        privacy: 'Settings are saved on the Harness host; results enter the selected session log.',
+        drag: 'Drag to move; arrow keys to adjust; Home resets',
+        setup: 'Set up your schedule',
+        setupHint: 'These are example values, not your income. Save to start.',
+        breakEnabled: 'Deduct unpaid break',
+        noBreak: 'no break',
+        nextDay: 'next day',
+        preview: 'Preview',
+        salaryGroup: 'Salary',
+        scheduleGroup: 'Schedule',
+        appearanceGroup: 'Appearance',
+        advanced: 'Advanced',
+        sessionHint:
+          'Logs configuration operations only; not a ledger and does not affect pay calculations.',
+        session: 'Action log session',
+        masked: 'Salary hidden',
+        reset: 'Reset position',
+        synced: 'Latest settings loaded',
+        refresh: 'Reload latest settings',
+        busy: 'Saving…',
+        storage: 'Local storage is blocked; position and opacity last only for this visit.',
+        shiftDate: 'Shift',
+        opacity: 'Surface opacity',
+        opacityHint: 'Affects the background only.',
       },
     };
     const STYLE = `
@@ -124,31 +215,65 @@ window.__ModuleLoader__.load({
 @media(max-width:420px){.owc-pill{min-width:136px;padding:8px 8px 7px 12px}.owc-pill-status{display:none}.owc-pill-time{font-size:22px}.owc-main,.owc-form{padding-left:14px;padding-right:14px}.owc-time{font-size:31px}}
 `;
     const ICONS = {
-      eye: [['path', {d:'M1.7 8S4.3 3.9 8 3.9 14.3 8 14.3 8 11.7 12.1 8 12.1 1.7 8 1.7 8Z'}], ['circle', {cx:8, cy:8, r:2.05}]],
-      eyeOff: [['path', {d:'M1.7 8S4.3 3.9 8 3.9 14.3 8 14.3 8 11.7 12.1 8 12.1 1.7 8 1.7 8Z'}], ['circle', {cx:8, cy:8, r:2.05}], ['path', {d:'M3 3l10 10'}]],
-      sliders: [['path', {d:'M2.2 4.6h3.4M9.2 4.6h4.6M2.2 11.4h5.4M11.4 11.4h2.4'}], ['circle', {cx:7.3, cy:4.6, r:1.55}], ['circle', {cx:9.4, cy:11.4, r:1.55}]],
-      alarm: [['circle', {cx:8, cy:9, r:4.5}], ['path', {d:'M8 6.5V9l1.7 1M2 4l2-2M12 2l2 2M5 13l-1 2M11 13l1 2'}]],
-      chevronUp: [['path', {d:'M3.7 9.8L8 5.5l4.3 4.3'}]],
-      chevronDown: [['path', {d:'M3.7 6.2L8 10.5l4.3-4.3'}]],
-      close: [['path', {d:'M4.3 4.3l7.4 7.4M11.7 4.3l-7.4 7.4'}]],
-      refresh: [['path', {d:'M13.1 8a5.1 5.1 0 1 1-1.5-3.6'}], ['path', {d:'M13.1 3v3.2H9.9'}]],
+      eye: [
+        ['path', { d: 'M1.7 8S4.3 3.9 8 3.9 14.3 8 14.3 8 11.7 12.1 8 12.1 1.7 8 1.7 8Z' }],
+        ['circle', { cx: 8, cy: 8, r: 2.05 }],
+      ],
+      eyeOff: [
+        ['path', { d: 'M1.7 8S4.3 3.9 8 3.9 14.3 8 14.3 8 11.7 12.1 8 12.1 1.7 8 1.7 8Z' }],
+        ['circle', { cx: 8, cy: 8, r: 2.05 }],
+        ['path', { d: 'M3 3l10 10' }],
+      ],
+      sliders: [
+        ['path', { d: 'M2.2 4.6h3.4M9.2 4.6h4.6M2.2 11.4h5.4M11.4 11.4h2.4' }],
+        ['circle', { cx: 7.3, cy: 4.6, r: 1.55 }],
+        ['circle', { cx: 9.4, cy: 11.4, r: 1.55 }],
+      ],
+      alarm: [
+        ['circle', { cx: 8, cy: 9, r: 4.5 }],
+        ['path', { d: 'M8 6.5V9l1.7 1M2 4l2-2M12 2l2 2M5 13l-1 2M11 13l1 2' }],
+      ],
+      chevronUp: [['path', { d: 'M3.7 9.8L8 5.5l4.3 4.3' }]],
+      chevronDown: [['path', { d: 'M3.7 6.2L8 10.5l4.3-4.3' }]],
+      close: [['path', { d: 'M4.3 4.3l7.4 7.4M11.7 4.3l-7.4 7.4' }]],
+      refresh: [
+        ['path', { d: 'M13.1 8a5.1 5.1 0 1 1-1.5-3.6' }],
+        ['path', { d: 'M13.1 3v3.2H9.9' }],
+      ],
     };
-    const iconSvg = (name, size = 15) => h('svg', {
-      width: size, height: size, viewBox: '0 0 16 16', fill: 'none', stroke: 'currentColor',
-      strokeWidth: 1.55, strokeLinecap: 'round', strokeLinejoin: 'round', 'aria-hidden': 'true', focusable: 'false',
-    }, ICONS[name].map(([tag, attrs], index) => h(tag, {key: index, ...attrs})));
+    const iconSvg = (name, size = 15) =>
+      h(
+        'svg',
+        {
+          width: size,
+          height: size,
+          viewBox: '0 0 16 16',
+          fill: 'none',
+          stroke: 'currentColor',
+          strokeWidth: 1.55,
+          strokeLinecap: 'round',
+          strokeLinejoin: 'round',
+          'aria-hidden': 'true',
+          focusable: 'false',
+        },
+        ICONS[name].map(([tag, attrs], index) => h(tag, { key: index, ...attrs })),
+      );
 
     return {
       inject: ['slots', 'locale', 'remote', 'remote.commands'],
       apply(ctx) {
-        for (const [lang, dict] of Object.entries(messages)) ctx.effect(() => ctx.locale.register('offwork-clock', lang, dict));
+        for (const [lang, dict] of Object.entries(messages))
+          ctx.effect(() => ctx.locale.register('offwork-clock', lang, dict));
         const viewKey = 'dsh.offwork-clock.view.v4';
         const legacyKey = 'dsh.offwork-clock.view.v3';
 
         function Clock(props) {
-          const locale = React.useSyncExternalStore(fn => ctx.locale.subscribe(fn), () => ctx.locale.getSnapshot());
+          const locale = React.useSyncExternalStore(
+            (fn) => ctx.locale.subscribe(fn),
+            () => ctx.locale.getSnapshot(),
+          );
           const t = ctx.locale.bind('offwork-clock');
-          const sessions = props.useSessions(s => s);
+          const sessions = props.useSessions((s) => s);
           const sessionIds = Array.isArray(sessions?.ids) ? sessions.ids : [];
           const [sessionChoice, setSessionChoice] = React.useState('');
           const sessionId = sessionIds.includes(sessionChoice) ? sessionChoice : sessionIds[0];
@@ -175,37 +300,76 @@ window.__ModuleLoader__.load({
           const preview = workingDraft ? safeCalculate(workingDraft) : null;
           const safeState = state && !state.error ? state : null;
           const collapsed = !!safeState && !editing && view.mini && !error && !state?.error;
-          const seconds = safeState ? (safeState.status === 'before' ? safeState.startRemaining : safeState.remaining) : NaN;
+          const seconds = safeState
+            ? safeState.status === 'before'
+              ? safeState.startRemaining
+              : safeState.remaining
+            : NaN;
           const duration = formatDuration(seconds);
-          const formatMoney = React.useMemo(() => new Intl.NumberFormat(locale.active, {
-            style: 'currency', currency: 'CNY', minimumFractionDigits: 2, maximumFractionDigits: 2,
-          }), [locale.active]);
-          const money = value => view.masked ? '••••' : formatMoney.format(value);
+          const formatMoney = React.useMemo(
+            () =>
+              new Intl.NumberFormat(locale.active, {
+                style: 'currency',
+                currency: 'CNY',
+                minimumFractionDigits: 2,
+                maximumFractionDigits: 2,
+              }),
+            [locale.active],
+          );
+          const money = (value) => (view.masked ? '••••' : formatMoney.format(value));
           const moneyText = safeState ? money(safeState.earned) : '—';
-          const cardStyle = Object.assign({ '--owc-alpha': String(view.opacity) },
-            view.position ? { left: view.position.x, top: view.position.y, right: 'auto' } : {});
+          const cardStyle = Object.assign(
+            { '--owc-alpha': String(view.opacity) },
+            view.position ? { left: view.position.x, top: view.position.y, right: 'auto' } : {},
+          );
 
           function safeCalculate(value) {
-            try { return calculate(value, now); }
-            catch (e) { return { error: e instanceof Error ? e.message : t('error') }; }
+            try {
+              return calculate(value, now);
+            } catch (e) {
+              return { error: e instanceof Error ? e.message : t('error') };
+            }
           }
-          function errorText(e) { return e instanceof Error ? e.message : t('error'); }
-          function setPreference(patch) { setView(current => ({ ...current, ...patch })); }
+          function errorText(e) {
+            return e instanceof Error ? e.message : t('error');
+          }
+          function setPreference(patch) {
+            setView((current) => ({ ...current, ...patch }));
+          }
 
-          const clamp = React.useCallback(position => clampPosition(position,
-            { width: window.innerWidth, height: window.innerHeight },
-            { width: box.current?.offsetWidth || 300, height: box.current?.offsetHeight || 200 }), []);
+          const clamp = React.useCallback(
+            (position) =>
+              clampPosition(
+                position,
+                { width: window.innerWidth, height: window.innerHeight },
+                {
+                  width: box.current?.offsetWidth || 300,
+                  height: box.current?.offsetHeight || 200,
+                },
+              ),
+            [],
+          );
 
           React.useEffect(() => {
             try {
               const saved = localStorage.getItem(viewKey);
               const legacy = !saved ? JSON.parse(localStorage.getItem(legacyKey) || 'null') : null;
-              setView(normalizeView(saved ? JSON.parse(saved) : { position: legacy?.position ?? null, masked: legacy?.masked ?? true }));
-            } catch { setStorageError(true); }
+              setView(
+                normalizeView(
+                  saved
+                    ? JSON.parse(saved)
+                    : { position: legacy?.position ?? null, masked: legacy?.masked ?? true },
+                ),
+              );
+            } catch {
+              setStorageError(true);
+            }
             setReady(true);
-            const sync = e => {
+            const sync = (e) => {
               if (e.key !== viewKey) return;
-              try { setView(normalizeView(JSON.parse(e.newValue || 'null'))); } catch {}
+              try {
+                setView(normalizeView(JSON.parse(e.newValue || 'null')));
+              } catch {}
             };
             window.addEventListener('storage', sync);
             return () => window.removeEventListener('storage', sync);
@@ -213,72 +377,122 @@ window.__ModuleLoader__.load({
 
           React.useEffect(() => {
             if (!ready) return;
-            try { localStorage.setItem(viewKey, JSON.stringify(normalizeView(view))); }
-            catch { setStorageError(true); }
+            try {
+              localStorage.setItem(viewKey, JSON.stringify(normalizeView(view)));
+            } catch {
+              setStorageError(true);
+            }
           }, [ready, view]);
 
           React.useEffect(() => {
             if (sessionId) reload();
             else setError(t('noSession'));
-            return () => { generation.current++; };
+            return () => {
+              generation.current++;
+            };
           }, [sessionId]);
 
           React.useEffect(() => {
             let timer;
-            const tick = () => { setNow(Date.now()); timer = setTimeout(tick, 1000 - Date.now() % 1000); };
-            const visibility = () => { clearTimeout(timer); setNow(Date.now()); if (!document.hidden) tick(); };
+            const tick = () => {
+              setNow(Date.now());
+              timer = setTimeout(tick, 1000 - (Date.now() % 1000));
+            };
+            const visibility = () => {
+              clearTimeout(timer);
+              setNow(Date.now());
+              if (!document.hidden) tick();
+            };
             if (!document.hidden) tick();
             document.addEventListener('visibilitychange', visibility);
-            return () => { clearTimeout(timer); document.removeEventListener('visibilitychange', visibility); };
+            return () => {
+              clearTimeout(timer);
+              document.removeEventListener('visibilitychange', visibility);
+            };
           }, []);
 
           React.useEffect(() => {
-            const resize = () => setView(current => current.position ? { ...current, position: clamp(current.position) } : current);
+            const resize = () =>
+              setView((current) =>
+                current.position ? { ...current, position: clamp(current.position) } : current,
+              );
             const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(resize) : null;
             if (box.current) ro?.observe(box.current);
             window.addEventListener('resize', resize);
-            return () => { ro?.disconnect(); window.removeEventListener('resize', resize); };
+            return () => {
+              ro?.disconnect();
+              window.removeEventListener('resize', resize);
+            };
           }, [clamp]);
 
           React.useEffect(() => {
-            if (!editing) { focusReturn.current?.focus?.(); return; }
+            if (!editing) {
+              focusReturn.current?.focus?.();
+              return;
+            }
             box.current?.querySelector('form input,form select')?.focus?.();
           }, [editing]);
 
-          React.useEffect(() => () => { generation.current++; dragState.current = null; }, []);
+          React.useEffect(
+            () => () => {
+              generation.current++;
+              dragState.current = null;
+            },
+            [],
+          );
 
           async function request(action, patch) {
             if (!sessionId) throw new Error(t('noSession'));
-            const rpc = await ctx.remote.commands.execute(sessionId, '/offwork-clock ' + action + (patch ? ' ' + JSON.stringify(patch) : ''), []);
+            const rpc = await ctx.remote.commands.execute(
+              sessionId,
+              '/offwork-clock ' + action + (patch ? ' ' + JSON.stringify(patch) : ''),
+              [],
+            );
             return decodeCommand(rpc);
           }
 
           async function reload(explicit = false) {
             if (requestBusy.current) return;
             const token = ++generation.current;
-            setBusy(true); setError('');
+            setBusy(true);
+            setError('');
             try {
               const next = await request('get');
               if (token !== generation.current) return;
               setData(next);
-              if (!next.configured) { setDraft({ ...next.settings }); setEditing(true); }
+              if (!next.configured) {
+                setDraft({ ...next.settings });
+                setEditing(true);
+              }
               if (explicit) setNotice(t('synced'));
-            } catch (e) { if (token === generation.current) setError(errorText(e)); }
-            finally { if (token === generation.current) setBusy(false); }
+            } catch (e) {
+              if (token === generation.current) setError(errorText(e));
+            } finally {
+              if (token === generation.current) setBusy(false);
+            }
           }
 
           async function save(event) {
             event.preventDefault();
             if (requestBusy.current) return;
-            requestBusy.current = true; setBusy(true); setError('');
+            requestBusy.current = true;
+            setBusy(true);
+            setError('');
             const token = ++generation.current;
             try {
               const next = await request('set', changedSettings(settings, draft));
               if (token === generation.current) {
-                setData(next); setEditing(false); setDraft(null); setNotice(t('saved'));
+                setData(next);
+                setEditing(false);
+                setDraft(null);
+                setNotice(t('saved'));
               }
-            } catch (e) { if (token === generation.current) setError(errorText(e)); }
-            finally { requestBusy.current = false; if (token === generation.current) setBusy(false); }
+            } catch (e) {
+              if (token === generation.current) setError(errorText(e));
+            } finally {
+              requestBusy.current = false;
+              if (token === generation.current) setBusy(false);
+            }
           }
 
           function commitPosition(position) {
@@ -288,10 +502,21 @@ window.__ModuleLoader__.load({
           }
           function dragDown(e) {
             if (e.button !== 0) return;
-            if (e.target.closest?.('button,input,select,label,a,textarea,summary,[contenteditable]')) return;
+            if (
+              e.target.closest?.('button,input,select,label,a,textarea,summary,[contenteditable]')
+            )
+              return;
             const rect = box.current.getBoundingClientRect();
-            dragState.current = { dx: e.clientX - rect.left, dy: e.clientY - rect.top, x0: e.clientX, y0: e.clientY, moved: false };
-            try { e.currentTarget.setPointerCapture?.(e.pointerId); } catch {}
+            dragState.current = {
+              dx: e.clientX - rect.left,
+              dy: e.clientY - rect.top,
+              x0: e.clientX,
+              y0: e.clientY,
+              moved: false,
+            };
+            try {
+              e.currentTarget.setPointerCapture?.(e.pointerId);
+            } catch {}
           }
           function dragMove(e) {
             const d = dragState.current;
@@ -311,10 +536,17 @@ window.__ModuleLoader__.load({
             if (!d) return;
             dragState.current = null;
             if (d.moved && lastPosition.current) commitPosition(lastPosition.current);
-            try { if (e.currentTarget.hasPointerCapture?.(e.pointerId)) e.currentTarget.releasePointerCapture(e.pointerId); } catch {}
+            try {
+              if (e.currentTarget.hasPointerCapture?.(e.pointerId))
+                e.currentTarget.releasePointerCapture(e.pointerId);
+            } catch {}
           }
           function gripKeys(e) {
-            if (e.key === 'Home') { e.preventDefault(); setPreference({ position: null }); return; }
+            if (e.key === 'Home') {
+              e.preventDefault();
+              setPreference({ position: null });
+              return;
+            }
             if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
             e.preventDefault();
             const rect = box.current.getBoundingClientRect();
@@ -328,114 +560,324 @@ window.__ModuleLoader__.load({
             focusReturn.current = e.currentTarget;
             setDraft({ ...settings });
             setEditing(true);
-            setError(''); setNotice('');
+            setError('');
+            setNotice('');
           }
           function closeEditor() {
             if (!data?.configured) return;
-            setEditing(false); setDraft(null); setError('');
+            setEditing(false);
+            setDraft(null);
+            setError('');
           }
-          function update(key, value) { setDraft(current => ({ ...current, [key]: value })); }
+          function update(key, value) {
+            setDraft((current) => ({ ...current, [key]: value }));
+          }
           function toggleBreak(e) {
-            const point = text => +text.slice(0, 2) * 60 + +text.slice(3);
-            const label = minutes => String(Math.floor(minutes / 60)).padStart(2, '0') + ':' + String(minutes % 60).padStart(2, '0');
-            setDraft(current => {
-              if (!e.target.checked) return { ...current, breakStart: current.start, breakEnd: current.start };
+            const point = (text) => +text.slice(0, 2) * 60 + +text.slice(3);
+            const label = (minutes) =>
+              String(Math.floor(minutes / 60)).padStart(2, '0') +
+              ':' +
+              String(minutes % 60).padStart(2, '0');
+            setDraft((current) => {
+              if (!e.target.checked)
+                return { ...current, breakStart: current.start, breakEnd: current.start };
               const start = point(current.start);
               const span = (point(current.end) - start + 1440) % 1440;
-              return { ...current, breakStart: current.start, breakEnd: label((start + Math.max(1, Math.min(60, Math.floor(span / 2)))) % 1440) };
+              return {
+                ...current,
+                breakStart: current.start,
+                breakEnd: label((start + Math.max(1, Math.min(60, Math.floor(span / 2)))) % 1440),
+              };
             });
           }
 
-          const label = (text, control) => h('label', { className: 'owc-field' }, h('span', null, text), control);
-          const numberInput = key => h('input', {
-            name: key, type: 'number', step: 'any', min: key === 'workdaysPerMonth' ? '0.01' : '0',
-            value: workingDraft?.[key] ?? '', disabled: busy,
-            onChange: e => update(key, e.target.value === '' ? '' : e.target.valueAsNumber),
-          });
-          const timeInput = key => h('input', {
-            name: key, type: 'time', required: true, value: workingDraft?.[key] ?? '', disabled: busy,
-            onChange: e => update(key, e.target.value),
-          });
-          const sessionSelect = () => h('select', {
-            value: sessionId || '', disabled: busy,
-            onChange: e => setSessionChoice(e.target.value),
-          }, sessionIds.length
-            ? sessionIds.map(id => h('option', { key: id, value: id }, sessions?.byId?.[id]?.title || String(id).slice(0, 12)))
-            : h('option', { value: '' }, t('noSession')));
-          const salaryToggle = () => h('button', {
-            type: 'button', className: 'owc-text', 'aria-pressed': view.masked,
-            title: t(view.masked ? 'show' : 'hide'),
-            onClick: () => setPreference({ masked: !view.masked }),
-          }, iconSvg(view.masked ? 'eyeOff' : 'eye', 13), t(view.masked ? 'show' : 'hide'));
+          const label = (text, control) =>
+            h('label', { className: 'owc-field' }, h('span', null, text), control);
+          const numberInput = (key) =>
+            h('input', {
+              name: key,
+              type: 'number',
+              step: 'any',
+              min: key === 'workdaysPerMonth' ? '0.01' : '0',
+              value: workingDraft?.[key] ?? '',
+              disabled: busy,
+              onChange: (e) => update(key, e.target.value === '' ? '' : e.target.valueAsNumber),
+            });
+          const timeInput = (key) =>
+            h('input', {
+              name: key,
+              type: 'time',
+              required: true,
+              value: workingDraft?.[key] ?? '',
+              disabled: busy,
+              onChange: (e) => update(key, e.target.value),
+            });
+          const sessionSelect = () =>
+            h(
+              'select',
+              {
+                value: sessionId || '',
+                disabled: busy,
+                onChange: (e) => setSessionChoice(e.target.value),
+              },
+              sessionIds.length
+                ? sessionIds.map((id) =>
+                    h(
+                      'option',
+                      { key: id, value: id },
+                      sessions?.byId?.[id]?.title || String(id).slice(0, 12),
+                    ),
+                  )
+                : h('option', { value: '' }, t('noSession')),
+            );
+          const salaryToggle = () =>
+            h(
+              'button',
+              {
+                type: 'button',
+                className: 'owc-text',
+                'aria-pressed': view.masked,
+                title: t(view.masked ? 'show' : 'hide'),
+                onClick: () => setPreference({ masked: !view.masked }),
+              },
+              iconSvg(view.masked ? 'eyeOff' : 'eye', 13),
+              t(view.masked ? 'show' : 'hide'),
+            );
 
-          const strip = () => h('div', { className: 'owc-pill' },
-            h('div', { className: 'owc-pill-top' },
-              iconSvg('alarm', 16),
-              h('span', { className: 'owc-grip', tabIndex: 0, title: t('drag'), onKeyDown: gripKeys },
-                safeState.status !== 'done' && h('span', { className: 'owc-pill-status' }, t(safeState.status)),
-                h('span', { className: 'owc-pill-time' }, duration)),
-              h('button', {
-                type: 'button', className: 'owc-icon', style: { marginLeft: 'auto' },
-                title: t('expand'), 'aria-label': t('expand'),
-                onClick: () => setPreference({ mini: false }),
-              }, iconSvg('chevronUp', 14))),
-            h('div', { className: 'owc-pill-bottom' },
-              h('span', { className: 'owc-pill-money', 'aria-label': view.masked ? t('masked') : moneyText }, moneyText),
-              h('div', { className: 'owc-pill-actions' },
-                h('button', {
-                  type: 'button', className: 'owc-icon',
-                  title: t(view.masked ? 'show' : 'hide'), 'aria-label': t(view.masked ? 'show' : 'hide'),
-                  onClick: () => setPreference({ masked: !view.masked }),
-                }, iconSvg(view.masked ? 'eyeOff' : 'eye', 14)))));
+          const strip = () =>
+            h(
+              'div',
+              { className: 'owc-pill' },
+              h(
+                'div',
+                { className: 'owc-pill-top' },
+                iconSvg('alarm', 16),
+                h(
+                  'span',
+                  { className: 'owc-grip', tabIndex: 0, title: t('drag'), onKeyDown: gripKeys },
+                  safeState.status !== 'done' &&
+                    h('span', { className: 'owc-pill-status' }, t(safeState.status)),
+                  h('span', { className: 'owc-pill-time' }, duration),
+                ),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-icon',
+                    style: { marginLeft: 'auto' },
+                    title: t('expand'),
+                    'aria-label': t('expand'),
+                    onClick: () => setPreference({ mini: false }),
+                  },
+                  iconSvg('chevronUp', 14),
+                ),
+              ),
+              h(
+                'div',
+                { className: 'owc-pill-bottom' },
+                h(
+                  'span',
+                  {
+                    className: 'owc-pill-money',
+                    'aria-label': view.masked ? t('masked') : moneyText,
+                  },
+                  moneyText,
+                ),
+                h(
+                  'div',
+                  { className: 'owc-pill-actions' },
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'owc-icon',
+                      title: t(view.masked ? 'show' : 'hide'),
+                      'aria-label': t(view.masked ? 'show' : 'hide'),
+                      onClick: () => setPreference({ masked: !view.masked }),
+                    },
+                    iconSvg(view.masked ? 'eyeOff' : 'eye', 14),
+                  ),
+                ),
+              ),
+            );
 
-          const panelHead = () => h('div', { className: 'owc-head' },
-            h('span', {
-              className: 'owc-title', tabIndex: 0, title: t('drag'), onKeyDown: gripKeys,
-            }, editing ? t(data?.configured ? 'settings' : 'setup') : t('title')),
-            editing
-              ? (data?.configured && h('button', {
-                  type: 'button', className: 'owc-icon', title: t('cancel'), 'aria-label': t('cancel'),
-                  onClick: closeEditor, disabled: busy,
-                }, iconSvg('close')))
-              : h(React.Fragment, null,
-                  h('button', {
-                    type: 'button', className: 'owc-icon', title: t('settings'), 'aria-label': t('settings'),
-                    onClick: openEditor, disabled: busy,
-                  }, iconSvg('sliders')),
-                  h('button', {
-                    type: 'button', className: 'owc-icon', title: t('collapse'), 'aria-label': t('collapse'),
-                    onClick: () => setPreference({ mini: true }),
-                  }, iconSvg('chevronDown'))));
+          const panelHead = () =>
+            h(
+              'div',
+              { className: 'owc-head' },
+              h(
+                'span',
+                {
+                  className: 'owc-title',
+                  tabIndex: 0,
+                  title: t('drag'),
+                  onKeyDown: gripKeys,
+                },
+                editing ? t(data?.configured ? 'settings' : 'setup') : t('title'),
+              ),
+              editing
+                ? data?.configured &&
+                    h(
+                      'button',
+                      {
+                        type: 'button',
+                        className: 'owc-icon',
+                        title: t('cancel'),
+                        'aria-label': t('cancel'),
+                        onClick: closeEditor,
+                        disabled: busy,
+                      },
+                      iconSvg('close'),
+                    )
+                : h(
+                    React.Fragment,
+                    null,
+                    h(
+                      'button',
+                      {
+                        type: 'button',
+                        className: 'owc-icon',
+                        title: t('settings'),
+                        'aria-label': t('settings'),
+                        onClick: openEditor,
+                        disabled: busy,
+                      },
+                      iconSvg('sliders'),
+                    ),
+                    h(
+                      'button',
+                      {
+                        type: 'button',
+                        className: 'owc-icon',
+                        title: t('collapse'),
+                        'aria-label': t('collapse'),
+                        onClick: () => setPreference({ mini: true }),
+                      },
+                      iconSvg('chevronDown'),
+                    ),
+                  ),
+            );
 
           const panelBody = () => {
-            if (!safeState) return h('div', { className: 'owc-main' },
-              h('div', { className: 'owc-status' }, h('span', { className: 'owc-dot' }), t('loading')),
-              !sessionId && h('p', { className: 'owc-hint' }, t('noSession')),
-              h('div', { className: 'owc-row-actions' },
-                h('button', { type: 'button', className: 'owc-text', onClick: () => reload(true), disabled: busy || !sessionId },
-                  iconSvg('refresh', 12), t('retry'))));
+            if (!safeState)
+              return h(
+                'div',
+                { className: 'owc-main' },
+                h(
+                  'div',
+                  { className: 'owc-status' },
+                  h('span', { className: 'owc-dot' }),
+                  t('loading'),
+                ),
+                !sessionId && h('p', { className: 'owc-hint' }, t('noSession')),
+                h(
+                  'div',
+                  { className: 'owc-row-actions' },
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'owc-text',
+                      onClick: () => reload(true),
+                      disabled: busy || !sessionId,
+                    },
+                    iconSvg('refresh', 12),
+                    t('retry'),
+                  ),
+                ),
+              );
             const status = safeState.status === 'done' ? '' : t(safeState.status);
-            return h('div', { className: 'owc-main' },
-              status && h('div', { className: 'owc-status' }, h('span', { className: 'owc-dot' }), status),
+            return h(
+              'div',
+              { className: 'owc-main' },
+              status &&
+                h('div', { className: 'owc-status' }, h('span', { className: 'owc-dot' }), status),
               h('div', { className: 'owc-time', 'aria-label': status + ' ' + duration }, duration),
-              h('div', {
-                className: 'owc-progress', role: 'progressbar', 'aria-label': t('progress'),
-                'aria-valuenow': Math.floor(safeState.progress * 100), 'aria-valuemin': 0, 'aria-valuemax': 100,
-              }, h('div', { style: { width: safeState.progress * 100 + '%' } })),
-              h('div', { className: 'owc-earn-row' },
-                h('span', { className: 'owc-muted' }, t('earned')), salaryToggle()),
-              h('div', { className: 'owc-money', 'aria-label': view.masked ? t('masked') : moneyText }, moneyText),
-              h('div', { className: 'owc-stats' },
-                h('div', null, h('span', null, t('daily')), h('strong', null, money(safeState.daily))),
-                h('div', null, h('span', null, t('hourly')), h('strong', null, money(safeState.hourly)))),
-              h('div', { className: 'owc-meta' },
-                h('span', null, settings.start + ' — ' + settings.end + (settings.end < settings.start ? ' +1' : '') +
-                  ' · ' + (settings.breakStart === settings.breakEnd ? t('noBreak') : settings.breakStart + '–' + settings.breakEnd)),
-                h('span', null, t('shiftDate') + ' ' + safeState.shiftDate + ' · ' + settings.timezone)),
-              h('div', { className: 'owc-row-actions' },
-                h('button', { type: 'button', className: 'owc-text', onClick: () => reload(true), disabled: busy },
-                  iconSvg('refresh', 12), t('refresh')),
-                h('button', { type: 'button', className: 'owc-text', onClick: () => setPreference({ position: null }) }, t('reset'))));
+              h(
+                'div',
+                {
+                  className: 'owc-progress',
+                  role: 'progressbar',
+                  'aria-label': t('progress'),
+                  'aria-valuenow': Math.floor(safeState.progress * 100),
+                  'aria-valuemin': 0,
+                  'aria-valuemax': 100,
+                },
+                h('div', { style: { width: safeState.progress * 100 + '%' } }),
+              ),
+              h(
+                'div',
+                { className: 'owc-earn-row' },
+                h('span', { className: 'owc-muted' }, t('earned')),
+                salaryToggle(),
+              ),
+              h(
+                'div',
+                { className: 'owc-money', 'aria-label': view.masked ? t('masked') : moneyText },
+                moneyText,
+              ),
+              h(
+                'div',
+                { className: 'owc-stats' },
+                h(
+                  'div',
+                  null,
+                  h('span', null, t('daily')),
+                  h('strong', null, money(safeState.daily)),
+                ),
+                h(
+                  'div',
+                  null,
+                  h('span', null, t('hourly')),
+                  h('strong', null, money(safeState.hourly)),
+                ),
+              ),
+              h(
+                'div',
+                { className: 'owc-meta' },
+                h(
+                  'span',
+                  null,
+                  settings.start +
+                    ' — ' +
+                    settings.end +
+                    (settings.end < settings.start ? ' +1' : '') +
+                    ' · ' +
+                    (settings.breakStart === settings.breakEnd
+                      ? t('noBreak')
+                      : settings.breakStart + '–' + settings.breakEnd),
+                ),
+                h(
+                  'span',
+                  null,
+                  t('shiftDate') + ' ' + safeState.shiftDate + ' · ' + settings.timezone,
+                ),
+              ),
+              h(
+                'div',
+                { className: 'owc-row-actions' },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-text',
+                    onClick: () => reload(true),
+                    disabled: busy,
+                  },
+                  iconSvg('refresh', 12),
+                  t('refresh'),
+                ),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-text',
+                    onClick: () => setPreference({ position: null }),
+                  },
+                  t('reset'),
+                ),
+              ),
+            );
           };
 
           const editor = () => {
@@ -443,91 +885,290 @@ window.__ModuleLoader__.load({
             const payDaily = workingDraft.payMode === 'daily';
             const salaryKey = payDaily ? 'dailySalary' : 'monthlySalary';
             const salaryControl = view.masked
-              ? h('div', { className: 'owc-private' }, h('span', null, '••••'),
-                  h('button', { type: 'button', className: 'owc-text', onClick: () => setPreference({ masked: false }) }, t('show')))
+              ? h(
+                  'div',
+                  { className: 'owc-private' },
+                  h('span', null, '••••'),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'owc-text',
+                      onClick: () => setPreference({ masked: false }),
+                    },
+                    t('show'),
+                  ),
+                )
               : numberInput(salaryKey);
             const breakOn = workingDraft.breakStart !== workingDraft.breakEnd;
-            const commonZones = ['Asia/Shanghai', 'Asia/Hong_Kong', 'Asia/Taipei', 'Asia/Singapore', 'Asia/Tokyo', 'Asia/Seoul', 'Asia/Kolkata', 'Europe/London', 'Europe/Paris', 'America/New_York', 'America/Los_Angeles', 'Australia/Sydney', 'UTC'];
+            const commonZones = [
+              'Asia/Shanghai',
+              'Asia/Hong_Kong',
+              'Asia/Taipei',
+              'Asia/Singapore',
+              'Asia/Tokyo',
+              'Asia/Seoul',
+              'Asia/Kolkata',
+              'Europe/London',
+              'Europe/Paris',
+              'America/New_York',
+              'America/Los_Angeles',
+              'Australia/Sydney',
+              'UTC',
+            ];
             let allZones = [];
-            try { allZones = Intl.supportedValuesOf('timeZone'); } catch {}
-            const zones = [...new Set([workingDraft.timezone, ...commonZones, ...allZones].filter(Boolean))];
-            return h('form', {
-              className: 'owc-form', onSubmit: save,
-              onKeyDown: e => { if (e.key === 'Escape') { e.preventDefault(); closeEditor(); } },
-            },
-            !data?.configured && h('p', { className: 'owc-hint' }, t('setupHint')),
-            h('fieldset', { className: 'owc-setting-group' }, h('legend', null, t('salaryGroup')),
-            label(t('payMode'), h('div', { className: 'owc-seg' },
-              h('button', { type: 'button', disabled: busy, 'aria-pressed': !payDaily, onClick: () => update('payMode', 'monthly') }, t('monthly')),
-              h('button', { type: 'button', disabled: busy, 'aria-pressed': payDaily, onClick: () => update('payMode', 'daily') }, t('dailyMode')))),
-            h('div', { className: 'owc-row2' },
-              label(t(salaryKey), salaryControl),
-              !payDaily && label(t('workdaysPerMonth'), numberInput('workdaysPerMonth')))),
-            h('fieldset', { className: 'owc-setting-group' }, h('legend', null, t('scheduleGroup')),
-            h('div', { className: 'owc-row2' }, label(t('start'), timeInput('start')), label(t('end'), timeInput('end'))),
-            workingDraft.end < workingDraft.start && h('p', { className: 'owc-hint' }, t('end') + ' · ' + t('nextDay')),
-            h('label', { className: 'owc-check' },
-              h('input', { type: 'checkbox', checked: breakOn, disabled: busy, onChange: toggleBreak }), t('breakEnabled')),
-            breakOn && h('div', { className: 'owc-row2' }, label(t('breakStart'), timeInput('breakStart')), label(t('breakEnd'), timeInput('breakEnd'))),
-            label(t('weekdays'), h('div', { className: 'owc-days' }, [0, 1, 2, 3, 4, 5, 6].map(day => h('button', {
-              key: day, type: 'button', disabled: busy, 'aria-pressed': workingDraft.weekdays.includes(day),
-              'aria-label': t('weekdays') + ' ' + t('days')[day],
-              onClick: () => update('weekdays', workingDraft.weekdays.includes(day)
-                ? workingDraft.weekdays.filter(d => d !== day)
-                : [...workingDraft.weekdays, day].sort((a, b) => a - b)),
-            }, t('days')[day])))),
-            label(t('timezone'), h('select', {
-              name: 'timezone', value: workingDraft.timezone ?? '', disabled: busy,
-              onChange: e => update('timezone', e.target.value),
-            }, zones.map(zone => h('option', { key: zone, value: zone }, zone))))),
-            h('fieldset', { className: 'owc-setting-group' }, h('legend', null, t('appearanceGroup')),
-            label(t('opacity'), h(React.Fragment, null,
-              h('input', {
-                className: 'owc-range', type: 'range', min: '30', max: '100', step: '5',
-                value: String(Math.round(view.opacity * 100)), disabled: busy, 'aria-label': t('opacity'),
-                onChange: e => setPreference({ opacity: e.target.valueAsNumber / 100 }),
-              }),
-              h('span', { className: 'owc-hint', style: { margin: 0 } }, Math.round(view.opacity * 100) + '% · ' + t('opacityHint'))))),
-            preview && !preview.error && h('div', { className: 'owc-preview' },
-              t('preview') + ' · ' + t('daily') + ' ' + money(preview.daily) + ' · ' + t('hourly') + ' ' + money(preview.hourly)),
-            preview?.error && h('p', { className: 'owc-error', role: 'alert', style: { padding: 0 } }, preview.error),
-            h('details', { className: 'owc-advanced' },
-              h('summary', null, t('advanced')),
-              h('p', { className: 'owc-hint' }, t('sessionHint')),
-              label(t('session'), sessionSelect())),
-            h('p', { className: 'owc-hint' }, t('privacy')),
-            h('div', { className: 'owc-save' },
-              data?.configured && h('button', { type: 'button', className: 'owc-text', onClick: closeEditor, disabled: busy }, t('cancel')),
-              h('button', { type: 'submit', className: 'owc-primary', disabled: busy || !!preview?.error }, t(busy ? 'busy' : 'save'))));
+            try {
+              allZones = Intl.supportedValuesOf('timeZone');
+            } catch {}
+            const zones = [
+              ...new Set([workingDraft.timezone, ...commonZones, ...allZones].filter(Boolean)),
+            ];
+            return h(
+              'form',
+              {
+                className: 'owc-form',
+                onSubmit: save,
+                onKeyDown: (e) => {
+                  if (e.key === 'Escape') {
+                    e.preventDefault();
+                    closeEditor();
+                  }
+                },
+              },
+              !data?.configured && h('p', { className: 'owc-hint' }, t('setupHint')),
+              h(
+                'fieldset',
+                { className: 'owc-setting-group' },
+                h('legend', null, t('salaryGroup')),
+                label(
+                  t('payMode'),
+                  h(
+                    'div',
+                    { className: 'owc-seg' },
+                    h(
+                      'button',
+                      {
+                        type: 'button',
+                        disabled: busy,
+                        'aria-pressed': !payDaily,
+                        onClick: () => update('payMode', 'monthly'),
+                      },
+                      t('monthly'),
+                    ),
+                    h(
+                      'button',
+                      {
+                        type: 'button',
+                        disabled: busy,
+                        'aria-pressed': payDaily,
+                        onClick: () => update('payMode', 'daily'),
+                      },
+                      t('dailyMode'),
+                    ),
+                  ),
+                ),
+                h(
+                  'div',
+                  { className: 'owc-row2' },
+                  label(t(salaryKey), salaryControl),
+                  !payDaily && label(t('workdaysPerMonth'), numberInput('workdaysPerMonth')),
+                ),
+              ),
+              h(
+                'fieldset',
+                { className: 'owc-setting-group' },
+                h('legend', null, t('scheduleGroup')),
+                h(
+                  'div',
+                  { className: 'owc-row2' },
+                  label(t('start'), timeInput('start')),
+                  label(t('end'), timeInput('end')),
+                ),
+                workingDraft.end < workingDraft.start &&
+                  h('p', { className: 'owc-hint' }, t('end') + ' · ' + t('nextDay')),
+                h(
+                  'label',
+                  { className: 'owc-check' },
+                  h('input', {
+                    type: 'checkbox',
+                    checked: breakOn,
+                    disabled: busy,
+                    onChange: toggleBreak,
+                  }),
+                  t('breakEnabled'),
+                ),
+                breakOn &&
+                  h(
+                    'div',
+                    { className: 'owc-row2' },
+                    label(t('breakStart'), timeInput('breakStart')),
+                    label(t('breakEnd'), timeInput('breakEnd')),
+                  ),
+                label(
+                  t('weekdays'),
+                  h(
+                    'div',
+                    { className: 'owc-days' },
+                    [0, 1, 2, 3, 4, 5, 6].map((day) =>
+                      h(
+                        'button',
+                        {
+                          key: day,
+                          type: 'button',
+                          disabled: busy,
+                          'aria-pressed': workingDraft.weekdays.includes(day),
+                          'aria-label': t('weekdays') + ' ' + t('days')[day],
+                          onClick: () =>
+                            update(
+                              'weekdays',
+                              workingDraft.weekdays.includes(day)
+                                ? workingDraft.weekdays.filter((d) => d !== day)
+                                : [...workingDraft.weekdays, day].sort((a, b) => a - b),
+                            ),
+                        },
+                        t('days')[day],
+                      ),
+                    ),
+                  ),
+                ),
+                label(
+                  t('timezone'),
+                  h(
+                    'select',
+                    {
+                      name: 'timezone',
+                      value: workingDraft.timezone ?? '',
+                      disabled: busy,
+                      onChange: (e) => update('timezone', e.target.value),
+                    },
+                    zones.map((zone) => h('option', { key: zone, value: zone }, zone)),
+                  ),
+                ),
+              ),
+              h(
+                'fieldset',
+                { className: 'owc-setting-group' },
+                h('legend', null, t('appearanceGroup')),
+                label(
+                  t('opacity'),
+                  h(
+                    React.Fragment,
+                    null,
+                    h('input', {
+                      className: 'owc-range',
+                      type: 'range',
+                      min: '30',
+                      max: '100',
+                      step: '5',
+                      value: String(Math.round(view.opacity * 100)),
+                      disabled: busy,
+                      'aria-label': t('opacity'),
+                      onChange: (e) => setPreference({ opacity: e.target.valueAsNumber / 100 }),
+                    }),
+                    h(
+                      'span',
+                      { className: 'owc-hint', style: { margin: 0 } },
+                      Math.round(view.opacity * 100) + '% · ' + t('opacityHint'),
+                    ),
+                  ),
+                ),
+              ),
+              preview &&
+                !preview.error &&
+                h(
+                  'div',
+                  { className: 'owc-preview' },
+                  t('preview') +
+                    ' · ' +
+                    t('daily') +
+                    ' ' +
+                    money(preview.daily) +
+                    ' · ' +
+                    t('hourly') +
+                    ' ' +
+                    money(preview.hourly),
+                ),
+              preview?.error &&
+                h(
+                  'p',
+                  { className: 'owc-error', role: 'alert', style: { padding: 0 } },
+                  preview.error,
+                ),
+              h(
+                'details',
+                { className: 'owc-advanced' },
+                h('summary', null, t('advanced')),
+                h('p', { className: 'owc-hint' }, t('sessionHint')),
+                label(t('session'), sessionSelect()),
+              ),
+              h('p', { className: 'owc-hint' }, t('privacy')),
+              h(
+                'div',
+                { className: 'owc-save' },
+                data?.configured &&
+                  h(
+                    'button',
+                    { type: 'button', className: 'owc-text', onClick: closeEditor, disabled: busy },
+                    t('cancel'),
+                  ),
+                h(
+                  'button',
+                  { type: 'submit', className: 'owc-primary', disabled: busy || !!preview?.error },
+                  t(busy ? 'busy' : 'save'),
+                ),
+              ),
+            );
           };
 
-          const notices = () => h(React.Fragment, null,
-            error && h('p', { className: 'owc-error', role: 'alert' }, error),
-            state?.error && h('p', { className: 'owc-error', role: 'alert' }, state.error),
-            notice && h('p', { className: 'owc-note', role: 'status' }, notice),
-            storageError && h('p', { className: 'owc-note' }, t('storage')));
+          const notices = () =>
+            h(
+              React.Fragment,
+              null,
+              error && h('p', { className: 'owc-error', role: 'alert' }, error),
+              state?.error && h('p', { className: 'owc-error', role: 'alert' }, state.error),
+              notice && h('p', { className: 'owc-note', role: 'status' }, notice),
+              storageError && h('p', { className: 'owc-note' }, t('storage')),
+            );
 
-          return h('section', {
-            ref: box,
-            className: 'owc-v2' + (collapsed ? ' owc-compact' : '') + (editing ? ' owc-editing' : ''),
-            'aria-label': t('title'), 'data-version': '1.0.0', 'data-status': safeState?.status || 'setup',
-            style: cardStyle,
-            onPointerDown: dragDown, onPointerMove: dragMove, onPointerUp: dragEnd,
-            onPointerCancel: dragEnd, onLostPointerCapture: dragEnd,
-          },
-          h('style', null, STYLE),
-          h('div', { className: 'owc-glass', 'aria-hidden': 'true' }),
-          h('div', { className: 'owc-content' },
-            collapsed ? strip() : h(React.Fragment, null,
-              panelHead(),
-              editing ? editor() : panelBody(),
-              notices())));
+          return h(
+            'section',
+            {
+              ref: box,
+              className:
+                'owc-v2' + (collapsed ? ' owc-compact' : '') + (editing ? ' owc-editing' : ''),
+              'aria-label': t('title'),
+              'data-version': '1.0.0',
+              'data-status': safeState?.status || 'setup',
+              style: cardStyle,
+              onPointerDown: dragDown,
+              onPointerMove: dragMove,
+              onPointerUp: dragEnd,
+              onPointerCancel: dragEnd,
+              onLostPointerCapture: dragEnd,
+            },
+            h('style', null, STYLE),
+            h('div', { className: 'owc-glass', 'aria-hidden': 'true' }),
+            h(
+              'div',
+              { className: 'owc-content' },
+              collapsed
+                ? strip()
+                : h(React.Fragment, null, panelHead(), editing ? editor() : panelBody(), notices()),
+            ),
+          );
         }
 
-        ctx.slots.inject('shell.overlay', () => ctx.slots.register({
-          name: 'shell.overlay', id: 'offwork-clock', order: 900,
-          label: () => ctx.locale.bind('offwork-clock')('title'),
-        }, Clock));
+        ctx.slots.inject('shell.overlay', () =>
+          ctx.slots.register(
+            {
+              name: 'shell.overlay',
+              id: 'offwork-clock',
+              order: 900,
+              label: () => ctx.locale.bind('offwork-clock')('title'),
+            },
+            Clock,
+          ),
+        );
       },
     };
   },

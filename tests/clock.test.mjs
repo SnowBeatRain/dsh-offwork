@@ -3,23 +3,35 @@ import assert from 'node:assert/strict';
 import { calculate } from '../clock.js';
 
 const base = {
-  monthlySalary: 10000, workdaysPerMonth: 20,
-  start: '09:00', end: '18:00', breakStart: '12:00', breakEnd: '13:00',
-  weekdays: [1, 2, 3, 4, 5], timezone: 'Asia/Shanghai',
+  monthlySalary: 10000,
+  workdaysPerMonth: 20,
+  start: '09:00',
+  end: '18:00',
+  breakStart: '12:00',
+  breakEnd: '13:00',
+  weekdays: [1, 2, 3, 4, 5],
+  timezone: 'Asia/Shanghai',
 };
 const at = (time, patch = {}) => calculate({ ...base, ...patch }, Date.parse(time));
 const night = { start: '22:00', end: '06:00', breakStart: '02:00', breakEnd: '03:00' };
 const utc = { timezone: 'UTC' };
 
 for (const [time, status, progress] of [
-  ['08:00', 'before', 0], ['09:00', 'working', 0], ['11:00', 'working', 0.25],
-  ['12:00', 'lunch', 0.375], ['12:59', 'lunch', 0.375],
-  ['13:00', 'working', 0.375], ['17:00', 'working', 0.875], ['18:00', 'done', 1], ['23:59', 'done', 1],
-]) test(`same-day boundary ${time}: ${status}`, () => {
-  const result = at(`2026-11-02T${time}:00+08:00`);
-  assert.equal(result.status, status);
-  assert.equal(result.progress, progress);
-});
+  ['08:00', 'before', 0],
+  ['09:00', 'working', 0],
+  ['11:00', 'working', 0.25],
+  ['12:00', 'lunch', 0.375],
+  ['12:59', 'lunch', 0.375],
+  ['13:00', 'working', 0.375],
+  ['17:00', 'working', 0.875],
+  ['18:00', 'done', 1],
+  ['23:59', 'done', 1],
+])
+  test(`same-day boundary ${time}: ${status}`, () => {
+    const result = at(`2026-11-02T${time}:00+08:00`);
+    assert.equal(result.status, status);
+    assert.equal(result.progress, progress);
+  });
 
 test('before has both actual end countdown and start countdown', () => {
   const result = at('2026-11-02T08:00:00+08:00');
@@ -65,7 +77,11 @@ test('night break after midnight is normalized into the shift', () => {
   assert.equal(result.total, 7 * 3600);
 });
 test('break spanning midnight is normalized', () => {
-  const result = at('2026-11-03T00:15:00+08:00', { ...night, breakStart: '23:30', breakEnd: '00:30' });
+  const result = at('2026-11-03T00:15:00+08:00', {
+    ...night,
+    breakStart: '23:30',
+    breakEnd: '00:30',
+  });
   assert.equal(result.status, 'lunch');
   assert.equal(result.elapsed, 1.5 * 3600);
 });
@@ -109,7 +125,10 @@ test('configured Sunday workday overrides weekday assumptions', () => {
 });
 test('daily salary ignores monthly fields and truncates cents', () => {
   const result = at('2026-11-02T18:00:00+08:00', {
-    payMode: 'daily', dailySalary: 123.459, monthlySalary: undefined, workdaysPerMonth: undefined,
+    payMode: 'daily',
+    dailySalary: 123.459,
+    monthlySalary: undefined,
+    workdaysPerMonth: undefined,
   });
   assert.equal(result.payMode, 'daily');
   assert.equal(result.daily, 123.45);
@@ -148,7 +167,13 @@ test('fractional-zone offset is handled independently of system timezone', () =>
   assert.equal(result.progress, 0);
 });
 test('DST spring night countdown measures real elapsed seconds', () => {
-  const patch = { ...night, timezone: 'America/New_York', weekdays: [6], breakStart: '00:00', breakEnd: '00:00' };
+  const patch = {
+    ...night,
+    timezone: 'America/New_York',
+    weekdays: [6],
+    breakStart: '00:00',
+    breakEnd: '00:00',
+  };
   const result = at('2026-03-08T06:00:00Z', patch);
   assert.equal(result.shiftDate, '2026-03-07');
   assert.equal(result.total, 7 * 3600);
@@ -156,7 +181,13 @@ test('DST spring night countdown measures real elapsed seconds', () => {
   assert.equal(result.remaining, 4 * 3600);
 });
 test('DST fall night countdown includes the repeated hour', () => {
-  const patch = { ...night, timezone: 'America/New_York', weekdays: [6], breakStart: '00:00', breakEnd: '00:00' };
+  const patch = {
+    ...night,
+    timezone: 'America/New_York',
+    weekdays: [6],
+    breakStart: '00:00',
+    breakEnd: '00:00',
+  };
   const result = at('2026-11-01T06:30:00Z', patch);
   assert.equal(result.total, 9 * 3600);
   assert.equal(result.elapsed, 4.5 * 3600);
@@ -169,25 +200,37 @@ test('subsecond countdown rounds upwards and salary remains truncated', () => {
 });
 for (const [label, patch, begin] of [
   ['monthly lunch', {}, '2026-11-02T00:00:00+08:00'],
-  ['daily no lunch', { payMode: 'daily', dailySalary: 109.99, breakStart: '00:00', breakEnd: '00:00' }, '2026-11-02T00:00:00+08:00'],
-  ['night cross-midnight lunch', { ...night, breakStart: '23:30', breakEnd: '00:30' }, '2026-11-02T22:00:00+08:00'],
+  [
+    'daily no lunch',
+    { payMode: 'daily', dailySalary: 109.99, breakStart: '00:00', breakEnd: '00:00' },
+    '2026-11-02T00:00:00+08:00',
+  ],
+  [
+    'night cross-midnight lunch',
+    { ...night, breakStart: '23:30', breakEnd: '00:30' },
+    '2026-11-02T22:00:00+08:00',
+  ],
   ['decimal cents', { monthlySalary: 0.29, workdaysPerMonth: 1 }, '2026-11-02T00:00:00+08:00'],
-]) test(`whole-day minute grid: monotone and bounded (${label})`, () => {
-  let previous = 0;
-  const start = Date.parse(begin);
-  // Stop before the next civil day / shift resets its earnings.
-  const last = 1439;
-  for (let minute = 0; minute <= last; minute++) {
-    const result = calculate({ ...base, ...patch }, start + minute * 60000);
-    assert.ok(result.earnedCents >= previous, `${label} minute ${minute} regressed`);
-    assert.ok(result.earnedCents <= result.dailyCents);
-    assert.ok(result.progress >= 0 && result.progress <= 1);
-    assert.equal(Number.isInteger(result.earnedCents), true);
-    previous = result.earnedCents;
-  }
-  assert.equal(previous, calculate({ ...base, ...patch }, start).dailyCents);
-});
+])
+  test(`whole-day minute grid: monotone and bounded (${label})`, () => {
+    let previous = 0;
+    const start = Date.parse(begin);
+    // Stop before the next civil day / shift resets its earnings.
+    const last = 1439;
+    for (let minute = 0; minute <= last; minute++) {
+      const result = calculate({ ...base, ...patch }, start + minute * 60000);
+      assert.ok(result.earnedCents >= previous, `${label} minute ${minute} regressed`);
+      assert.ok(result.earnedCents <= result.dailyCents);
+      assert.ok(result.progress >= 0 && result.progress <= 1);
+      assert.equal(Number.isInteger(result.earnedCents), true);
+      previous = result.earnedCents;
+    }
+    assert.equal(previous, calculate({ ...base, ...patch }, start).dailyCents);
+  });
 test('invalid empty shift or external break fails explicitly', () => {
   assert.throws(() => at('2026-11-02T10:00:00Z', { start: '09:00', end: '09:00' }), RangeError);
-  assert.throws(() => at('2026-11-02T10:00:00Z', { breakStart: '18:00', breakEnd: '19:00' }), RangeError);
+  assert.throws(
+    () => at('2026-11-02T10:00:00Z', { breakStart: '18:00', breakEnd: '19:00' }),
+    RangeError,
+  );
 });

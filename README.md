@@ -28,13 +28,19 @@
 
 ### 从 npm 安装
 
-首次 npm 发布完成后，在 Harness 中使用 `plugin_manager` 的 `install_bundle` 操作，将 `target` 填为 `dsh-offwork`：
+在 Harness 中使用 `plugin_manager` 的 `install_bundle` 操作，将 `target` 填为 `dsh-offwork`：
 
 ```text
 plugin_manager → install_bundle → target: dsh-offwork
 ```
 
-这是 Harness 插件，请通过 Harness 插件管理器安装，以加载 Host 配置和 Web 悬浮窗。
+这是 Harness 插件，请通过 Harness 插件管理器安装，以加载 Host 配置和 Web 悬浮窗。使用命令行管理 Web 配置时，也可以运行：
+
+```sh
+dsh plugin --profile web add dsh-offwork
+```
+
+`web` 是配置名称，使用其他配置时请替换为实际名称。
 
 ### 从 GitHub 安装
 
@@ -67,15 +73,15 @@ plugin_manager → install_bundle → target: /绝对路径/dsh-offwork
 
 ### 常用操作
 
-| 操作 | 使用方式 |
-| --- | --- |
-| 移动悬浮窗 | 按住小条或卡片的空白处拖动 |
-| 微调位置 | 悬浮窗获得键盘焦点后，使用方向键调整；Home 复位 |
-| 展开 / 收起 | 点击上箭头展开详情，点击下箭头收回小条 |
-| 显示 / 隐藏工资 | 点击眼睛图标或「显示工资」 |
-| 修改薪资和作息 | 点击齿轮进入设置 |
-| 调整透明度 | 在设置中调整「背景透明度」，仅影响背景层 |
-| 获取其他页面保存的配置 | 点击「读取最新配置」 |
+| 操作                   | 使用方式                                        |
+| ---------------------- | ----------------------------------------------- |
+| 移动悬浮窗             | 按住小条或卡片的空白处拖动                      |
+| 微调位置               | 悬浮窗获得键盘焦点后，使用方向键调整；Home 复位 |
+| 展开 / 收起            | 点击上箭头展开详情，点击下箭头收回小条          |
+| 显示 / 隐藏工资        | 点击眼睛图标或「显示工资」                      |
+| 修改薪资和作息         | 点击齿轮进入设置                                |
+| 调整透明度             | 在设置中调整「背景透明度」，仅影响背景层        |
+| 获取其他页面保存的配置 | 点击「读取最新配置」                            |
 
 同一浏览器、同一站点下的多个标签页会同步显示偏好。薪资与作息配置由 Harness Host 共享，其他页面保存后可手动读取最新配置。
 
@@ -83,12 +89,12 @@ plugin_manager → install_bundle → target: /绝对路径/dsh-offwork
 
 所有金额以人民币（CNY）显示，表示按配置估算的税前收入。
 
-| 项目 | 计算方式 |
-| --- | --- |
-| 月薪模式的日薪 | 月薪 ÷ 月计薪天数 |
-| 日薪模式的日薪 | 直接使用填写的日薪 |
-| 有效时薪 | 日薪 ÷ 扣除无薪休息后的班次时长 |
-| 本班已赚 | 日薪 × 已完成的有效计薪比例 |
+| 项目           | 计算方式                        |
+| -------------- | ------------------------------- |
+| 月薪模式的日薪 | 月薪 ÷ 月计薪天数               |
+| 日薪模式的日薪 | 直接使用填写的日薪              |
+| 有效时薪       | 日薪 ÷ 扣除无薪休息后的班次时长 |
+| 本班已赚       | 日薪 × 已完成的有效计薪比例     |
 
 例如，月薪为 10,000 元、月计薪天数为 21.75 天，上班时间为 09:00–18:00，并扣除 12:00–13:00 的无薪休息时，日薪约为 459.77 元，有效时薪约为 57.47 元。
 
@@ -148,24 +154,26 @@ plugin_manager → install_bundle → target: /绝对路径/dsh-offwork
 
 ## 开发
 
-建议使用 Node.js 22，与仓库 CI 保持一致。当前项目无需安装第三方依赖即可构建和测试。
+建议使用 Node.js 22，与仓库 CI 保持一致。运行时无第三方依赖；开发依赖仅用于代码格式检查，通过锁文件固定版本。
 
 ```sh
 git clone https://github.com/SnowBeatRain/dsh-offwork.git
 cd dsh-offwork
-npm run build
-npm test
-npm pack --dry-run
+npm ci --ignore-scripts
+npm run format
+npm run check
 ```
 
-| 文件 | 用途 |
-| --- | --- |
-| `client.source.js` | Web 界面源码 |
-| `clock.js` | 班次、时区和工资计算 |
-| `ui-utils.js` | 界面状态与显示辅助函数 |
-| `client.js` | 构建生成的客户端文件，请通过构建更新 |
-| `index.js` | Host 命令、代理工具、配置校验与保存 |
-| `tests/` | 计算、持久化与界面辅助逻辑测试 |
+`npm run format` 统一源码格式并重新生成客户端；`npm run check` 检查格式、生成物一致性、自动化测试、JavaScript 语法及 npm 打包内容。单独构建使用 `npm run build`，单独运行测试使用 `npm test`。代码约定和人工验证步骤见 [贡献指南](https://github.com/SnowBeatRain/dsh-offwork/blob/main/CONTRIBUTING.md)。
+
+| 文件               | 用途                                 |
+| ------------------ | ------------------------------------ |
+| `client.source.js` | Web 界面源码                         |
+| `clock.js`         | 班次、时区和工资计算                 |
+| `ui-utils.js`      | 界面状态与显示辅助函数               |
+| `client.js`        | 构建生成的客户端文件，请通过构建更新 |
+| `index.js`         | Host 命令、代理工具、配置校验与保存  |
+| `tests/`           | 计算、持久化与界面辅助逻辑测试       |
 
 `npm run build` 将计算模块和界面辅助模块内联到 `client.js`。`npm test` 先检查生成物是否与源码一致，再运行测试，覆盖班次边界、夜班、休息、时区与夏令时、金额精度、磁盘持久化和命令 / 工具行为。浏览器外观、拖动与实际 Harness 安装体验仍需人工检查。
 
@@ -174,9 +182,9 @@ npm pack --dry-run
 包名为 `dsh-offwork`，版本以 `package.json` 为准。发布前确认 npm 账号拥有该包的发布权限，并完成检查：
 
 ```sh
+npm ci --ignore-scripts
 npm run build
-npm test
-npm pack --dry-run
+npm run check
 ```
 
 检查打包清单，确认包含 README、客户端、Host 入口和语言文件，且不包含 `data.json`、`.env` 或其他本地配置。
@@ -188,7 +196,7 @@ npm login
 npm publish --access public
 ```
 
-`npm publish` 会通过 `prepublishOnly` 自动执行构建和测试。npm 不允许覆盖已发布的同名版本，后续发布需先更新版本，例如 `npm version patch` 或 `npm version minor`。
+`npm publish` 会通过 `prepublishOnly` 自动执行构建和完整检查。npm 不允许覆盖已发布的同名版本，后续发布需先更新版本，例如 `npm version patch` 或 `npm version minor`。
 
 ### GitHub Actions 发布
 
@@ -196,15 +204,14 @@ npm publish --access public
 
 1. 在 GitHub 仓库的 **Settings → Secrets and variables → Actions** 中配置 `NPM_TOKEN`，使用具备该包发布权限并满足 npm 发布认证要求的 npm 令牌。GitHub 登录使用的 `ghp_…` 令牌不能用于 npm 发布。
 2. 确认代码已提交，且标签版本与 `package.json` 中的版本完全一致。
-3. 首次发布 `1.0.0` 时执行以下命令；若该版本已发布，请先更新版本并使用对应的新标签：
+3. 通过 `npm version patch`、`npm version minor` 或 `npm version major` 创建版本提交和标签，再推送到 GitHub。例如发布修订版本：
 
 ```sh
-git tag v1.0.0
-git push origin main
-git push origin v1.0.0
+npm version patch
+git push origin main --follow-tags
 ```
 
-后续可通过 `npm version patch` 创建版本提交和标签，再执行 `git push origin main --follow-tags`。在 [Actions 页面](https://github.com/SnowBeatRain/dsh-offwork/actions) 确认发布结果。本地发布和 Actions 发布任选一种，避免重复发布同一版本。
+在 [Actions 页面](https://github.com/SnowBeatRain/dsh-offwork/actions) 确认发布结果。本地发布和 Actions 发布任选一种，避免重复发布同一版本。
 
 ## 许可与反馈
 

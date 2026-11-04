@@ -5,9 +5,14 @@
   "type": "module",
   "license": "MIT",
   "author": "now",
-  "repository": { "type": "git", "url": "git+https://github.com/SnowBeatRain/dsh-offwork.git" },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/SnowBeatRain/dsh-offwork.git"
+  },
   "homepage": "https://github.com/SnowBeatRain/dsh-offwork#readme",
-  "bugs": { "url": "https://github.com/SnowBeatRain/dsh-offwork/issues" },
+  "bugs": {
+    "url": "https://github.com/SnowBeatRain/dsh-offwork/issues"
+  },
   "keywords": [
     "deepseek-harness",
     "dsh-plugin",
@@ -39,12 +44,16 @@
     "LICENSE",
     "README.md",
     "tests/*.mjs",
-    "tools/build.mjs"
+    "tools/*.mjs"
   ],
   "scripts": {
     "build": "node tools/build.mjs",
+    "format": "prettier --write . && npm run build",
+    "format:check": "prettier --check .",
     "test": "node tools/build.mjs --check && node --test tests/*.mjs",
-    "prepublishOnly": "npm run build && npm test"
+    "check:package": "node tools/check-package.mjs",
+    "check": "npm run format:check && npm test && npm run check:package",
+    "prepublishOnly": "npm run build && npm run check"
   },
   "dsh": {
     "bundle": {
@@ -58,5 +67,8 @@
         "@deepseek-ai/dsh-api-remotes"
       ]
     }
+  },
+  "devDependencies": {
+    "prettier": "3.9.10"
   }
 }
