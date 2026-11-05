@@ -261,7 +261,8 @@ window.__ModuleLoader__.load({
 .owc-v2 :is(button,input,select,label,a){cursor:pointer;user-select:auto;-webkit-user-select:auto}
 .owc-v2 :is(input,select){user-select:text;-webkit-user-select:text}
 .owc-glass{position:absolute;inset:0;border-radius:inherit;pointer-events:none;opacity:var(--owc-alpha,.82);background:color-mix(in srgb,var(--dsw-alias-bg-overlay) 97%,var(--owc-accent));-webkit-backdrop-filter:blur(18px);backdrop-filter:blur(18px);border:1px solid color-mix(in srgb,var(--dsw-alias-label-secondary) 18%,transparent);box-shadow:inset 0 1px 0 color-mix(in srgb,var(--dsw-alias-bg-base) 70%,transparent),0 8px 20px color-mix(in srgb,var(--dsw-alias-label-primary) 7%,transparent),0 14px 34px color-mix(in srgb,var(--owc-accent) 5%,transparent);transition:opacity .18s ease}
-.owc-content{position:relative;border-radius:inherit;max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.owc-content{position:relative;border-radius:inherit;max-height:calc(100dvh - 24px);overflow:auto;overscroll-behavior:contain;scrollbar-width:none}
+.owc-content::-webkit-scrollbar{display:none}
 .owc-v2 button{appearance:none;-webkit-appearance:none;border:0;margin:0;background:transparent;color:inherit;font:inherit;display:inline-flex;align-items:center;justify-content:center;gap:5px;padding:6px;min-height:28px;border-radius:10px;transition:background .15s ease,color .15s ease}
 .owc-v2 button:hover{background:color-mix(in srgb,var(--dsw-alias-label-primary) 7%,transparent)}
 .owc-v2 button:focus-visible,.owc-v2 :is(input,select):focus-visible{outline:2px solid var(--dsw-alias-brand-primary);outline-offset:1px}

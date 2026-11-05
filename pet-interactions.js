@@ -127,7 +127,8 @@ export const PET_INTERACTION_STYLE = `
 .owc-pet-water-alert{position:fixed!important;width:140px;box-sizing:border-box;min-height:30px!important;border:1px solid var(--owc-accent)!important;background:var(--dsw-alias-bg-overlay)!important;box-shadow:0 4px 12px #18354b18;font-size:11px!important;z-index:2}
 .owc-pet-panel.owc-pet-workspace{display:flex;flex-direction:column;overflow:hidden}
 .owc-pet-workspace>.owc-head{position:relative;flex:none;min-height:46px;padding:8px 12px;box-sizing:border-box}
-.owc-pet-workspace>.owc-pet-scroll{position:relative;min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
+.owc-pet-workspace>.owc-pet-scroll{position:relative;min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:none}
+.owc-pet-scroll::-webkit-scrollbar{display:none}
 .owc-pet-scroll .owc-save{position:sticky;bottom:0;background:var(--dsw-alias-bg-overlay);padding:10px 0;margin-bottom:0;z-index:2}
 .owc-pet-scroll .owc-appearance legend{display:none}
 .owc-pet-home{padding:14px}
