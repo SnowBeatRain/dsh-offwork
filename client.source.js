@@ -505,6 +505,8 @@ window.__ModuleLoader__.load({
           const [waterConfirm, setWaterConfirm] = React.useState(null);
           const [waterNotice, setWaterNotice] = React.useState(false);
           const reactionState = React.useRef(null);
+          const petMotion = React.useRef(null);
+          const petReactionToken = React.useRef(null);
           const waterRuntime = React.useRef(null);
           const waterOwner = React.useRef(null);
           if (!waterOwner.current)
@@ -1191,7 +1193,10 @@ window.__ModuleLoader__.load({
             d.moved = true;
             petDragged.current = true;
             const next = clamp({ x: e.clientX - d.dx, y: e.clientY - d.dy });
-            if (petMode) setDragPosition(next);
+            if (petMode) {
+              setDragPosition(next);
+              petMotion.current?.drag(e.clientX - d.x0);
+            }
             lastPosition.current = next;
             if (box.current) {
               box.current.style.left = next.x + 'px';
@@ -1203,6 +1208,7 @@ window.__ModuleLoader__.load({
             const d = dragState.current;
             if (!d) return;
             dragState.current = null;
+            if (petMode && d.moved) petMotion.current?.release(e.type !== 'pointerup');
             if (e.type === 'pointercancel' || e.type === 'lostpointercapture')
               petDragged.current = false;
             if (d.moved && lastPosition.current) commitPosition(lastPosition.current);
@@ -1472,6 +1478,49 @@ window.__ModuleLoader__.load({
             motion: view.companionMotion && !reactionState.current?.stopped,
             pageVisible: waterVisible && !document.hidden && !editing && !waterEditing,
           });
+          React.useLayoutEffect(() => {
+            if (!petMode) return;
+            const artwork = box.current?.querySelector('.owc-pet-handle > .owc-pet-art');
+            if (!artwork) return;
+            const controller = createPetMotion(artwork, window, { enabled: false });
+            petMotion.current = controller;
+            return () => {
+              controller.destroy();
+              petMotion.current = null;
+            };
+          }, [petMode, stageModel]);
+          React.useLayoutEffect(() => {
+            petMotion.current?.configure({
+              enabled:
+                savedView.companionMotion &&
+                waterVisible &&
+                waterReady &&
+                !waterError &&
+                !error &&
+                !editing &&
+                !waterEditing &&
+                !ui.menu,
+              resting: ['quiet', 'rest', 'offline'].includes(companion.pose),
+            });
+          }, [
+            petMode,
+            stageModel,
+            savedView.companionMotion,
+            waterVisible,
+            waterReady,
+            waterError,
+            error,
+            editing,
+            waterEditing,
+            !!ui.menu,
+            companion.pose,
+          ]);
+          React.useLayoutEffect(() => {
+            const token = waterNotice?.token;
+            if (petReactionToken.current === token) return;
+            petReactionToken.current = token;
+            if (petMode && companion.animate) petMotion.current?.play('celebrate');
+          }, [petMode, waterNotice?.token, companion.animate]);
           const companionCard = (compact = false) =>
             companion.visible &&
             h(
@@ -3116,7 +3165,14 @@ window.__ModuleLoader__.load({
                     'aria-label': t('petOpen'),
                     'aria-expanded': !!petShowing,
                     title: t('companionName') + ' · ' + t('petHint'),
-                    onClick: togglePetPanel,
+                    onClick: (event) => {
+                      if (!petDragged.current && !ui.pending) petMotion.current?.play('greet');
+                      togglePetPanel(event);
+                    },
+                    onPointerEnter: (event) => {
+                      if (event.pointerType === 'mouse' && !dragState.current)
+                        petMotion.current?.play('look');
+                    },
                     onKeyDown: gripKeys,
                   },
                   petArtwork(
@@ -3126,6 +3182,7 @@ window.__ModuleLoader__.load({
                     waterNotice?.token,
                     stageModel,
                     PET_SPRITES,
+                    true,
                   ),
                 ),
                 h(

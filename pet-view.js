@@ -111,12 +111,14 @@ export function petArtwork(
   reaction = '',
   modelId = 'xiaoxie-original',
   sprites = {},
+  interactive = false,
 ) {
   const { pose, animate } = presentation;
   const model = petModel(modelId);
   if (model.renderer === 'image' && sprites[model.id])
     return h('img', {
-      key: model.id + ':' + pose + ':' + reaction,
+      key: interactive ? model.id : model.id + ':' + pose + ':' + reaction,
+      'data-interactive': interactive || undefined,
       src: sprites[model.id],
       alt: '',
       'aria-hidden': true,
@@ -132,7 +134,8 @@ export function petArtwork(
   return h(
     'svg',
     {
-      key: pose + ':' + reaction,
+      key: interactive ? model.id : pose + ':' + reaction,
+      'data-interactive': interactive || undefined,
       viewBox: '0 0 160 176',
       width: size,
       height: size * 1.1,
@@ -250,10 +253,13 @@ export const PET_STYLE = `
 .owc-v2 button.owc-pet-handle:active{cursor:grabbing}
 .owc-pet-art{overflow:visible;pointer-events:none;filter:drop-shadow(0 3px 5px #32557418)}
 .owc-pet-portrait{display:block;object-fit:contain;transform-origin:50% 90%}
-.owc-pet-portrait[data-animate=true]{animation:owc-portrait-thanks .65s ease-in-out 2}
+.owc-pet-portrait[data-animate=true]:not([data-interactive=true]){animation:owc-portrait-thanks .65s ease-in-out 2}
+.owc-pet-art[data-interactive=true]{transform-origin:50% 90%}
+.owc-pet-art[data-interactive=true][data-motion=idle]:not([data-action]){animation:owc-pet-breathe 4.5s ease-in-out infinite}
+@keyframes owc-pet-breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.006)}}
 @keyframes owc-portrait-thanks{0%,100%{transform:translateY(0)}45%{transform:translateY(-3px) rotate(-1deg)}75%{transform:rotate(1deg)}}
 .owc-pet-art[data-pose=offline]{opacity:.65}
-.owc-pet-art[data-animate=true] .owc-pet-body{transform-origin:80px 150px;animation:owc-pet-thanks .65s ease-in-out 2}
+.owc-pet-art[data-animate=true]:not([data-interactive=true]) .owc-pet-body{transform-origin:80px 150px;animation:owc-pet-thanks .65s ease-in-out 2}
 @keyframes owc-pet-thanks{0%,100%{transform:translateY(0)}45%{transform:translateY(-4px) rotate(-3deg)}75%{transform:rotate(2deg)}}
 .owc-v2 button.owc-pet-clock{padding:4px 10px;min-height:26px;gap:5px;white-space:nowrap;border-radius:999px;font-size:11px;background:var(--dsw-alias-bg-overlay);border:1px solid color-mix(in srgb,var(--owc-accent) 25%,transparent);box-shadow:0 3px 12px #142e4812;font-variant-numeric:tabular-nums;max-width:100%;box-sizing:border-box;overflow:hidden}
 .owc-pet-clock-label{min-width:0;overflow:hidden;text-overflow:ellipsis}

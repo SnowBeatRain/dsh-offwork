@@ -2,11 +2,17 @@
 
 更新于 2026-11-05。此文件用于缩短后续上下文检索，不表示系统对话已经执行压缩。
 
+## 当前开发：立绘交互动作
+
+用户询问角色能否像dsh-pet一样交互动画。基于263e237创建feature/character-interactions，独立实现pet-motion.js，提供待机呼吸、鼠标靠近、点击回应、拖动倾斜/放下回弹及已确认喝水后的庆祝反馈。图片仍是静态立绘，整体动作不等于人物局部眨眼/摆尾；没有第三方运行时或动画素材，没有声称已完成视频模型。
+
+控制器使用浏览器动画API，稳定角色DOM节点，停止与抢占动作不会重播旧事件。页面隐藏、编辑菜单、动作开关与系统减少动态效果都能停止动作；原左键喝水、右键菜单、拖动及外观草稿规则保留。136项检查与motion-test.cjs验证通过，whale-test.cjs及cards-test.cjs验证角色切换/预览、独立卡片与双标签提醒回归通过。日志归档在offwork-hydration-artifacts/character-motion。仅更新指定开发环境，保持1.1.0版本，不把新功能推送到main或重新发布同一版本。
+
 ## 当前发布指示：1.1.0
 
 用户明确要求将当前成果发布为1.1.0，已授权本轮更新版本、合并主分支、推送、创建标签和发布npm/GitHub Release。此指示覆盖下文历史阶段的“不改版本、不发布”限制。当前发布分支release/1.1.0，功能基线c7857d6。两张用户提供立绘按本次发布指示随包分发，素材说明已同步更新。
 
-发布与验证见 docs/RELEASE-1.1.0.md。发布提交59efb26已推送main和v1.1.0；GitHub Actions 42000649482成功，GitHub Release及附件已公开，附件校验一致，开发实例已升级。npm明确返回包已接收、正在处理中；截至09:24 UTC，公开latest仍1.0.1且1.1.0下载404，未冒充下载验证通过。只读监测与验证脚本 /tmp/offwork-release-1.1.0/verify.py，结果归档 offwork-hydration-artifacts/release-1.1.0；后续先检查registry.json/registry-watch.log，再决定是否更新发布结果文档。不要重复发布同一版本。以下内容保留为开发历史。
+发布与验证见 docs/RELEASE-1.1.0.md。发布提交59efb26已推送main和v1.1.0；GitHub Actions 42000649482成功，GitHub Release及附件已公开，附件校验一致，开发实例已升级。npm于09:32 UTC完成公开验证，latest=1.1.0，下载包SHA-512及逐文件内容与验证包一致。结果归档offwork-hydration-artifacts/release-1.1.0/registry.json，main已在72665ae同步发布结果，本分支已快进包含该文档提交。不要重复发布同一版本。以下内容保留为开发历史。
 
 ## 最新：鲸系少女外观（feature/whale-character）
 

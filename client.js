@@ -530,12 +530,14 @@ function petArtwork(
   reaction = '',
   modelId = 'xiaoxie-original',
   sprites = {},
+  interactive = false,
 ) {
   const { pose, animate } = presentation;
   const model = petModel(modelId);
   if (model.renderer === 'image' && sprites[model.id])
     return h('img', {
-      key: model.id + ':' + pose + ':' + reaction,
+      key: interactive ? model.id : model.id + ':' + pose + ':' + reaction,
+      'data-interactive': interactive || undefined,
       src: sprites[model.id],
       alt: '',
       'aria-hidden': true,
@@ -551,7 +553,8 @@ function petArtwork(
   return h(
     'svg',
     {
-      key: pose + ':' + reaction,
+      key: interactive ? model.id : pose + ':' + reaction,
+      'data-interactive': interactive || undefined,
       viewBox: '0 0 160 176',
       width: size,
       height: size * 1.1,
@@ -669,10 +672,13 @@ const PET_STYLE = `
 .owc-v2 button.owc-pet-handle:active{cursor:grabbing}
 .owc-pet-art{overflow:visible;pointer-events:none;filter:drop-shadow(0 3px 5px #32557418)}
 .owc-pet-portrait{display:block;object-fit:contain;transform-origin:50% 90%}
-.owc-pet-portrait[data-animate=true]{animation:owc-portrait-thanks .65s ease-in-out 2}
+.owc-pet-portrait[data-animate=true]:not([data-interactive=true]){animation:owc-portrait-thanks .65s ease-in-out 2}
+.owc-pet-art[data-interactive=true]{transform-origin:50% 90%}
+.owc-pet-art[data-interactive=true][data-motion=idle]:not([data-action]){animation:owc-pet-breathe 4.5s ease-in-out infinite}
+@keyframes owc-pet-breathe{0%,100%{transform:translateY(0) scale(1)}50%{transform:translateY(-2px) scale(1.006)}}
 @keyframes owc-portrait-thanks{0%,100%{transform:translateY(0)}45%{transform:translateY(-3px) rotate(-1deg)}75%{transform:rotate(1deg)}}
 .owc-pet-art[data-pose=offline]{opacity:.65}
-.owc-pet-art[data-animate=true] .owc-pet-body{transform-origin:80px 150px;animation:owc-pet-thanks .65s ease-in-out 2}
+.owc-pet-art[data-animate=true]:not([data-interactive=true]) .owc-pet-body{transform-origin:80px 150px;animation:owc-pet-thanks .65s ease-in-out 2}
 @keyframes owc-pet-thanks{0%,100%{transform:translateY(0)}45%{transform:translateY(-4px) rotate(-3deg)}75%{transform:rotate(2deg)}}
 .owc-v2 button.owc-pet-clock{padding:4px 10px;min-height:26px;gap:5px;white-space:nowrap;border-radius:999px;font-size:11px;background:var(--dsw-alias-bg-overlay);border:1px solid color-mix(in srgb,var(--owc-accent) 25%,transparent);box-shadow:0 3px 12px #142e4812;font-variant-numeric:tabular-nums;max-width:100%;box-sizing:border-box;overflow:hidden}
 .owc-pet-clock-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
@@ -689,6 +695,117 @@ const PET_STYLE = `
 .owc-pet-speech strong{display:block;font-size:11px;color:var(--dsw-alias-label-secondary);margin-bottom:4px}
 @media(prefers-reduced-motion:reduce){.owc-pet-art,.owc-pet-art *{animation:none!important;transition:none!important}}
 `;
+
+// Independent, decorative motion only. Never writes preferences or drinking records.
+const PET_ACTIONS = {
+  look: { duration: 650, transforms: ['none', 'rotate(-1deg) translateY(-1px)', 'none'] },
+  greet: {
+    duration: 900,
+    transforms: ['none', 'translateY(2px) rotate(-2deg)', 'translateY(-4px) rotate(1deg)', 'none'],
+  },
+  celebrate: {
+    duration: 1200,
+    transforms: [
+      'none',
+      'translateY(-7px) rotate(-1deg)',
+      'translateY(1px)',
+      'translateY(-3px) rotate(1deg)',
+      'none',
+    ],
+  },
+  settle: {
+    duration: 550,
+    transforms: ['none', 'translateY(2px) scaleY(.985)', 'translateY(-2px)', 'none'],
+  },
+};
+
+function createPetMotion(element, host, options = {}) {
+  const document = host.document;
+  const reduced = host.matchMedia?.('(prefers-reduced-motion: reduce)');
+  let enabled = options.enabled ?? true;
+  let resting = options.resting ?? false;
+  let animation = null;
+  let destroyed = false;
+  const allowed = () => !destroyed && enabled && !document.hidden && !reduced?.matches;
+  function stop() {
+    const previous = animation;
+    animation = null;
+    previous?.cancel();
+    delete element.dataset.action;
+    element.style.transform = '';
+  }
+  function sync() {
+    if (!allowed()) stop();
+    element.dataset.motion = allowed() && !resting ? 'idle' : 'off';
+  }
+  function play(action) {
+    if (!allowed() || !Object.hasOwn(PET_ACTIONS, action) || !element.animate) return false;
+    if (element.dataset.action === 'drag') return false;
+    if (action === 'look' && element.dataset.action) return false;
+    if (action === 'greet' && element.dataset.action === 'celebrate') return false;
+    stop();
+    const spec = PET_ACTIONS[action];
+    element.dataset.action = action;
+    try {
+      const running = element.animate(
+        spec.transforms.map((transform) => ({ transform })),
+        {
+          duration: spec.duration,
+          easing: 'ease-in-out',
+        },
+      );
+      animation = running;
+      running.finished.then(
+        () => {
+          if (animation === running) {
+            animation = null;
+            delete element.dataset.action;
+          }
+        },
+        () => {
+          if (animation === running) {
+            animation = null;
+            delete element.dataset.action;
+          }
+        },
+      );
+      return true;
+    } catch {
+      stop();
+      return false;
+    }
+  }
+  document.addEventListener('visibilitychange', sync);
+  reduced?.addEventListener?.('change', sync);
+  sync();
+  return {
+    play,
+    configure(next) {
+      if (next.resting && !resting) stop();
+      enabled = next.enabled;
+      resting = next.resting;
+      sync();
+    },
+    drag(direction) {
+      if (!allowed()) return;
+      stop();
+      element.dataset.action = 'drag';
+      element.style.transform = `translateY(-2px) rotate(${direction < 0 ? -2 : 2}deg)`;
+    },
+    release(cancelled = false) {
+      const dragged = element.dataset.action === 'drag';
+      stop();
+      if (dragged && !cancelled) play('settle');
+    },
+    destroy() {
+      destroyed = true;
+      stop();
+      element.dataset.motion = 'off';
+      document.removeEventListener('visibilitychange', sync);
+      reduced?.removeEventListener?.('change', sync);
+    },
+  };
+}
 
 // Ephemeral UI navigation only. Business data stays in its existing stores.
 const PET_EDITOR_SCREENS = ['water', 'schedule', 'appearance'];
@@ -1929,6 +2046,8 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           const [waterConfirm, setWaterConfirm] = React.useState(null);
           const [waterNotice, setWaterNotice] = React.useState(false);
           const reactionState = React.useRef(null);
+          const petMotion = React.useRef(null);
+          const petReactionToken = React.useRef(null);
           const waterRuntime = React.useRef(null);
           const waterOwner = React.useRef(null);
           if (!waterOwner.current)
@@ -2615,7 +2734,10 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             d.moved = true;
             petDragged.current = true;
             const next = clamp({ x: e.clientX - d.dx, y: e.clientY - d.dy });
-            if (petMode) setDragPosition(next);
+            if (petMode) {
+              setDragPosition(next);
+              petMotion.current?.drag(e.clientX - d.x0);
+            }
             lastPosition.current = next;
             if (box.current) {
               box.current.style.left = next.x + 'px';
@@ -2627,6 +2749,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             const d = dragState.current;
             if (!d) return;
             dragState.current = null;
+            if (petMode && d.moved) petMotion.current?.release(e.type !== 'pointerup');
             if (e.type === 'pointercancel' || e.type === 'lostpointercapture')
               petDragged.current = false;
             if (d.moved && lastPosition.current) commitPosition(lastPosition.current);
@@ -2896,6 +3019,49 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             motion: view.companionMotion && !reactionState.current?.stopped,
             pageVisible: waterVisible && !document.hidden && !editing && !waterEditing,
           });
+          React.useLayoutEffect(() => {
+            if (!petMode) return;
+            const artwork = box.current?.querySelector('.owc-pet-handle > .owc-pet-art');
+            if (!artwork) return;
+            const controller = createPetMotion(artwork, window, { enabled: false });
+            petMotion.current = controller;
+            return () => {
+              controller.destroy();
+              petMotion.current = null;
+            };
+          }, [petMode, stageModel]);
+          React.useLayoutEffect(() => {
+            petMotion.current?.configure({
+              enabled:
+                savedView.companionMotion &&
+                waterVisible &&
+                waterReady &&
+                !waterError &&
+                !error &&
+                !editing &&
+                !waterEditing &&
+                !ui.menu,
+              resting: ['quiet', 'rest', 'offline'].includes(companion.pose),
+            });
+          }, [
+            petMode,
+            stageModel,
+            savedView.companionMotion,
+            waterVisible,
+            waterReady,
+            waterError,
+            error,
+            editing,
+            waterEditing,
+            !!ui.menu,
+            companion.pose,
+          ]);
+          React.useLayoutEffect(() => {
+            const token = waterNotice?.token;
+            if (petReactionToken.current === token) return;
+            petReactionToken.current = token;
+            if (petMode && companion.animate) petMotion.current?.play('celebrate');
+          }, [petMode, waterNotice?.token, companion.animate]);
           const companionCard = (compact = false) =>
             companion.visible &&
             h(
@@ -4540,7 +4706,14 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                     'aria-label': t('petOpen'),
                     'aria-expanded': !!petShowing,
                     title: t('companionName') + ' · ' + t('petHint'),
-                    onClick: togglePetPanel,
+                    onClick: (event) => {
+                      if (!petDragged.current && !ui.pending) petMotion.current?.play('greet');
+                      togglePetPanel(event);
+                    },
+                    onPointerEnter: (event) => {
+                      if (event.pointerType === 'mouse' && !dragState.current)
+                        petMotion.current?.play('look');
+                    },
                     onKeyDown: gripKeys,
                   },
                   petArtwork(
@@ -4550,6 +4723,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                     waterNotice?.token,
                     stageModel,
                     PET_SPRITES,
+                    true,
                   ),
                 ),
                 h(
