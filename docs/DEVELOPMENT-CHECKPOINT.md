@@ -6,7 +6,7 @@
 
 - 项目 `dsh-offwork`，GitHub `SnowBeatRain/dsh-offwork`，正式 npm 版本为 `1.0.1`。
 - 用户计划下次版本 `1.0.2`，但明确要求暂不修改版本号；先验收，再决定发布。
-- 最新目标更新：用户希望接入 dshpet 一类插件的卡通模型，做独立悬浮宠物，可能包含系统桌面常驻。此方向更新了早期“只在 Harness、不做桌宠”的限制；先确认网页/系统宿主及操作系统，再决定实现范围。
+- 最新明确范围：只做 DeepSeek Harness 页面内的独立悬浮宠物，接入 dsh-pet 类插件的卡通模型；不做系统桌宠、Electron 客户端，也不需要询问操作系统。
 - 用户指定 `https://dsh.toolscc.cn` 的 `xxy` 环境加载本地开发目录进行验收。其他环境使用插件市场正式版。
 - 本地验收环境的更新和单用户服务重启已获授权；不要把这等同于授权合并主分支、推送、打标签或发布 npm。
 
@@ -77,4 +77,6 @@
 
 ## 最新澄清：接入 dshpet 模型与桌宠形态
 
-用户指出最终想要使用现有 dshpet 类插件的模型，独立展示一个桌宠，而非仅在当前卡片中加入水滴头像。已查阅网页 dsh-pet 与 Electron dsh-pet-desktop 的公开文档，见 `docs/PET-INTEGRATION-RESEARCH.md`。当前只做可行性调查，尚未安装或接入第三方插件；需要明确第一阶段网页悬浮/系统桌面及目标操作系统。远程服务器环境、客户端安装、模型格式差异、浏览器提醒数据与桌宠状态共享是接入重点。
+用户已明确只做 Harness 页面宠物。最终希望复用 dsh-pet 类插件的角色模型，在页面独立悬浮并提供现有功能入口。系统桌面路线已排除，不再询问网页/系统形态或操作系统。
+
+发现 Web profile 已声明 `dsh-pet: 0.4.1` 和 `@local/dsh-pet-offwork`，后者链接 `/opt/dsh/users/xxy/workspace/dsh/plugins/dsh-pet-offwork`，基于 PC2005-cloud 的实现，并有大量 WebM 素材。其 lib/client.js 的宠物倒计时目前写死为上海时间工作日 17:00，后续应对接真实业务状态。该包未由本轮修改；接入前核对实际启用实例及构建，保留已有定制。详见 `docs/PET-INTEGRATION-RESEARCH.md`。
