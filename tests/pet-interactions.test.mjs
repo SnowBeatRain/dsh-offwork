@@ -71,11 +71,18 @@ test('appearance snapshots omit position and salary preferences', () => {
       companion: true,
       companionMotion: false,
       petSize: 132,
+      petModel: 'whale-ornate',
       opacity: 0.8,
       position: { x: 1, y: 2 },
       petPosition: { x: 3, y: 4 },
       masked: false,
     }),
-    { companion: true, companionMotion: false, petSize: 132, opacity: 0.8 },
+    {
+      companion: true,
+      companionMotion: false,
+      petSize: 132,
+      petModel: 'whale-ornate',
+      opacity: 0.8,
+    },
   );
 });

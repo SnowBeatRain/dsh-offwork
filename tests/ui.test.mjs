@@ -29,6 +29,7 @@ test('position stays visible when viewport shrinks', () => {
 });
 test('view defaults: compact, salary hidden, 82% glass and companion enabled', () => {
   assert.deepEqual(normalizeView(null), {
+    petModel: 'whale-dress',
     petSize: 132,
     petPosition: null,
     mini: true,
@@ -42,6 +43,7 @@ test('view defaults: compact, salary hidden, 82% glass and companion enabled', (
     normalizeView({ mini: false, masked: false, opacity: 0.5, position: { x: 1, y: 2 } }),
     {
       petSize: 132,
+      petModel: 'whale-dress',
       petPosition: null,
       mini: false,
       masked: false,
@@ -56,6 +58,7 @@ test('view defaults: compact, salary hidden, 82% glass and companion enabled', (
 });
 test('malformed positions and opacity are repaired, not trusted', () => {
   assert.deepEqual(normalizeView({ mini: 'yes', masked: true, position: { x: 'oops', y: 2 } }), {
+    petModel: 'whale-dress',
     petSize: 132,
     petPosition: null,
     mini: true,

@@ -1,6 +1,6 @@
 # 下班计时器 · Offwork Clock
 
-> 此开发分支包含待验收的独立 Harness 页面宠物“小歇”与喝水提醒，尚未推送或发布。版本标记保持 `1.0.1`；计划在验收后再决定 `1.0.2` 的版本与发布操作。详见 [独立宠物原型](docs/PET-PREVIEW.md)、[喝水提醒验收说明](docs/HYDRATION-ACCEPTANCE.md) 和 [拟人化表现层](docs/COMPANION.md)。npm 的现有版本不包含这些功能。
+> 此开发分支包含待验收的独立 Harness 页面宠物（鲸系少女立绘／“小歇”水滴）与喝水提醒，尚未推送或发布。版本标记保持 `1.0.1`；计划在验收后再决定 `1.0.2` 的版本与发布操作。详见 [独立宠物原型](docs/PET-PREVIEW.md)、[喝水提醒验收说明](docs/HYDRATION-ACCEPTANCE.md) 和 [拟人化表现层](docs/COMPANION.md)。npm 的现有版本不包含这些功能。
 
 在 DeepSeek Harness 中查看距离下班还有多久，以及本班已经赚了多少钱。
 

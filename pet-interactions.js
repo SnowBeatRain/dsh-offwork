@@ -38,6 +38,7 @@ export function appearanceValues(view) {
     companion: view.companion,
     companionMotion: view.companionMotion,
     petSize: view.petSize,
+    petModel: view.petModel,
     opacity: view.opacity,
   };
 }

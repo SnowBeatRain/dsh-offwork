@@ -173,8 +173,9 @@ export const PET_SURFACE_STYLE = `
 .owc-v2 .owc-pet-natural>.owc-form:last-child,.owc-v2 .owc-pet-natural>.owc-water-form:last-child{padding-bottom:0}
 .owc-v2 .owc-pet-scroll .owc-save{background:var(--owc-surface);padding:12px 0;border-top:1px solid var(--owc-border);gap:8px;flex-wrap:wrap}
 .owc-v2 .owc-save button{min-width:72px}
-.owc-v2 .owc-appearance-preview{height:210px;display:flex;align-items:center;justify-content:center;border-radius:12px;background:var(--owc-subtle);margin-bottom:16px;overflow:hidden}
-.owc-v2 .owc-appearance-preview svg{flex:none}
+.owc-v2 .owc-appearance-preview{height:260px;display:flex;align-items:center;justify-content:center;border-radius:12px;background:var(--owc-subtle);margin-bottom:16px;overflow:hidden}
+.owc-v2 .owc-appearance-preview .owc-pet-art{flex:none;animation:none}
+.owc-v2 .owc-appearance-preview .owc-pet-art *{animation:none!important}
 .owc-v2 .owc-appearance-preview p{font-size:13px;color:var(--owc-muted);padding:16px;text-align:center}
 .owc-v2 .owc-pet-context{padding:0;background:var(--owc-surface);border:1px solid var(--owc-border);border-radius:var(--owc-radius);box-shadow:var(--owc-shadow);scrollbar-width:none}
 .owc-v2 .owc-pet-context::-webkit-scrollbar{display:none}
@@ -187,7 +188,7 @@ export const PET_SURFACE_STYLE = `
 .owc-v2 .owc-pet-unsaved p{font-size:13px;overflow-wrap:anywhere}
 @container (max-width:310px){.owc-v2 .owc-row2{grid-template-columns:1fr}.owc-v2 .owc-stats{gap:8px}.owc-v2 .owc-days{gap:2px}.owc-v2 .owc-days button{font-size:11px}}
 @media (pointer:coarse){.owc-v2{--owc-control-height:44px}.owc-v2 .owc-icon{min-width:44px}.owc-v2 button.owc-primary{min-height:44px}.owc-v2 :is(input[type=text],input[type=time],input[type=number],select){font-size:16px}.owc-v2 input[type=range]{min-height:36px}.owc-v2 .owc-check{min-height:44px}}
-@media (max-height:600px){.owc-v2 .owc-appearance-preview{height:120px}.owc-v2 .owc-appearance-preview svg{transform:scale(.55)}}
+@media (max-height:600px){.owc-v2 .owc-appearance-preview{height:120px}.owc-v2 .owc-appearance-preview svg{transform:scale(.55)}.owc-v2 .owc-appearance-preview img{transform:scale(.45)}}
 @media (prefers-contrast:more){.owc-v2{--owc-border:var(--owc-text)}.owc-v2 .owc-glass{opacity:1!important}}
 @media (prefers-reduced-transparency:reduce){.owc-v2 .owc-glass{opacity:1!important;backdrop-filter:none;-webkit-backdrop-filter:none}}
 `;

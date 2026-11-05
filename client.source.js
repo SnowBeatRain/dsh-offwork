@@ -5,6 +5,7 @@ window.__ModuleLoader__.load({
     const React = require('react');
     const h = React.createElement;
     /* PURE_MODULES */
+    /* PET_SPRITES */
     const messages = {
       zh: {
         ...COMPANION_MESSAGES.zh,
@@ -431,7 +432,8 @@ window.__ModuleLoader__.load({
       apply(ctx) {
         for (const [lang, dict] of Object.entries(messages))
           ctx.effect(() => ctx.locale.register('offwork-clock', lang, dict));
-        const viewKey = 'dsh.offwork-clock.view.v4';
+        const viewKey = 'dsh.offwork-clock.view.v5';
+        const previousViewKey = 'dsh.offwork-clock.view.v4';
         const legacyKey = 'dsh.offwork-clock.view.v3';
 
         function Clock(props) {
@@ -525,10 +527,13 @@ window.__ModuleLoader__.load({
             data?.configured &&
             !!safeState &&
             (appearanceOnly ? appearanceWasPet.current : view.companion);
+          const stageModel = appearanceOnly ? savedView.petModel : view.petModel;
           const petGeometry = petLayout(
             dragPosition ?? view.petPosition,
             viewport,
             appearanceOnly ? savedView.petSize : view.petSize,
+            420,
+            stageModel,
           );
           const surfaceScreen = ui.screen || 'reminder';
           const surfaceWidth = petSurfaceWidth(surfaceScreen, viewport);
@@ -650,7 +655,7 @@ window.__ModuleLoader__.load({
 
           React.useEffect(() => {
             try {
-              const saved = localStorage.getItem(viewKey);
+              const saved = localStorage.getItem(viewKey) ?? localStorage.getItem(previousViewKey);
               const legacy = !saved ? JSON.parse(localStorage.getItem(legacyKey) || 'null') : null;
               setView(
                 normalizeView(
@@ -2275,6 +2280,21 @@ window.__ModuleLoader__.load({
                 t('companionMotion'),
               ),
               label(
+                t('petCharacter'),
+                h(
+                  'select',
+                  {
+                    'aria-label': t('petCharacter'),
+                    value: view.petModel,
+                    disabled: !view.companion,
+                    onChange: (event) => updateAppearance({ petModel: event.target.value }),
+                  },
+                  ...Object.values(PET_MODELS).map((model) =>
+                    h('option', { key: model.id, value: model.id }, t(model.label)),
+                  ),
+                ),
+              ),
+              label(
                 t('petSize'),
                 h('input', {
                   type: 'range',
@@ -2323,7 +2343,14 @@ window.__ModuleLoader__.load({
                   'div',
                   { 'data-appearance-preview': true, className: 'owc-appearance-preview' },
                   view.companion
-                    ? petArtwork(h, companion, view.petSize)
+                    ? petArtwork(
+                        h,
+                        companion,
+                        view.petSize * (petModel(view.petModel).renderer === 'image' ? 0.65 : 1),
+                        '',
+                        view.petModel,
+                        PET_SPRITES,
+                      )
                     : h('p', null, t('petClassicPreview')),
                 ),
                 appearanceFields(),
@@ -3045,7 +3072,7 @@ window.__ModuleLoader__.load({
                 ref: box,
                 className: 'owc-v2 owc-pet-shell',
                 'data-version': '1.0.1',
-                'data-pet-model': PET_MODEL.id,
+                'data-pet-model': stageModel,
                 'data-status': safeState.status,
                 'aria-label': t('companionLabel'),
                 style: {
@@ -3092,7 +3119,14 @@ window.__ModuleLoader__.load({
                     onClick: togglePetPanel,
                     onKeyDown: gripKeys,
                   },
-                  petArtwork(h, companion, petGeometry.artworkSize, waterNotice?.token),
+                  petArtwork(
+                    h,
+                    companion,
+                    petGeometry.artworkSize,
+                    waterNotice?.token,
+                    stageModel,
+                    PET_SPRITES,
+                  ),
                 ),
                 h(
                   'button',

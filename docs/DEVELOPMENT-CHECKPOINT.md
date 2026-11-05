@@ -2,6 +2,17 @@
 
 更新于 2026-11-05。此文件用于缩短后续上下文检索，不表示系统对话已经执行压缩。
 
+## 最新：鲸系少女外观（feature/whale-character）
+
+- 用户提供两张1024×1536 RGBA原图，授权用于替换水滴形象。均有透明通道，浅/深底合成正常；没有重新生成或重绘人物。
+- 已加入 whale-dress 默认长裙、whale-ornate 可选礼裙，保留 xiaoxie-original 水滴。外观增加角色下拉选择，应用前只更新卡片内预览。
+- assets/characters 中为640×1024透明WebP，约139KB/124KB；构建内嵌客户端，不依赖用户文件分享链接。来源范围见同目录NOTICE.md。
+- 人物大小采用纵向比例，布局同时约束宽高，手脚和尾巴完整显示；只有轻微整体反馈，不包含独立眨眼/摆尾或Live2D。
+- 外观记录升级为 dsh.offwork-clock.view.v5，从v4一次性迁移，保留大小/位置/透明度/隐私/动作。避免旧标签页的normalize写回删除新字段导致循环；喝水库和Host薪资完全不变。
+- 131项检查通过；/tmp/offwork-hydration-ux/whale-test.cjs 和 whale-migration.cjs 验证模型切换、预览取消/应用刷新、拖动、打卡、320px和横屏全卡片边界、减少动态、v4迁移以及新旧标签页隔离/新版同步。
+- 原图与处理临时文件 /tmp/offwork-character-intake；原图及结果归档在 offwork-hydration-artifacts/whale-character。获取用户指定的文件使用本机文件服务的只读附件接口，没有读取其他文件或暴露凭据。
+- 保持1.0.1，更新指定开发环境，尚未合并main或发布。
+
 ## 用户目标与授权
 
 - 项目 `dsh-offwork`，GitHub `SnowBeatRain/dsh-offwork`，正式 npm 版本为 `1.0.1`。
@@ -42,7 +53,7 @@
 
 ## 测试与资料
 
-- 最近 `npm run check` 通过，128 项测试；格式、生成物一致性、语法和打包检查均通过。
+- 最近 `npm run check` 通过，131 项测试；格式、生成物一致性、语法和打包检查均通过。
 - 隔离 Harness `0.2.1-rc.5` + Headless Chromium 验证了间隔选择、实际触发、刷新、并发、存储错误、作息变更和秒级倒计时。
 - 测试工具缓存与脚本：`/tmp/offwork-hydration-ux`，独立 Harness 已停止，可由 `start.py` 重启。私有启动地址在 `state.json`，不要打印或分享。
 - 使用前核对旧测试脚本的 UI 选择器是否仍匹配。不要用用户浏览器的 IndexedDB 作为测试夹具。

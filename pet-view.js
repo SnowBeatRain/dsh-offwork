@@ -1,7 +1,35 @@
 // Independent Harness pet presentation. No third-party pet code or assets.
 export const PET_MODEL = Object.freeze({ id: 'xiaoxie-original', renderer: 'svg', license: 'MIT' });
 
-export function petLayout(position, viewport, size = 132, contentHeight = 420) {
+export const PET_MODELS = Object.freeze({
+  'whale-dress': {
+    id: 'whale-dress',
+    renderer: 'image',
+    widthScale: 1.3125,
+    heightScale: 2.1,
+    label: 'petWhaleDress',
+  },
+  'whale-ornate': {
+    id: 'whale-ornate',
+    renderer: 'image',
+    widthScale: 1.3125,
+    heightScale: 2.1,
+    label: 'petWhaleOrnate',
+  },
+  'xiaoxie-original': { ...PET_MODEL, widthScale: 1, heightScale: 1.1, label: 'petDroplet' },
+});
+export function petModel(id) {
+  return Object.hasOwn(PET_MODELS, id) ? PET_MODELS[id] : PET_MODELS['whale-dress'];
+}
+
+export function petLayout(
+  position,
+  viewport,
+  size = 132,
+  contentHeight = 420,
+  modelId = 'xiaoxie-original',
+) {
+  const model = petModel(modelId);
   const originX = viewport.left ?? 0,
     originY = viewport.top ?? 0;
   const edge = 12,
@@ -12,12 +40,15 @@ export function petLayout(position, viewport, size = 132, contentHeight = 420) {
     1,
     Math.min(
       size,
-      Math.max(1, width - edge * 2),
-      Math.max(1, Math.floor((height - edge * 2 - 30) / 1.1)),
+      Math.max(1, (width - edge * 2) / model.widthScale),
+      Math.max(1, Math.floor((height - edge * 2 - 30) / model.heightScale)),
     ),
   );
-  const petWidth = Math.min(Math.max(1, width - edge * 2), Math.max(148, artworkSize));
-  const petHeight = Math.ceil(artworkSize * 1.1) + 30;
+  const petWidth = Math.min(
+    Math.max(1, width - edge * 2),
+    Math.max(148, artworkSize * model.widthScale),
+  );
+  const petHeight = Math.ceil(artworkSize * model.heightScale) + 30;
   const bound = (n, max) => Math.max(Math.min(edge, max), Math.min(n, max));
   const x = bound(
     Number.isFinite(position?.x) ? position.x - originX : width - petWidth - 32,
@@ -73,8 +104,29 @@ export function petLayout(position, viewport, size = 132, contentHeight = 420) {
 }
 
 // Original full-body Xiaoxie: droplet body, small feet and a scarf.
-export function petArtwork(h, presentation, size, reaction = '') {
+export function petArtwork(
+  h,
+  presentation,
+  size,
+  reaction = '',
+  modelId = 'xiaoxie-original',
+  sprites = {},
+) {
   const { pose, animate } = presentation;
+  const model = petModel(modelId);
+  if (model.renderer === 'image' && sprites[model.id])
+    return h('img', {
+      key: model.id + ':' + pose + ':' + reaction,
+      src: sprites[model.id],
+      alt: '',
+      'aria-hidden': true,
+      draggable: false,
+      width: size * model.widthScale,
+      height: size * model.heightScale,
+      className: 'owc-pet-art owc-pet-portrait',
+      'data-pose': pose,
+      'data-animate': animate,
+    });
   const asleep = ['quiet', 'rest'].includes(pose);
   const path = (d, props = {}) => h('path', { d, ...props });
   return h(
@@ -163,6 +215,10 @@ export function petArtwork(h, presentation, size, reaction = '') {
 export const PET_MESSAGES = {
   zh: {
     petOpen: '打开宠物面板',
+    petCharacter: '角色形象',
+    petWhaleDress: '鲸蓝少女 · 长裙',
+    petWhaleOrnate: '鲸蓝少女 · 礼裙',
+    petDroplet: '小歇 · 水滴',
     petClose: '收起宠物面板',
     petQuick: '日常陪伴',
     petDetails: '下班与收入',
@@ -173,6 +229,10 @@ export const PET_MESSAGES = {
   },
   en: {
     petOpen: 'Open pet panel',
+    petCharacter: 'Character',
+    petWhaleDress: 'Blue whale · Long dress',
+    petWhaleOrnate: 'Blue whale · Ornate dress',
+    petDroplet: 'Xiaoxie · Droplet',
     petClose: 'Close pet panel',
     petQuick: 'Daily companion',
     petDetails: 'Clock and earnings',
@@ -189,6 +249,9 @@ export const PET_STYLE = `
 .owc-v2 button.owc-pet-handle{padding:0;background:none!important;border-radius:50%;min-height:0;display:block;cursor:grab;touch-action:none;line-height:0}
 .owc-v2 button.owc-pet-handle:active{cursor:grabbing}
 .owc-pet-art{overflow:visible;pointer-events:none;filter:drop-shadow(0 3px 5px #32557418)}
+.owc-pet-portrait{display:block;object-fit:contain;transform-origin:50% 90%}
+.owc-pet-portrait[data-animate=true]{animation:owc-portrait-thanks .65s ease-in-out 2}
+@keyframes owc-portrait-thanks{0%,100%{transform:translateY(0)}45%{transform:translateY(-3px) rotate(-1deg)}75%{transform:rotate(1deg)}}
 .owc-pet-art[data-pose=offline]{opacity:.65}
 .owc-pet-art[data-animate=true] .owc-pet-body{transform-origin:80px 150px;animation:owc-pet-thanks .65s ease-in-out 2}
 @keyframes owc-pet-thanks{0%,100%{transform:translateY(0)}45%{transform:translateY(-4px) rotate(-3deg)}75%{transform:rotate(2deg)}}
@@ -205,5 +268,5 @@ export const PET_STYLE = `
 .owc-pet-time strong{font-size:21px;color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums}
 .owc-pet-speech{padding:12px 16px;font-size:12px;line-height:1.65}
 .owc-pet-speech strong{display:block;font-size:11px;color:var(--dsw-alias-label-secondary);margin-bottom:4px}
-@media(prefers-reduced-motion:reduce){.owc-pet-art *{animation:none!important;transition:none!important}}
+@media(prefers-reduced-motion:reduce){.owc-pet-art,.owc-pet-art *{animation:none!important;transition:none!important}}
 `;

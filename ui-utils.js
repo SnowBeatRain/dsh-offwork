@@ -33,6 +33,9 @@ export function normalizeView(value) {
     masked: value?.masked !== false,
     companion: value?.companion !== false,
     companionMotion: value?.companionMotion !== false,
+    petModel: ['whale-dress', 'whale-ornate', 'xiaoxie-original'].includes(value?.petModel)
+      ? value.petModel
+      : 'whale-dress',
     petSize: Math.min(180, Math.max(80, Number.isFinite(value?.petSize) ? value.petSize : 132)),
     petPosition:
       Number.isFinite(value?.petPosition?.x) && Number.isFinite(value?.petPosition?.y)
