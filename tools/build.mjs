@@ -7,6 +7,7 @@ const moduleNames = [
   'ui-utils.js',
   'companion.js',
   'pet-view.js',
+  'pet-interactions.js',
   'hydration.js',
   'hydration-store.js',
 ];

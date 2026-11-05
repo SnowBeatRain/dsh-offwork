@@ -9,6 +9,7 @@ window.__ModuleLoader__.load({
       zh: {
         ...COMPANION_MESSAGES.zh,
         ...PET_MESSAGES.zh,
+        ...PET_INTERACTION_MESSAGES.zh,
         title: '下班计时器',
         working: '距离下班',
         before: '距离开工',
@@ -128,6 +129,7 @@ window.__ModuleLoader__.load({
       en: {
         ...COMPANION_MESSAGES.en,
         ...PET_MESSAGES.en,
+        ...PET_INTERACTION_MESSAGES.en,
         title: 'Offwork Clock',
         working: 'Until clock-out',
         before: 'Until work starts',
@@ -370,7 +372,8 @@ window.__ModuleLoader__.load({
 @media(max-width:420px){.owc-pill{min-width:136px;padding:8px 8px 7px 12px}.owc-pill-status{display:none}.owc-pill-time{font-size:22px}.owc-main,.owc-form{padding-left:14px;padding-right:14px}.owc-time{font-size:31px}}
 ` +
       COMPANION_STYLE +
-      PET_STYLE;
+      PET_STYLE +
+      PET_INTERACTION_STYLE;
     const ICONS = {
       water: [
         ['path', { d: 'M8 1.5C6.6 4 3.5 7.1 3.5 10a4.5 4.5 0 0 0 9 0C12.5 7.1 9.4 4 8 1.5Z' }],
@@ -439,21 +442,32 @@ window.__ModuleLoader__.load({
           const sessionId = sessionIds.includes(sessionChoice) ? sessionChoice : sessionIds[0];
           const [data, setData] = React.useState(null);
           const [draft, setDraft] = React.useState(null);
-          const [editing, setEditing] = React.useState(false);
-          const [appearanceOnly, setAppearanceOnly] = React.useState(false);
+          const [ui, dispatchUI] = React.useReducer(petUIReducer, initialPetUI);
+          const editing = ui.screen === 'schedule' || ui.screen === 'appearance';
+          const appearanceOnly = ui.screen === 'appearance';
+          const waterEditing = ui.screen === 'water';
+          const [appearanceDraft, setAppearanceDraft] = React.useState(null);
+          const appearanceBase = React.useRef(null);
+          const appearanceWasPet = React.useRef(false);
+          const salaryBase = React.useRef(null);
+          const menuBox = React.useRef(null);
+          const menuTrigger = React.useRef(null);
+          const [dragPosition, setDragPosition] = React.useState(null);
           const [busy, setBusy] = React.useState(false);
           const [error, setError] = React.useState('');
           const [notice, setNotice] = React.useState('');
           const [storageError, setStorageError] = React.useState(false);
           const [now, setNow] = React.useState(Date.now());
-          const [view, setView] = React.useState(normalizeView(null));
+          const [savedView, setView] = React.useState(normalizeView(null));
+          const view =
+            appearanceOnly && appearanceDraft ? { ...savedView, ...appearanceDraft } : savedView;
           const [ready, setReady] = React.useState(false);
           const box = React.useRef(null);
           const petPanel = React.useRef(null);
+          const panelPlacement = React.useRef(null);
           const petDragged = React.useRef(false);
-          const [petOpen, setPetOpen] = React.useState(false);
-          const [petDetails, setPetDetails] = React.useState(false);
-          const [petPanelHeight, setPetPanelHeight] = React.useState(420);
+          const petOpen = ui.screen !== null;
+          const petDetails = ui.screen === 'income';
           const [viewport, setViewport] = React.useState({
             width: window.innerWidth,
             height: window.innerHeight,
@@ -469,7 +483,6 @@ window.__ModuleLoader__.load({
           const [waterBusy, setWaterBusy] = React.useState(false);
           const [waterVisible, setWaterVisible] = React.useState(!document.hidden);
           const [waterInterval, setWaterInterval] = React.useState('60');
-          const [waterEditing, setWaterEditing] = React.useState(false);
           const [waterQuickOpen, setWaterQuickOpen] = React.useState(false);
           const waterQuickTrigger = React.useRef(null);
           const [waterEnabledDraft, setWaterEnabledDraft] = React.useState(false);
@@ -499,8 +512,27 @@ window.__ModuleLoader__.load({
           const state = settings ? safeCalculate(settings) : null;
           const preview = workingDraft ? safeCalculate(workingDraft) : null;
           const safeState = state && !state.error ? state : null;
-          const petMode = ready && view.companion && data?.configured && !!safeState;
-          const petGeometry = petLayout(view.petPosition, viewport, view.petSize, petPanelHeight);
+          const petMode =
+            ready &&
+            data?.configured &&
+            !!safeState &&
+            (appearanceOnly ? appearanceWasPet.current : view.companion);
+          const petGeometry = petLayout(
+            dragPosition ?? view.petPosition,
+            viewport,
+            view.petSize,
+            petOpen ? 440 : 150,
+          );
+          const placementKey = [
+            viewport.width,
+            viewport.height,
+            (dragPosition ?? savedView.petPosition)?.x,
+            (dragPosition ?? savedView.petPosition)?.y,
+          ].join(':');
+          if (!petMode || !petOpen) panelPlacement.current = null;
+          else if (panelPlacement.current?.key !== placementKey)
+            panelPlacement.current = { key: placementKey, panel: petGeometry.panel };
+          const floatingPanel = panelPlacement.current?.panel ?? petGeometry.panel;
           const collapsed =
             !petMode &&
             !!safeState &&
@@ -587,11 +619,11 @@ window.__ModuleLoader__.load({
           React.useEffect(() => {
             if (!ready) return;
             try {
-              localStorage.setItem(viewKey, JSON.stringify(normalizeView(view)));
+              localStorage.setItem(viewKey, JSON.stringify(normalizeView(savedView)));
             } catch {
               setStorageError(true);
             }
-          }, [ready, view]);
+          }, [ready, savedView]);
 
           React.useEffect(() => {
             let active = true;
@@ -788,22 +820,12 @@ window.__ModuleLoader__.load({
           }
 
           function openWaterEditor(event) {
-            waterPreferencesBase.current = { enabled: water.enabled, interval: water.interval };
-            focusReturn.current = event?.currentTarget;
-            setWaterInterval(String(water.interval));
-            setWaterEnabledDraft(water.enabled);
-            setWaterInvalid(false);
-            setWaterConfirm(null);
-            setWaterNotice(false);
-            setNotice('');
-            setWaterEditing(true);
+            navigateScreen('water', event);
           }
 
           function closeWaterEditor() {
             if (waterPending.current) return;
-            setWaterEditing(false);
-            setWaterInvalid(false);
-            setWaterConfirm(null);
+            performNavigation(ui.back);
           }
 
           async function saveWaterSettings(event) {
@@ -820,7 +842,8 @@ window.__ModuleLoader__.load({
                 : {}),
               ...(interval !== waterPreferencesBase.current?.interval ? { interval } : {}),
             });
-            if (result) setWaterEditing(false);
+            if (result) performNavigation(ui.back);
+            return result;
           }
 
           async function waterAction(action) {
@@ -881,9 +904,13 @@ window.__ModuleLoader__.load({
                         ? '.owc-pet-handle'
                         : '.owc-grip,.owc-title'
                       : action.type === 'manual-drink'
-                        ? '.owc-water-actions .owc-primary'
+                        ? petMode
+                          ? '.owc-pet-water-row .owc-primary'
+                          : '.owc-water-actions .owc-primary'
                         : action.type === 'end-quiet'
-                          ? '.owc-water-quiet summary'
+                          ? petMode
+                            ? '.owc-pet-quiet-row button'
+                            : '.owc-water-quiet summary'
                           : '.owc-water-form details > summary';
                     box.current?.querySelector(target)?.focus();
                   });
@@ -951,6 +978,10 @@ window.__ModuleLoader__.load({
           }, [clamp, petMode]);
 
           React.useEffect(() => {
+            if (ui.pending) {
+              box.current?.querySelector('[data-keep-editing]')?.focus();
+              return;
+            }
             const wasOpen = editorWasOpen.current;
             const modeChanged = previousPetMode.current !== petMode;
             previousPetMode.current = petMode;
@@ -970,7 +1001,7 @@ window.__ModuleLoader__.load({
               return;
             }
             box.current?.querySelector('form input,form select,.owc-appearance input')?.focus?.();
-          }, [editing, waterEditing, petMode]);
+          }, [editing, waterEditing, petMode, ui.screen, ui.pending]);
 
           React.useEffect(
             () => () => {
@@ -1010,7 +1041,8 @@ window.__ModuleLoader__.load({
               setData(next);
               if (!next.configured) {
                 setDraft({ ...next.settings });
-                setEditing(true);
+                dispatchUI({ type: 'navigate', screen: 'schedule', discard: true });
+                salaryBase.current = next.settings;
               }
               if (explicit) setNotice(t('synced'));
             } catch (e) {
@@ -1031,7 +1063,10 @@ window.__ModuleLoader__.load({
               const baseSchedule = (await waterRuntime.current?.update({ type: 'sync' }))?.state
                 ?.shift?.schedule;
               if (token !== generation.current) return;
-              const next = await request('set', changedSettings(settings, draft));
+              const next = await request(
+                'set',
+                changedSettings(salaryBase.current ?? settings, draft),
+              );
               if (token === generation.current) {
                 waterScheduleChange.current = {
                   baseSchedule,
@@ -1039,9 +1074,10 @@ window.__ModuleLoader__.load({
                     .schedule,
                 };
                 setData(next);
-                setEditing(false);
+                dispatchUI({ type: 'navigate', screen: ui.back, discard: true });
                 setDraft(null);
                 setNotice(t('saved'));
+                return next;
               }
             } catch (e) {
               if (token === generation.current) setError(errorText(e));
@@ -1068,6 +1104,7 @@ window.__ModuleLoader__.load({
             )
               return;
             const capture = petMode ? e.target.closest('.owc-pet-handle') : e.currentTarget;
+            if (petMode && ui.menu) dispatchUI({ type: 'dismiss-menu' });
             const rect = box.current.getBoundingClientRect();
             dragState.current = {
               dx: e.clientX - rect.left,
@@ -1084,11 +1121,11 @@ window.__ModuleLoader__.load({
           function dragMove(e) {
             const d = dragState.current;
             if (!d) return;
-            if (!d.moved && Math.abs(e.clientX - d.x0) + Math.abs(e.clientY - d.y0) < 4) return;
+            if (!d.moved && Math.hypot(e.clientX - d.x0, e.clientY - d.y0) < 6) return;
             d.moved = true;
             petDragged.current = true;
             const next = clamp({ x: e.clientX - d.dx, y: e.clientY - d.dy });
-            if (petMode) setPreference({ petPosition: next });
+            if (petMode) setDragPosition(next);
             lastPosition.current = next;
             if (box.current) {
               box.current.style.left = next.x + 'px';
@@ -1103,6 +1140,7 @@ window.__ModuleLoader__.load({
             if (e.type === 'pointercancel' || e.type === 'lostpointercapture')
               petDragged.current = false;
             if (d.moved && lastPosition.current) commitPosition(lastPosition.current);
+            setDragPosition(null);
             try {
               if (d.capture?.hasPointerCapture?.(e.pointerId))
                 d.capture.releasePointerCapture(e.pointerId);
@@ -1131,16 +1169,25 @@ window.__ModuleLoader__.load({
               )
             )
               return false;
-            // Consume our context menu before considering editing/busy guards.
-            // Repeated right-clicks must not fall through to the browser menu.
             event.preventDefault();
             event.stopPropagation();
-            if (editing || waterEditing || waterBusy || busy || !data?.configured) return true;
             petDragged.current = false;
+            if (!petMode) {
+              if (!busy && !waterBusy) navigateScreen('appearance', event);
+              return true;
+            }
             const trigger =
-              event.target.closest('button,.owc-grip,.owc-title') ||
-              box.current?.querySelector(petMode ? '.owc-pet-handle' : '.owc-grip,.owc-title');
-            openAppearance({ currentTarget: trigger });
+              event.target.closest('button,.owc-title') ||
+              box.current.querySelector('.owc-pet-handle');
+            menuTrigger.current = menuBox.current?.contains(trigger)
+              ? box.current?.querySelector('.owc-pet-handle')
+              : trigger;
+            const rect = trigger?.getBoundingClientRect();
+            const point =
+              event.type === 'keydown'
+                ? { x: rect?.right ?? petGeometry.x, y: rect?.top ?? petGeometry.y }
+                : { x: event.clientX, y: event.clientY };
+            dispatchUI({ type: 'menu', position: point });
             return true;
           }
           function appearanceShortcut(event) {
@@ -1148,23 +1195,88 @@ window.__ModuleLoader__.load({
               return openAppearanceContext(event);
             return false;
           }
-          function openAppearance(event) {
-            openEditor(event);
-            setAppearanceOnly(true);
+          function performNavigation(screen) {
+            if (screen !== ui.screen) {
+              if (screen === 'water') {
+                waterPreferencesBase.current = { enabled: water.enabled, interval: water.interval };
+                setWaterInterval(String(water.interval));
+                setWaterEnabledDraft(water.enabled);
+                setWaterInvalid(false);
+                setWaterConfirm(null);
+              }
+              if (screen === 'schedule') {
+                salaryBase.current = settings;
+                setDraft({ ...settings });
+                setError('');
+              }
+              if (screen === 'appearance') {
+                appearanceBase.current = appearanceValues(savedView);
+                appearanceWasPet.current = !!petMode;
+                setAppearanceDraft(appearanceValues(savedView));
+              }
+              if (ui.screen === 'schedule') {
+                setDraft(null);
+                setError('');
+              }
+              if (ui.screen === 'appearance') setAppearanceDraft(null);
+            }
+            dispatchUI({ type: 'navigate', screen, discard: true });
+            setWaterConfirm(null);
           }
-          function openEditor(e) {
-            setAppearanceOnly(false);
-            focusReturn.current = e.currentTarget;
-            setDraft({ ...settings });
-            setEditing(true);
-            setError('');
-            setNotice('');
+          function navigateScreen(screen, event) {
+            if (!data?.configured && screen !== 'schedule') return;
+            if (busy || waterBusy || requestBusy.current || waterPending.current) return;
+            if (event?.currentTarget) focusReturn.current = event.currentTarget;
+            if (screen !== ui.screen && draftChanged()) {
+              dispatchUI({ type: 'navigate', screen, dirty: true });
+              return;
+            }
+            performNavigation(screen);
+          }
+          function draftChanged() {
+            if (waterEditing && waterPreferencesBase.current)
+              return (
+                waterEnabledDraft !== waterPreferencesBase.current.enabled ||
+                Number(waterInterval) !== waterPreferencesBase.current.interval
+              );
+            if (ui.screen === 'schedule' && draft && salaryBase.current)
+              return Object.keys(changedSettings(salaryBase.current, draft)).length > 0;
+            if (appearanceOnly && appearanceDraft && appearanceBase.current)
+              return (
+                Object.keys(changedSettings(appearanceBase.current, appearanceDraft)).length > 0
+              );
+            return false;
+          }
+          function applyAppearance() {
+            panelPlacement.current = null;
+            if (appearanceDraft)
+              setPreference(changedSettings(appearanceBase.current, appearanceDraft));
+            performNavigation(ui.back);
+            return true;
+          }
+          async function saveAndContinue() {
+            if (!ui.pending || busy || waterBusy) return;
+            const destination = ui.pending.screen;
+            const result = waterEditing
+              ? await saveWaterSettings({ preventDefault() {} })
+              : appearanceOnly
+                ? applyAppearance()
+                : await save({ preventDefault() {} });
+            if (result) performNavigation(destination);
+            else dispatchUI({ type: 'stay' });
+          }
+          function updateAppearance(patch) {
+            setAppearanceDraft((current) => ({ ...current, ...patch }));
+          }
+          function openAppearance(event) {
+            navigateScreen('appearance', event);
+          }
+          function openEditor(event) {
+            navigateScreen('schedule', event);
           }
           function closeEditor() {
-            if (!data?.configured) return;
-            setEditing(false);
-            setDraft(null);
-            setError('');
+            if ((!data?.configured && !appearanceOnly) || busy) return;
+            performNavigation(ui.back);
           }
           function update(key, value) {
             setDraft((current) => ({ ...current, [key]: value }));
@@ -1358,16 +1470,17 @@ window.__ModuleLoader__.load({
             h(
               'div',
               { className: 'owc-water-actions' },
-              h(
-                'button',
-                {
-                  type: 'button',
-                  className: 'owc-primary',
-                  disabled: !waterCanRecord || waterBusy,
-                  onClick: recordWater,
-                },
-                t('waterManual'),
-              ),
+              !waterPrompt &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-primary',
+                    disabled: !waterCanRecord || waterBusy,
+                    onClick: recordWater,
+                  },
+                  t('waterManual'),
+                ),
               waterState.phase === 'quiet' &&
                 h(
                   'button',
@@ -1527,7 +1640,7 @@ window.__ModuleLoader__.load({
                 onKeyDown: (event) => {
                   if (event.key === 'Escape') {
                     event.preventDefault();
-                    closeWaterEditor();
+                    navigateScreen(ui.back);
                   }
                 },
               },
@@ -2059,7 +2172,7 @@ window.__ModuleLoader__.load({
                   type: 'checkbox',
                   name: 'companion',
                   checked: view.companion,
-                  onChange: (event) => setPreference({ companion: event.target.checked }),
+                  onChange: (event) => updateAppearance({ companion: event.target.checked }),
                 }),
                 t('petMode'),
               ),
@@ -2070,7 +2183,7 @@ window.__ModuleLoader__.load({
                   type: 'checkbox',
                   checked: view.companionMotion,
                   disabled: !view.companion,
-                  onChange: (event) => setPreference({ companionMotion: event.target.checked }),
+                  onChange: (event) => updateAppearance({ companionMotion: event.target.checked }),
                 }),
                 t('companionMotion'),
               ),
@@ -2084,10 +2197,10 @@ window.__ModuleLoader__.load({
                   value: view.petSize,
                   'aria-label': t('petSize'),
                   disabled: !view.companion,
-                  onChange: (event) => setPreference({ petSize: event.target.valueAsNumber }),
+                  onChange: (event) => updateAppearance({ petSize: event.target.valueAsNumber }),
                 }),
               ),
-              h('p', { className: 'owc-hint' }, t('companionPreferences')),
+              h('p', { className: 'owc-hint' }, t('petAppearanceHint')),
               label(
                 t('opacity'),
                 h(
@@ -2103,7 +2216,7 @@ window.__ModuleLoader__.load({
                     disabled: busy,
                     'aria-label': t('opacity'),
                     onChange: (event) =>
-                      setPreference({ opacity: event.target.valueAsNumber / 100 }),
+                      updateAppearance({ opacity: event.target.valueAsNumber / 100 }),
                   }),
                   h(
                     'span',
@@ -2119,13 +2232,29 @@ window.__ModuleLoader__.load({
                 'div',
                 { className: 'owc-form owc-appearance', 'data-appearance-settings': true },
                 appearanceFields(),
+                !appearanceWasPet.current &&
+                  view.companion &&
+                  h(
+                    'div',
+                    {
+                      'data-appearance-preview': true,
+                      style: {
+                        height: 210,
+                        display: 'flex',
+                        alignItems: 'center',
+                        justifyContent: 'center',
+                      },
+                    },
+                    petArtwork(h, companion, view.petSize),
+                  ),
                 h(
                   'div',
                   { className: 'owc-save' },
+                  h('button', { type: 'button', onClick: closeEditor }, t('cancel')),
                   h(
                     'button',
-                    { type: 'button', className: 'owc-primary', onClick: closeEditor },
-                    t('appearanceDone'),
+                    { type: 'button', className: 'owc-primary', onClick: applyAppearance },
+                    t('petApplyAppearance'),
                   ),
                 ),
               );
@@ -2180,7 +2309,7 @@ window.__ModuleLoader__.load({
                 onKeyDown: (e) => {
                   if (e.key === 'Escape') {
                     e.preventDefault();
-                    closeEditor();
+                    navigateScreen(ui.back);
                   }
                 },
               },
@@ -2296,7 +2425,6 @@ window.__ModuleLoader__.load({
                   ),
                 ),
               ),
-              appearanceFields(),
               preview &&
                 !preview.error &&
                 h(
@@ -2355,26 +2483,22 @@ window.__ModuleLoader__.load({
             );
 
           function closePetPanel() {
-            if (waterBusy || busy) return;
-            setPetOpen(false);
-            box.current?.querySelector('.owc-pet-handle')?.focus();
+            navigateScreen(null);
           }
           function togglePetPanel(event) {
             if (petDragged.current && event.detail !== 0) {
               petDragged.current = false;
               return;
             }
-            if (editing || waterEditing) return;
-            if (petOpen) closePetPanel();
-            else {
-              setPetOpen(true);
-              requestAnimationFrame(() =>
-                (
-                  petPanel.current?.querySelector('.owc-primary:not(:disabled)') ||
-                  petPanel.current?.querySelector('.owc-title')
-                )?.focus(),
-              );
-            }
+            navigateScreen('home', event);
+          }
+          function closePetMenu(restore = true) {
+            dispatchUI({ type: 'dismiss-menu' });
+            if (restore)
+              (menuTrigger.current?.isConnected
+                ? menuTrigger.current
+                : box.current?.querySelector('.owc-pet-handle')
+              )?.focus();
           }
           const liveFeedback = () =>
             h(
@@ -2390,30 +2514,361 @@ window.__ModuleLoader__.load({
                 waterPrompt ? t('waterDue') : waterNotice ? t(waterNotice.key) : '',
               ),
             );
-          const petShowing = petOpen || editing || waterEditing;
-          const petFloating = petShowing || waterPrompt || !!waterNotice;
+          const petShowing = petOpen;
+          const petFloating = petShowing || waterPrompt;
           React.useEffect(() => {
-            if (!petMode || !petFloating || !petPanel.current) return;
-            const element = petPanel.current;
-            const measure = () =>
-              setPetPanelHeight((previous) =>
-                previous === element.offsetHeight ? previous : element.offsetHeight,
-              );
-            const observer =
-              typeof ResizeObserver === 'function' ? new ResizeObserver(measure) : null;
-            observer?.observe(element);
-            measure();
-            return () => observer?.disconnect();
-          }, [petMode, petFloating, petShowing, petDetails, editing, waterEditing]);
-          React.useEffect(() => {
-            if (!petMode || !petShowing) return;
+            if (!petMode || (!petShowing && !ui.menu)) return;
             const outside = (event) => {
-              if (!box.current?.contains(event.target) && !editing && !waterEditing)
-                setPetOpen(false);
+              if (ui.menu && !menuBox.current?.contains(event.target)) {
+                dispatchUI({ type: 'dismiss-menu' });
+                return;
+              }
+              if (box.current?.contains(event.target)) return;
+              if (ui.menu) dispatchUI({ type: 'dismiss-menu' });
+              else if (!editing && !waterEditing && !waterBusy)
+                dispatchUI({ type: 'navigate', screen: null });
             };
             document.addEventListener('pointerdown', outside);
             return () => document.removeEventListener('pointerdown', outside);
-          }, [petMode, petShowing, editing, waterEditing]);
+          }, [petMode, petShowing, ui.menu, editing, waterEditing, waterBusy]);
+          React.useEffect(() => {
+            if (ui.menu) menuBox.current?.querySelector('[role=menuitem]:not(:disabled)')?.focus();
+          }, [ui.menu]);
+          React.useEffect(() => {
+            if (!petMode || editing || waterEditing || ui.menu) return;
+            if (ui.pending) {
+              box.current?.querySelector('[data-keep-editing]')?.focus();
+              return;
+            }
+            if (ui.screen === null) box.current?.querySelector('.owc-pet-handle')?.focus();
+            else petPanel.current?.querySelector('[data-pet-page-title]')?.focus();
+          }, [ui.screen]);
+
+          const draftGuard = () =>
+            h(
+              'div',
+              {
+                className: 'owc-pet-unsaved',
+                'data-nav-confirm': true,
+                role: 'alertdialog',
+                'aria-label': t('petUnsaved'),
+              },
+              h('h3', null, t('petUnsaved')),
+              h('p', null, t('petUnsavedHint')),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'owc-primary',
+                  disabled: busy || waterBusy,
+                  onClick: saveAndContinue,
+                },
+                t('petSaveContinue'),
+              ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  disabled: busy || waterBusy,
+                  onClick: () => performNavigation(ui.pending.screen),
+                },
+                t('petDiscard'),
+              ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  'data-keep-editing': true,
+                  disabled: busy || waterBusy,
+                  onClick: () => dispatchUI({ type: 'stay' }),
+                },
+                t('petKeepEditing'),
+              ),
+            );
+          const petPageTitle = {
+            home: 'companionName',
+            income: 'petDetails',
+            water: 'petWaterSettings',
+            appearance: 'petAppearance',
+            schedule: 'petWorkSettings',
+          };
+          const petHeader = () =>
+            h(
+              'div',
+              { className: 'owc-head' },
+              ui.screen !== 'home' &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-text',
+                    disabled: busy || waterBusy,
+                    onClick: () => navigateScreen(editing || waterEditing ? ui.back : 'home'),
+                    'aria-label': t('petBack'),
+                  },
+                  '← ',
+                  t('petBack'),
+                ),
+              h(
+                'strong',
+                { 'data-pet-page-title': true, tabIndex: -1, style: { flex: 1, fontSize: 12 } },
+                t(petPageTitle[ui.screen] || 'waterTitle'),
+              ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'owc-icon',
+                  'aria-label': t('petCloseAll'),
+                  disabled: busy || waterBusy,
+                  onClick: closePetPanel,
+                },
+                iconSvg('close', 14),
+              ),
+            );
+          const petHome = () =>
+            h(
+              'div',
+              { className: 'owc-pet-home', 'data-pet-home': true },
+              h(
+                'div',
+                { className: 'owc-pet-home-clock' },
+                t(safeState.status),
+                h('strong', null, duration),
+              ),
+              h(
+                'div',
+                {
+                  className: 'owc-pet-water-card' + (waterPrompt ? ' owc-water-due' : ''),
+                  'data-water-event': waterPrompt ? waterState.eventId : undefined,
+                },
+                h(
+                  'p',
+                  { className: 'owc-water-status', 'data-water-status': true },
+                  waterPrompt
+                    ? t('waterDue')
+                    : waterState.phase === 'quiet'
+                      ? t('petQuietActive')
+                      : waterSummary(),
+                ),
+                h(
+                  'div',
+                  { className: 'owc-pet-water-row' },
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'owc-primary',
+                      disabled: !waterCanRecord || waterBusy,
+                      onClick: recordWater,
+                    },
+                    t('petRecord'),
+                  ),
+                  h(
+                    'span',
+                    { 'data-water-count': true },
+                    t('waterCount') + ': ' + waterState.count,
+                  ),
+                ),
+              ),
+              h(
+                'div',
+                { className: 'owc-pet-quiet-row' },
+                [30, 60].map((minutes) =>
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      key: minutes,
+                      disabled: !waterCanQuiet || waterBusy,
+                      onClick: () => waterAction({ type: 'quiet', minutes }),
+                    },
+                    t(minutes === 30 ? 'petQuiet30' : 'petQuiet60'),
+                  ),
+                ),
+              ),
+              h(
+                'div',
+                { className: 'owc-pet-quiet-status' },
+                waterPrompt
+                  ? h(
+                      'button',
+                      {
+                        type: 'button',
+                        disabled: waterBusy,
+                        onClick: () => waterAction({ type: 'snooze', eventId: waterState.eventId }),
+                      },
+                      t('waterSnooze'),
+                    )
+                  : water.shift?.paused
+                    ? h(
+                        'button',
+                        {
+                          type: 'button',
+                          disabled: waterBusy,
+                          onClick: () => waterAction({ type: 'resume' }),
+                        },
+                        t('petResume'),
+                      )
+                    : waterState.phase === 'quiet'
+                      ? h(
+                          React.Fragment,
+                          null,
+                          t('waterQuiet') +
+                            ' · ' +
+                            formatDuration(waterState.quietRemaining / 1000),
+                          h(
+                            'button',
+                            {
+                              type: 'button',
+                              disabled: waterBusy,
+                              onClick: () => waterAction({ type: 'end-quiet' }),
+                            },
+                            t('waterQuietEnd'),
+                          ),
+                        )
+                      : t('petQuietHint'),
+              ),
+              h(
+                'div',
+                { className: 'owc-pet-feedback' },
+                waterNotice
+                  ? t(waterNotice.key)
+                  : waterError
+                    ? t('waterUnavailable')
+                    : t('petHomeHint'),
+              ),
+              waterError &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    disabled: waterBusy,
+                    onClick: () => waterAction({ type: 'retry' }),
+                  },
+                  t('waterRetry'),
+                ),
+              h(
+                'div',
+                { className: 'owc-pet-home-links' },
+                [
+                  ['income', 'petDetails'],
+                  ['water', 'petWaterSettings'],
+                  ['appearance', 'petAppearance'],
+                  ['schedule', 'petWorkSettings'],
+                ].map(([screen, label]) =>
+                  h(
+                    'button',
+                    {
+                      key: screen,
+                      type: 'button',
+                      onClick: (event) => navigateScreen(screen, event),
+                    },
+                    t(label),
+                  ),
+                ),
+              ),
+            );
+          const contextMenu = () =>
+            ui.menu &&
+            h(
+              'div',
+              {
+                ref: menuBox,
+                className: 'owc-pet-context',
+                role: 'menu',
+                'aria-label': t('petMenu'),
+                style: petMenuLayout(ui.menu, viewport, {
+                  x: petGeometry.x,
+                  y: petGeometry.y,
+                  width: petGeometry.petWidth,
+                  height: petGeometry.petHeight,
+                }),
+                onBlur: (event) => {
+                  if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget))
+                    dispatchUI({ type: 'dismiss-menu' });
+                },
+                onKeyDown: (event) => {
+                  if (event.key === 'Escape') {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    closePetMenu();
+                    return;
+                  }
+                  const items = [
+                    ...event.currentTarget.querySelectorAll('[role=menuitem]:not(:disabled)'),
+                  ];
+                  const index = items.indexOf(document.activeElement);
+                  const next =
+                    event.key === 'ArrowDown'
+                      ? (index + 1) % items.length
+                      : event.key === 'ArrowUp'
+                        ? (index + items.length - 1) % items.length
+                        : event.key === 'Home'
+                          ? 0
+                          : event.key === 'End'
+                            ? items.length - 1
+                            : -1;
+                  if (next >= 0) {
+                    event.preventDefault();
+                    event.stopPropagation();
+                    items[next]?.focus();
+                  }
+                },
+              },
+              [
+                ['appearance', 'petAppearance'],
+                ['water', 'petWaterSettings'],
+                ['schedule', 'petWorkSettings'],
+              ].map(([screen, label]) =>
+                h(
+                  'button',
+                  {
+                    key: screen,
+                    type: 'button',
+                    role: 'menuitem',
+                    tabIndex: -1,
+                    disabled: busy || waterBusy,
+                    onClick: (event) => navigateScreen(screen, event),
+                  },
+                  t(label),
+                ),
+              ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  role: 'menuitem',
+                  tabIndex: -1,
+                  disabled:
+                    !water.enabled ||
+                    busy ||
+                    waterBusy ||
+                    waterError ||
+                    !waterContext ||
+                    water.shift?.id !== waterContext.id,
+                  onClick: () => {
+                    closePetMenu();
+                    void waterAction({ type: water.shift?.paused ? 'resume' : 'pause' });
+                  },
+                },
+                t(water.shift?.paused ? 'waterResume' : 'waterPause'),
+              ),
+              h('hr', null),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  role: 'menuitem',
+                  tabIndex: -1,
+                  onClick: () => {
+                    setPreference({ petPosition: null });
+                    closePetMenu();
+                  },
+                },
+                t('reset'),
+              ),
+            );
 
           if (petMode)
             return h(
@@ -2441,12 +2896,16 @@ window.__ModuleLoader__.load({
                 onContextMenuCapture: openAppearanceContext,
                 onKeyDown: (event) => {
                   if (appearanceShortcut(event)) return;
-                  if (event.key !== 'Escape' || event.defaultPrevented || waterBusy || busy) return;
+                  if (event.key !== 'Escape' || event.defaultPrevented) return;
                   event.preventDefault();
                   event.stopPropagation();
-                  if (waterEditing) closeWaterEditor();
-                  else if (editing) closeEditor();
-                  else closePetPanel();
+                  if (ui.menu) closePetMenu();
+                  else if (busy || waterBusy) return;
+                  else if (ui.pending) dispatchUI({ type: 'stay' });
+                  else if (editing || waterEditing) navigateScreen(ui.back);
+                  else if (petShowing) closePetPanel();
+                  else if (waterPrompt)
+                    void waterAction({ type: 'snooze', eventId: waterState.eventId });
                 },
               },
               h('style', null, STYLE),
@@ -2480,75 +2939,86 @@ window.__ModuleLoader__.load({
                   ['done', 'rest'].includes(safeState.status) ? null : h('strong', null, duration),
                 ),
               ),
+              contextMenu(),
+              !petShowing &&
+                !waterPrompt &&
+                waterNotice &&
+                h(
+                  'div',
+                  {
+                    className: 'owc-pet-toast',
+                    'aria-hidden': true,
+                    style: {
+                      left: Math.max(
+                        12,
+                        Math.min(
+                          petGeometry.x + petGeometry.petWidth / 2 - 104,
+                          viewport.width - 220,
+                        ),
+                      ),
+                      top: Math.max(12, petGeometry.y - 56),
+                    },
+                  },
+                  t(waterNotice.key),
+                ),
               petFloating &&
                 h(
                   'div',
                   {
                     ref: petPanel,
-                    className: 'owc-pet-panel',
+                    className: 'owc-pet-panel owc-pet-workspace',
                     'data-pet-panel': petShowing ? 'open' : 'bubble',
-                    'data-side': petGeometry.panel.side,
+                    'data-pet-screen': ui.screen || 'reminder',
+                    'data-side': floatingPanel.side,
                     role: 'region',
-                    'aria-label': t('petOpen'),
+                    'aria-label': t(petPageTitle[ui.screen] || 'waterTitle'),
                     style: {
-                      left: petGeometry.panel.left,
-                      top: petGeometry.panel.top,
-                      width: petGeometry.panel.width,
-                      maxHeight: petGeometry.panel.maxHeight,
+                      left: floatingPanel.left,
+                      top: floatingPanel.top,
+                      width: floatingPanel.width,
+                      height: Math.min(petShowing ? 440 : 150, floatingPanel.maxHeight),
+                      maxHeight: floatingPanel.maxHeight,
                     },
                   },
                   h('div', { className: 'owc-glass', 'aria-hidden': true }),
+                  petShowing
+                    ? petHeader()
+                    : h(
+                        'div',
+                        { className: 'owc-head' },
+                        h('strong', { style: { flex: 1, fontSize: 12 } }, t('waterTitle')),
+                        h(
+                          'button',
+                          {
+                            type: 'button',
+                            className: 'owc-icon',
+                            'aria-label': t('waterSnooze'),
+                            disabled: waterBusy,
+                            onClick: () =>
+                              waterAction({ type: 'snooze', eventId: waterState.eventId }),
+                          },
+                          iconSvg('close', 14),
+                        ),
+                      ),
                   h(
                     'div',
-                    { className: 'owc-content' },
+                    { className: 'owc-pet-scroll' },
                     petShowing
                       ? h(
                           React.Fragment,
                           null,
-                          panelHead(),
-                          !editing &&
-                            !waterEditing &&
-                            h(
-                              'div',
-                              { className: 'owc-pet-tabs' },
-                              [false, true].map((details) =>
-                                h(
-                                  'button',
-                                  {
-                                    key: String(details),
-                                    type: 'button',
-                                    'aria-pressed': petDetails === details,
-                                    onClick: () => setPetDetails(details),
-                                  },
-                                  t(details ? 'petDetails' : 'petQuick'),
-                                ),
-                              ),
-                            ),
-                          waterEditing
-                            ? waterSettings()
-                            : editing
-                              ? editor()
-                              : h(
-                                  React.Fragment,
-                                  null,
-                                  petDetails && companionCard(true),
-                                  petDetails && panelBody(),
-                                  waterOverview(),
-                                  waterReminder(),
-                                  !petDetails &&
-                                    companion.message &&
-                                    h('div', { className: 'owc-pet-speech' }, t(companion.message)),
-                                ),
+                          ui.pending
+                            ? draftGuard()
+                            : waterEditing
+                              ? waterSettings()
+                              : editing
+                                ? editor()
+                                : petDetails
+                                  ? h(React.Fragment, null, waterReminder(), panelBody())
+                                  : petHome(),
                           notices(),
                         )
-                      : waterPrompt
-                        ? waterReminder()
-                        : h(
-                            'div',
-                            { className: 'owc-pet-speech' },
-                            h('strong', null, t('companionName')),
-                            waterNotice && t(waterNotice.key),
-                          ),
+                      : waterReminder(),
                   ),
                 ),
             );
@@ -2572,7 +3042,21 @@ window.__ModuleLoader__.load({
               onPointerCancel: dragEnd,
               onLostPointerCapture: dragEnd,
               onContextMenuCapture: openAppearanceContext,
-              onKeyDown: appearanceShortcut,
+              onKeyDown: (event) => {
+                if (
+                  appearanceShortcut(event) ||
+                  event.key !== 'Escape' ||
+                  event.defaultPrevented ||
+                  busy ||
+                  waterBusy
+                )
+                  return;
+                event.preventDefault();
+                if (ui.pending) dispatchUI({ type: 'stay' });
+                else if (editing || waterEditing) navigateScreen(ui.back);
+                else if (waterQuickOpen) closeWaterQuick();
+                else setPreference({ mini: true });
+              },
             },
             h('style', null, STYLE),
             h('div', { className: 'owc-glass', 'aria-hidden': 'true' }),
@@ -2608,7 +3092,13 @@ window.__ModuleLoader__.load({
                     null,
                     panelHead(),
                     !editing && !waterEditing && companionCard(),
-                    waterEditing ? waterSettings() : editing ? editor() : panelBody(),
+                    ui.pending
+                      ? draftGuard()
+                      : waterEditing
+                        ? waterSettings()
+                        : editing
+                          ? editor()
+                          : panelBody(),
                     notices(),
                     !editing && !waterEditing && waterOverview(),
                   ),

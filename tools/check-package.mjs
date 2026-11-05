@@ -70,6 +70,7 @@ for (const path of [
   'client.js',
   'companion.js',
   'pet-view.js',
+  'pet-interactions.js',
   'hydration.js',
   'hydration-store.js',
   'cordis.patch.yml',

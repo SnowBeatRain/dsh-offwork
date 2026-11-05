@@ -42,7 +42,7 @@
 
 ## 测试与资料
 
-- 最近 `npm run check` 通过，113 项测试；格式、生成物一致性、语法和打包检查均通过。
+- 最近 `npm run check` 通过，119 项测试；格式、生成物一致性、语法和打包检查均通过。
 - 隔离 Harness `0.2.1-rc.5` + Headless Chromium 验证了间隔选择、实际触发、刷新、并发、存储错误、作息变更和秒级倒计时。
 - 测试工具缓存与脚本：`/tmp/offwork-hydration-ux`，独立 Harness 已停止，可由 `start.py` 重启。私有启动地址在 `state.json`，不要打印或分享。
 - 使用前核对旧测试脚本的 UI 选择器是否仍匹配。不要用用户浏览器的 IndexedDB 作为测试夹具。
@@ -74,6 +74,19 @@
 - 默认位置也会在内容增高时限制在视口内；外部点击只在整个组件之外关闭快捷区，避免内部按钮在 pointerdown 时移位。
 - 110 项检查通过；隔离浏览器脚本 `companion-test.cjs`、`companion-edges.cjs` 和截图位于 `/tmp/offwork-hydration-ux`。两份研究与复审位于 `/tmp/offwork-companion-research`。
 - 详细规则、截图和验收见 `docs/COMPANION.md`。仍保持包版本及客户端标记 `1.0.1`，不推送或发布。
+
+## 最新：交互重构（覆盖此前右键直达外观等旧规则）
+
+用户反馈整体体验差，授权重新处理交互。当前分支 refactor/pet-interactions，仍只更新本地开发环境，保持 1.0.1、不推送或发布。
+
+- 新增 pet-interactions.js，使用纯 reducer 管理唯一 screen（null/home/income/water/appearance/schedule）、back、menu、pending。旧 editing/waterEditing/appearanceOnly/petOpen 等由 screen 派生，不再独立设置。
+- 左键总是回主页；右键显示真正的小菜单（外观、提醒、作息、本班暂停/恢复、复位），菜单避开宠物并支持键盘。返回、关闭、Escape 分层处理。
+- 固定面板边界与标题栏，内容滚动；主页打卡/免打扰按钮位置不随反馈变化。外观尺寸预览期间固定面板，应用后重新定位。
+- 内部导航保护提醒、薪资、外观草稿，提供保存并继续/放弃/继续编辑。失败留在原编辑页保留值；实际失败存储恢复后可重试。
+- appearanceDraft 与 savedView 分开，预览不写 localStorage，Apply 只提交变化字段，Cancel 还原。模式切换应用后生效；卡片模式提供内嵌角色预览。
+- 关闭到期气泡会执行现有 10 个工作分钟稍后动作，避免关闭后立即重现。拖动中只更新临时位置，松开才持久化。
+- 119 项检查通过。/tmp/offwork-hydration-ux/ux-test.cjs 与 ux-multitab.cjs 覆盖连续导航、稳定布局、失败重试、跨标签草稿/偏好与单提醒。研究及复审在 /tmp/offwork-pet-ux-review。
+- 最新说明与截图以 docs/PET-PREVIEW.md 为准。早期的“右键直接打开外观”“外观设置即时保存”等描述仅是历史记录。
 
 ## 最新任务：独立宠物预览
 
