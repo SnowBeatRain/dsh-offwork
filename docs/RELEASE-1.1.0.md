@@ -34,4 +34,16 @@ Host薪资配置文件保持原格式。喝水存储支持schema 1→2事务迁�
 - [GitHub Release v1.1.0](https://github.com/SnowBeatRain/dsh-offwork/releases/tag/v1.1.0)
 - [发布工作流](https://github.com/SnowBeatRain/dsh-offwork/actions/workflows/publish.yml)
 
-通过主分支和v1.1.0标签触发仓库现有发布流程。最终检查npm的latest标签、发布压缩包完整性与GitHub发布结果。
+## 本轮发布结果
+
+- 发布提交：`59efb26`，已推送主分支及 `v1.1.0` 标签。
+- [标签发布工作流](https://github.com/SnowBeatRain/dsh-offwork/actions/runs/42000649482) 的测试与 publish 任务均成功。npm 日志确认接收 `dsh-offwork@1.1.0`，同时提示包正在服务端处理中。
+- GitHub Release 已公开，附带 `dsh-offwork-1.1.0.tgz`。从公开 Release 下载的文件与本地验证包 SHA-512 完全一致。
+- 指定开发环境已更新为 1.1.0，服务正常。
+- 截至 2026-11-05 09:24 UTC，npm 公共注册表仍返回 latest=1.0.1，新版本下载地址尚未可用；此时不能标记为 npm 下载验证通过。可先使用 GitHub Release 安装包，后续以注册表实际状态为准。
+
+安装包 SHA-512：
+
+```text
+sha512-dE28YocLUUYhkRLu+3kdjPBqbabcAEXIxQwHFcvXcynawQqMCpkMtaUaPOTtuycQrx1FiYcIlRzclSQ6hMr2pg==
+```

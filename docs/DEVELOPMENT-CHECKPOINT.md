@@ -6,7 +6,7 @@
 
 用户明确要求将当前成果发布为1.1.0，已授权本轮更新版本、合并主分支、推送、创建标签和发布npm/GitHub Release。此指示覆盖下文历史阶段的“不改版本、不发布”限制。当前发布分支release/1.1.0，功能基线c7857d6。两张用户提供立绘按本次发布指示随包分发，素材说明已同步更新。
 
-发布与验证见 docs/RELEASE-1.1.0.md；使用现有GitHub Actions发布流程，完成后核对npm latest、压缩包与源码一致性。以下内容保留为开发历史。
+发布与验证见 docs/RELEASE-1.1.0.md。发布提交59efb26已推送main和v1.1.0；GitHub Actions 42000649482成功，GitHub Release及附件已公开，附件校验一致，开发实例已升级。npm明确返回包已接收、正在处理中；截至09:24 UTC，公开latest仍1.0.1且1.1.0下载404，未冒充下载验证通过。只读监测与验证脚本 /tmp/offwork-release-1.1.0/verify.py，结果归档 offwork-hydration-artifacts/release-1.1.0；后续先检查registry.json/registry-watch.log，再决定是否更新发布结果文档。不要重复发布同一版本。以下内容保留为开发历史。
 
 ## 最新：鲸系少女外观（feature/whale-character）
 
