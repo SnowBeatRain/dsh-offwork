@@ -707,6 +707,8 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
         waterResume: '恢复本班提醒',
         waterCount: '本班打卡',
         waterManual: '喝了一杯',
+        waterQuick: '喝水快捷操作',
+        waterQuickClose: '收起喝水快捷操作',
         waterRecorded: '这杯记下啦。',
         waterRecordHint: '工作和午休期间可以打卡，关闭提醒也能记录。',
         waterActionStale: '状态已变化，请再试一次。',
@@ -822,6 +824,8 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
         waterResume: 'Resume this shift',
         waterCount: 'Drinks this shift',
         waterManual: 'Had a glass',
+        waterQuick: 'Quick water actions',
+        waterQuickClose: 'Close quick water actions',
         waterRecorded: 'Got it, your drink is recorded.',
         waterRecordHint: 'Check in during work or breaks, even with reminders off.',
         waterActionStale: 'The state changed. Please try again.',
@@ -862,6 +866,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
 .owc-v2{--owc-accent:color-mix(in srgb,var(--dsw-alias-brand-primary) 65%,#2563eb);pointer-events:auto;position:fixed;top:96px;right:24px;z-index:40;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);border-radius:20px;color:var(--dsw-alias-label-primary);font:13px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;cursor:grab;touch-action:manipulation;user-select:none;-webkit-user-select:none}
 .owc-v2:active{cursor:grabbing}
 .owc-v2.owc-compact{touch-action:none;border-radius:18px}
+.owc-v2.owc-compact.owc-quick{width:296px;touch-action:manipulation}
 .owc-v2:not(.owc-compact){width:296px}
 .owc-v2 :is(button,input,select,label,a){cursor:pointer;user-select:auto;-webkit-user-select:auto}
 .owc-v2 :is(input,select){user-select:text;-webkit-user-select:text}
@@ -1065,6 +1070,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           const [waterVisible, setWaterVisible] = React.useState(!document.hidden);
           const [waterInterval, setWaterInterval] = React.useState('60');
           const [waterEditing, setWaterEditing] = React.useState(false);
+          const [waterQuickOpen, setWaterQuickOpen] = React.useState(false);
           const [waterEnabledDraft, setWaterEnabledDraft] = React.useState(false);
           const waterPending = React.useRef(false);
           const manualAttempt = React.useRef(null);
@@ -1337,6 +1343,24 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             return () => clearTimeout(timer);
           }, [waterNotice]);
 
+          React.useEffect(() => {
+            if (!waterQuickOpen || !collapsed) return;
+            const closeOutside = (event) => {
+              if (!event.target.closest?.('[data-water-quick],.owc-pill-water'))
+                setWaterQuickOpen(false);
+            };
+            document.addEventListener('pointerdown', closeOutside);
+            return () => document.removeEventListener('pointerdown', closeOutside);
+          }, [waterQuickOpen, collapsed]);
+
+          function closeWaterQuick() {
+            setWaterQuickOpen(false);
+            (
+              box.current?.querySelector('.owc-pill-water') ||
+              box.current?.querySelector('.owc-grip')
+            )?.focus();
+          }
+
           function openWaterEditor(event) {
             waterPreferencesBase.current = { enabled: water.enabled, interval: water.interval };
             focusReturn.current = event?.currentTarget;
@@ -1469,6 +1493,8 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             if (!editing && !waterEditing) {
               if (!wasOpen) return;
               if (focusReturn.current?.isConnected) focusReturn.current.focus?.();
+              else if (waterQuickOpen)
+                box.current?.querySelector('[data-water-quick] .owc-text')?.focus?.();
               else box.current?.querySelector('.owc-grip,.owc-title')?.focus?.();
               focusReturn.current = null;
               return;
@@ -1845,10 +1871,25 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 ),
             );
 
-          const waterOverview = () =>
+          const waterOverview = (quick = false) =>
             h(
               'div',
-              { className: 'owc-water owc-water-overview', 'data-water-overview': true },
+              {
+                className: 'owc-water owc-water-overview',
+                'data-water-overview': true,
+                'data-water-quick': quick || undefined,
+                role: quick ? 'region' : undefined,
+                'aria-label': quick ? t('waterQuick') : undefined,
+                onKeyDown: quick
+                  ? (event) => {
+                      if (event.key === 'Escape') {
+                        event.preventDefault();
+                        event.stopPropagation();
+                        closeWaterQuick();
+                      }
+                    }
+                  : undefined,
+              },
               h(
                 'div',
                 { className: 'owc-water-head' },
@@ -1858,12 +1899,25 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   {
                     type: 'button',
                     className: 'owc-text',
+                    style: { marginLeft: 'auto' },
                     'aria-label': t('waterEdit'),
                     disabled: !waterReady || !data?.configured,
                     onClick: openWaterEditor,
                   },
                   t('settings'),
                 ),
+                quick &&
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'owc-icon',
+                      'aria-label': t('waterQuickClose'),
+                      title: t('waterQuickClose'),
+                      onClick: closeWaterQuick,
+                    },
+                    iconSvg('close', 14),
+                  ),
               ),
               h('p', { className: 'owc-water-status', 'data-water-status': true }, waterSummary()),
               h(
@@ -2100,7 +2154,10 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                     style: { marginLeft: 'auto' },
                     title: t('expand'),
                     'aria-label': t('expand'),
-                    onClick: () => setPreference({ mini: false }),
+                    onClick: () => {
+                      setWaterQuickOpen(false);
+                      setPreference({ mini: false });
+                    },
                   },
                   iconSvg('chevronUp', 14),
                 ),
@@ -2139,8 +2196,15 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                         {
                           type: 'button',
                           className: 'owc-pill-water',
-                          onClick: openWaterEditor,
-                          'aria-label': t('waterEdit'),
+                          onClick: () => setWaterQuickOpen((open) => !open),
+                          'aria-label': t('waterQuick'),
+                          'aria-expanded': waterQuickOpen,
+                          onKeyDown: (event) => {
+                            if (event.key === 'Escape' && waterQuickOpen) {
+                              event.preventDefault();
+                              closeWaterQuick();
+                            }
+                          },
                           title: waterSummary(),
                         },
                         iconSvg('water', 13),
@@ -2622,6 +2686,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               className:
                 'owc-v2' +
                 (collapsed ? ' owc-compact' : '') +
+                (collapsed && waterQuickOpen ? ' owc-quick' : '') +
                 (editing || waterEditing ? ' owc-editing' : ''),
               'aria-label': t('title'),
               'data-version': '1.0.1',
@@ -2639,7 +2704,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               'div',
               { className: 'owc-content' },
               collapsed
-                ? strip()
+                ? h(React.Fragment, null, strip(), waterQuickOpen && waterOverview(true))
                 : h(
                     React.Fragment,
                     null,

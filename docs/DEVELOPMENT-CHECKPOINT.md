@@ -15,7 +15,7 @@
 - 正式源码：`/opt/dsh/users/xxy/workspace/dsh/plugins/offwork-clock`，`main` 停在 `7df1465`。
 - 正在验收的开发目录：`/opt/dsh/users/xxy/workspace/dsh/offwork-hydration-dev`。
 - 开发分支：`feature/hydration-reminders`。本轮基线为 `5ba7602`，完成后快进到手动打卡与免打扰的实现提交。
-- 隔离修改目录：`/opt/dsh/users/xxy/workspace/dsh/offwork-hydration-ux`，本轮分支 `feature/hydration-checkins`。
+- 隔离修改目录：`/opt/dsh/users/xxy/workspace/dsh/offwork-hydration-ux`，当前追加的快捷入口分支 `fix/hydration-quick-actions`，从手动打卡与免打扰提交 `2f7325c` 开始。
 - 本地候选压缩包及验证输出：`/opt/dsh/users/xxy/workspace/dsh/offwork-hydration-artifacts`。
 - 用户 Web profile：`/opt/dsh/users/xxy/home/profiles/web`，其中 `dsh-offwork` 链接到开发目录。
 - 仅当隔离验证通过后快进开发分支，再重启 `dsh-user@xxy.service`。实例监听 `127.0.0.1:3080`，由网站 SSO 路由到该用户。
@@ -35,6 +35,7 @@
 - 作息变更以比较旧作息的条件授权处理，授权使用后消费。旧标签页不能通过 tick/release 等动作回写旧计划。
 - 喝水有独立设置页面。15/30/45/60/90/120 分钟预设+自定义，统一“保存提醒设置”，取消和返回不保存。不得恢复原先“薪资保存+应用间隔”混用交互。
 - 小条两行：下班倒计时；工资与喝水剩余时间。喝水倒计时必须逐秒显示 `05:00 → 04:59`，不能取整成“5 分钟”造成停滞观感。
+- 最新用户要求：把手动打卡放到点击小条喝水倒计时的位置。已改成原位快捷区，内含打卡、免打扰和设置；设置返回快捷区。支持再次点击、外部点击、关闭按钮和 Escape 收起，原完整展开卡片仍可用。隔离浏览器已验证操作、焦点、到期计数及 320px 窄屏。
 - 到期提示只出现一处，不抢输入焦点；本班暂停在展开面板中。
 - 模块经 `tools/build.mjs` 内联为 `client.js`，不要手改生成物。
 - package.json、package-lock.json、客户端 data-version 均保持 `1.0.1`。
