@@ -31,6 +31,11 @@ export function normalizeView(value) {
     masked: value?.masked !== false,
     companion: value?.companion !== false,
     companionMotion: value?.companionMotion !== false,
+    petSize: Math.min(180, Math.max(80, Number.isFinite(value?.petSize) ? value.petSize : 132)),
+    petPosition:
+      Number.isFinite(value?.petPosition?.x) && Number.isFinite(value?.petPosition?.y)
+        ? { x: value.petPosition.x, y: value.petPosition.y }
+        : null,
     opacity: clampOpacity(value?.opacity),
     position:
       Number.isFinite(value?.position?.x) && Number.isFinite(value?.position?.y)

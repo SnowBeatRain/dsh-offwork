@@ -69,6 +69,7 @@ for (const path of [
   'index.js',
   'client.js',
   'companion.js',
+  'pet-view.js',
   'hydration.js',
   'hydration-store.js',
   'cordis.patch.yml',

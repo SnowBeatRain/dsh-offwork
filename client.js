@@ -189,6 +189,11 @@ function normalizeView(value) {
     masked: value?.masked !== false,
     companion: value?.companion !== false,
     companionMotion: value?.companionMotion !== false,
+    petSize: Math.min(180, Math.max(80, Number.isFinite(value?.petSize) ? value.petSize : 132)),
+    petPosition:
+      Number.isFinite(value?.petPosition?.x) && Number.isFinite(value?.petPosition?.y)
+        ? { x: value.petPosition.x, y: value.petPosition.y }
+        : null,
     opacity: clampOpacity(value?.opacity),
     position:
       Number.isFinite(value?.position?.x) && Number.isFinite(value?.position?.y)
@@ -405,6 +410,208 @@ const COMPANION_STYLE = `
 .owc-companion-art[data-animate=true] .owc-companion-body{transform-origin:32px 52px;animation:owc-companion-thanks .65s ease-in-out 2}
 @keyframes owc-companion-thanks{0%,100%{transform:translateY(0) rotate(0)}40%{transform:translateY(-2px) rotate(-3deg)}70%{transform:translateY(0) rotate(2deg)}}
 @media(prefers-reduced-motion:reduce){.owc-companion-art *{animation:none!important;transition:none!important}}
+`;
+
+// Independent Harness pet presentation. No third-party pet code or assets.
+const PET_MODEL = Object.freeze({ id: 'xiaoxie-original', renderer: 'svg', license: 'MIT' });
+
+function petLayout(position, viewport, size = 132, contentHeight = 420) {
+  const edge = 12,
+    gap = 12;
+  const width = Math.max(1, viewport.width),
+    height = Math.max(1, viewport.height);
+  const artworkSize = Math.max(
+    1,
+    Math.min(
+      size,
+      Math.max(1, width - edge * 2),
+      Math.max(1, Math.floor((height - edge * 2 - 30) / 1.1)),
+    ),
+  );
+  const petWidth = Math.min(Math.max(1, width - edge * 2), Math.max(148, artworkSize));
+  const petHeight = Math.ceil(artworkSize * 1.1) + 30;
+  const bound = (n, max) => Math.max(Math.min(edge, max), Math.min(n, max));
+  const x = bound(
+    Number.isFinite(position?.x) ? position.x : width - petWidth - 32,
+    Math.max(0, width - petWidth - edge),
+  );
+  const y = bound(
+    Number.isFinite(position?.y) ? position.y : height - petHeight - 36,
+    Math.max(0, height - petHeight - edge),
+  );
+  const panelWidth = Math.min(296, Math.max(1, width - edge * 2));
+  let side =
+    x >= panelWidth + gap + edge
+      ? 'left'
+      : width - x - petWidth >= panelWidth + gap + edge
+        ? 'right'
+        : 'stack';
+  let maxHeight = Math.max(60, height - edge * 2);
+  let left = side === 'left' ? x - gap - panelWidth : x + petWidth + gap;
+  let top;
+  if (side === 'stack') {
+    left = Math.max(edge, Math.min(x + petWidth - panelWidth, width - panelWidth - edge));
+    const above = y - gap - edge;
+    const below = height - y - petHeight - gap - edge;
+    if (Math.max(above, below) < 48) {
+      side = 'overlay';
+      maxHeight = Math.max(1, height - edge * 2);
+      top = Math.min(edge, height / 2);
+    } else {
+      side = above >= below ? 'above' : 'below';
+      maxHeight = Math.max(48, side === 'above' ? above : below);
+      top = side === 'above' ? y - gap - Math.min(contentHeight, maxHeight) : y + petHeight + gap;
+    }
+  } else {
+    top = Math.max(
+      edge,
+      Math.min(y + petHeight - contentHeight, height - Math.min(contentHeight, maxHeight) - edge),
+    );
+  }
+  return {
+    x,
+    y,
+    petWidth,
+    artworkSize,
+    petHeight,
+    panel: { left, top: Math.max(0, top), width: panelWidth, maxHeight, side },
+  };
+}
+
+// Original full-body Xiaoxie: droplet body, small feet and a scarf.
+function petArtwork(h, presentation, size, reaction = '') {
+  const { pose, animate } = presentation;
+  const asleep = ['quiet', 'rest'].includes(pose);
+  const path = (d, props = {}) => h('path', { d, ...props });
+  return h(
+    'svg',
+    {
+      key: pose + ':' + reaction,
+      viewBox: '0 0 160 176',
+      width: size,
+      height: size * 1.1,
+      className: 'owc-pet-art',
+      'data-pose': pose,
+      'data-animate': animate,
+      'aria-hidden': true,
+      focusable: false,
+    },
+    h('ellipse', { cx: 80, cy: 160, rx: 42, ry: 6, fill: '#183b65', opacity: 0.13 }),
+    h(
+      'g',
+      {
+        className: 'owc-pet-body',
+        stroke: '#315b82',
+        strokeWidth: 2.2,
+        strokeLinecap: 'round',
+        strokeLinejoin: 'round',
+      },
+      h('ellipse', { cx: 58, cy: 148, rx: 12, ry: 8, fill: '#92cce2' }),
+      h('ellipse', { cx: 102, cy: 148, rx: 12, ry: 8, fill: '#92cce2' }),
+      path(
+        pose === 'happy' ? 'M36 86Q14 91 15 65Q28 65 43 76Z' : 'M36 87Q15 87 19 109Q31 113 44 99Z',
+        { fill: '#a4dcea' },
+      ),
+      path(
+        pose === 'happy'
+          ? 'M124 86Q146 91 145 65Q132 65 117 76Z'
+          : 'M124 87Q145 87 141 109Q129 113 116 99Z',
+        { fill: '#a4dcea' },
+      ),
+      path(
+        'M80 12C67 34 38 47 34 81C29 117 46 149 80 149C114 149 131 117 126 81C122 47 93 34 80 12Z',
+        { fill: '#c7eaf3' },
+      ),
+      path('M64 37Q48 53 44 69', { fill: 'none', stroke: '#fff', strokeWidth: 6, opacity: 0.8 }),
+      path('M46 113Q80 126 114 113L109 128Q79 137 51 127Z', { fill: '#fff1bc', stroke: '#b49454' }),
+      path('M102 123L113 145L100 147L92 127Z', { fill: '#ffe39b', stroke: '#b49454' }),
+      h('ellipse', { cx: 80, cy: 111, rx: 8, ry: 5, fill: '#e5f6fa', stroke: 'none' }),
+      asleep
+        ? path('M51 79Q59 85 67 79M93 79Q101 85 109 79', {
+            fill: 'none',
+            stroke: '#24425d',
+            strokeWidth: 3,
+          })
+        : h(
+            'g',
+            { fill: '#24425d', stroke: 'none' },
+            h('ellipse', { cx: 59, cy: 78, rx: 3.5, ry: 5 }),
+            h('ellipse', { cx: 101, cy: 78, rx: 3.5, ry: 5 }),
+          ),
+      path(
+        pose === 'happy'
+          ? 'M69 91Q80 108 91 91Z'
+          : pose === 'offline'
+            ? 'M74 95H86'
+            : 'M72 93Q80 101 88 93',
+        { fill: pose === 'happy' ? '#f19baf' : 'none', stroke: '#24425d', strokeWidth: 2.5 },
+      ),
+      h(
+        'g',
+        { fill: '#f0a2af', stroke: 'none', opacity: 0.65 },
+        h('ellipse', { cx: 46, cy: 91, rx: 8, ry: 4 }),
+        h('ellipse', { cx: 114, cy: 91, rx: 8, ry: 4 }),
+      ),
+      pose === 'drink' &&
+        h(
+          'g',
+          { fill: '#fff', stroke: '#44728f' },
+          path('M113 103H139L135 133H117Z'),
+          path('M140 108H146Q154 121 138 122', { fill: 'none' }),
+          path('M119 115H134', { stroke: '#6dc9e2', strokeWidth: 5 }),
+        ),
+      pose === 'quiet' &&
+        path('M122 32H135L122 44H135', { fill: 'none', stroke: '#67899c', strokeWidth: 3 }),
+    ),
+  );
+}
+
+const PET_MESSAGES = {
+  zh: {
+    petOpen: '打开宠物面板',
+    petClose: '收起宠物面板',
+    petQuick: '日常陪伴',
+    petDetails: '下班与收入',
+    petSize: '宠物大小',
+    petHint: '点击互动 · 拖动安置',
+    petMode: '宠物模式',
+    petClock: '下班倒计时',
+  },
+  en: {
+    petOpen: 'Open pet panel',
+    petClose: 'Close pet panel',
+    petQuick: 'Daily companion',
+    petDetails: 'Clock and earnings',
+    petSize: 'Pet size',
+    petHint: 'Click to interact · drag to move',
+    petMode: 'Pet mode',
+    petClock: 'Shift countdown',
+  },
+};
+
+const PET_STYLE = `
+.owc-v2.owc-pet-shell{border-radius:0;touch-action:none;cursor:default;overflow:visible}
+.owc-pet-stage{display:flex;flex-direction:column;align-items:center;position:relative}
+.owc-v2 button.owc-pet-handle{padding:0;background:none!important;border-radius:50%;min-height:0;display:block;cursor:grab;touch-action:none;line-height:0}
+.owc-v2 button.owc-pet-handle:active{cursor:grabbing}
+.owc-pet-art{overflow:visible;pointer-events:none;filter:drop-shadow(0 3px 5px #32557418)}
+.owc-pet-art[data-pose=offline]{opacity:.65}
+.owc-pet-art[data-animate=true] .owc-pet-body{transform-origin:80px 150px;animation:owc-pet-thanks .65s ease-in-out 2}
+@keyframes owc-pet-thanks{0%,100%{transform:translateY(0)}45%{transform:translateY(-4px) rotate(-3deg)}75%{transform:rotate(2deg)}}
+.owc-v2 button.owc-pet-clock{padding:4px 10px;min-height:26px;gap:5px;white-space:nowrap;border-radius:999px;font-size:11px;background:var(--dsw-alias-bg-overlay);border:1px solid color-mix(in srgb,var(--owc-accent) 25%,transparent);box-shadow:0 3px 12px #142e4812;font-variant-numeric:tabular-nums;max-width:100%;box-sizing:border-box;overflow:hidden}
+.owc-pet-clock-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.owc-pet-clock strong{flex:none}
+.owc-pet-panel{position:fixed;border-radius:20px;cursor:default;touch-action:manipulation;max-width:calc(100vw - 24px)}
+.owc-pet-panel>.owc-content{max-height:inherit}
+.owc-pet-panel .owc-glass{opacity:max(var(--owc-alpha),.94)}
+.owc-pet-tabs{display:flex;gap:5px;padding:8px 14px 0}
+.owc-pet-tabs button{flex:1;font-size:11px}
+.owc-pet-tabs button[aria-pressed=true]{color:var(--owc-accent);background:color-mix(in srgb,var(--owc-accent) 10%,transparent)}
+.owc-pet-time{padding:12px 17px 0;display:flex;align-items:center;justify-content:space-between;gap:8px;color:var(--dsw-alias-label-secondary);font-size:11px}
+.owc-pet-time strong{font-size:21px;color:var(--dsw-alias-label-primary);font-variant-numeric:tabular-nums}
+.owc-pet-speech{padding:12px 16px;font-size:12px;line-height:1.65}
+.owc-pet-speech strong{display:block;font-size:11px;color:var(--dsw-alias-label-secondary);margin-bottom:4px}
+@media(prefers-reduced-motion:reduce){.owc-pet-art *{animation:none!important;transition:none!important}}
 `;
 
 // Pure hydration rules. Time is measured in paid-work milliseconds from calculate().
@@ -815,6 +1022,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
     const messages = {
       zh: {
         ...COMPANION_MESSAGES.zh,
+        ...PET_MESSAGES.zh,
         title: '下班计时器',
         working: '距离下班',
         before: '距离开工',
@@ -932,6 +1140,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
       },
       en: {
         ...COMPANION_MESSAGES.en,
+        ...PET_MESSAGES.en,
         title: 'Offwork Clock',
         working: 'Until clock-out',
         before: 'Until work starts',
@@ -1171,7 +1380,9 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
 .owc-pill-water{font-size:11px!important;gap:4px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .owc-water-summary{justify-content:flex-start!important}
 @media(max-width:420px){.owc-pill{min-width:136px;padding:8px 8px 7px 12px}.owc-pill-status{display:none}.owc-pill-time{font-size:22px}.owc-main,.owc-form{padding-left:14px;padding-right:14px}.owc-time{font-size:31px}}
-` + COMPANION_STYLE;
+` +
+      COMPANION_STYLE +
+      PET_STYLE;
     const ICONS = {
       water: [
         ['path', { d: 'M8 1.5C6.6 4 3.5 7.1 3.5 10a4.5 4.5 0 0 0 9 0C12.5 7.1 9.4 4 8 1.5Z' }],
@@ -1249,6 +1460,15 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           const [view, setView] = React.useState(normalizeView(null));
           const [ready, setReady] = React.useState(false);
           const box = React.useRef(null);
+          const petPanel = React.useRef(null);
+          const petDragged = React.useRef(false);
+          const [petOpen, setPetOpen] = React.useState(false);
+          const [petDetails, setPetDetails] = React.useState(false);
+          const [petPanelHeight, setPetPanelHeight] = React.useState(420);
+          const [viewport, setViewport] = React.useState({
+            width: window.innerWidth,
+            height: window.innerHeight,
+          });
           const dragState = React.useRef(null);
           const lastPosition = React.useRef(null);
           const generation = React.useRef(0);
@@ -1268,6 +1488,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           const manualAttempt = React.useRef(null);
           const waterPreferencesBase = React.useRef(null);
           const editorWasOpen = React.useRef(false);
+          const previousPetMode = React.useRef(null);
           const [waterInvalid, setWaterInvalid] = React.useState(false);
           const [waterConfirm, setWaterConfirm] = React.useState(null);
           const [waterNotice, setWaterNotice] = React.useState(false);
@@ -1289,8 +1510,16 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           const state = settings ? safeCalculate(settings) : null;
           const preview = workingDraft ? safeCalculate(workingDraft) : null;
           const safeState = state && !state.error ? state : null;
+          const petMode = ready && view.companion && data?.configured && !!safeState;
+          const petGeometry = petLayout(view.petPosition, viewport, view.petSize, petPanelHeight);
           const collapsed =
-            !!safeState && !editing && !waterEditing && view.mini && !error && !state?.error;
+            !petMode &&
+            !!safeState &&
+            !editing &&
+            !waterEditing &&
+            view.mini &&
+            !error &&
+            !state?.error;
           const seconds = safeState
             ? safeState.status === 'before'
               ? safeState.startRemaining
@@ -1651,19 +1880,22 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   setWaterEnabledDraft(false);
                   setWaterInvalid(false);
                 }
-                if (hadFocus || ['end-quiet', 'clear-count', 'reset'].includes(action.type)) {
+                if (
+                  hadFocus ||
+                  ['manual-drink', 'end-quiet', 'clear-count', 'reset'].includes(action.type)
+                ) {
                   requestAnimationFrame(() => {
                     const active = document.activeElement;
-                    if (
-                      active !== actionFocus &&
-                      (actionFocus?.isConnected || active?.tagName !== 'BODY')
-                    )
-                      return;
+                    if (active !== actionFocus && active?.tagName !== 'BODY') return;
                     const target = hadFocus
-                      ? '.owc-grip,.owc-title'
-                      : action.type === 'end-quiet'
-                        ? '.owc-water-quiet summary'
-                        : '.owc-water-form details > summary';
+                      ? petMode
+                        ? '.owc-pet-handle'
+                        : '.owc-grip,.owc-title'
+                      : action.type === 'manual-drink'
+                        ? '.owc-water-actions .owc-primary'
+                        : action.type === 'end-quiet'
+                          ? '.owc-water-quiet summary'
+                          : '.owc-water-form details > summary';
                     box.current?.querySelector(target)?.focus();
                   });
                 }
@@ -1706,7 +1938,12 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           React.useEffect(() => {
             const resize = () => {
               const rect = box.current?.getBoundingClientRect();
-              if (!rect) return;
+              setViewport((current) =>
+                current.width === window.innerWidth && current.height === window.innerHeight
+                  ? current
+                  : { width: window.innerWidth, height: window.innerHeight },
+              );
+              if (!rect || petMode) return;
               setView((current) => {
                 const previous = current.position ?? { x: rect.left, y: rect.top };
                 const position = clamp(previous);
@@ -1722,22 +1959,29 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               ro?.disconnect();
               window.removeEventListener('resize', resize);
             };
-          }, [clamp]);
+          }, [clamp, petMode]);
 
           React.useEffect(() => {
             const wasOpen = editorWasOpen.current;
+            const modeChanged = previousPetMode.current !== petMode;
+            previousPetMode.current = petMode;
             editorWasOpen.current = editing || waterEditing;
+            if (editing && modeChanged) {
+              box.current?.querySelector('input[name=companion]')?.focus();
+              return;
+            }
             if (!editing && !waterEditing) {
               if (!wasOpen) return;
               if (focusReturn.current?.isConnected) focusReturn.current.focus?.();
               else if (waterQuickOpen)
                 box.current?.querySelector('[data-water-quick] .owc-text')?.focus?.();
+              else if (petMode) box.current?.querySelector('.owc-pet-handle')?.focus?.();
               else box.current?.querySelector('.owc-grip,.owc-title')?.focus?.();
               focusReturn.current = null;
               return;
             }
             box.current?.querySelector('form input,form select')?.focus?.();
-          }, [editing, waterEditing]);
+          }, [editing, waterEditing, petMode]);
 
           React.useEffect(
             () => () => {
@@ -1820,15 +2064,21 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
 
           function commitPosition(position) {
             const next = clamp(position);
-            setPreference({ position: next });
+            setPreference(petMode ? { petPosition: next } : { position: next });
             lastPosition.current = next;
           }
           function dragDown(e) {
             if (e.button !== 0) return;
+            petDragged.current = false;
             if (
-              e.target.closest?.('button,input,select,label,a,textarea,summary,[contenteditable]')
+              petMode
+                ? !e.target.closest?.('.owc-pet-handle')
+                : e.target.closest?.(
+                    'button,input,select,label,a,textarea,summary,[contenteditable]',
+                  )
             )
               return;
+            const capture = petMode ? e.target.closest('.owc-pet-handle') : e.currentTarget;
             const rect = box.current.getBoundingClientRect();
             dragState.current = {
               dx: e.clientX - rect.left,
@@ -1836,9 +2086,10 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               x0: e.clientX,
               y0: e.clientY,
               moved: false,
+              capture,
             };
             try {
-              e.currentTarget.setPointerCapture?.(e.pointerId);
+              capture.setPointerCapture?.(e.pointerId);
             } catch {}
           }
           function dragMove(e) {
@@ -1846,7 +2097,9 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             if (!d) return;
             if (!d.moved && Math.abs(e.clientX - d.x0) + Math.abs(e.clientY - d.y0) < 4) return;
             d.moved = true;
+            petDragged.current = true;
             const next = clamp({ x: e.clientX - d.dx, y: e.clientY - d.dy });
+            if (petMode) setPreference({ petPosition: next });
             lastPosition.current = next;
             if (box.current) {
               box.current.style.left = next.x + 'px';
@@ -1858,16 +2111,18 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             const d = dragState.current;
             if (!d) return;
             dragState.current = null;
+            if (e.type === 'pointercancel' || e.type === 'lostpointercapture')
+              petDragged.current = false;
             if (d.moved && lastPosition.current) commitPosition(lastPosition.current);
             try {
-              if (e.currentTarget.hasPointerCapture?.(e.pointerId))
-                e.currentTarget.releasePointerCapture(e.pointerId);
+              if (d.capture?.hasPointerCapture?.(e.pointerId))
+                d.capture.releasePointerCapture(e.pointerId);
             } catch {}
           }
           function gripKeys(e) {
             if (e.key === 'Home') {
               e.preventDefault();
-              setPreference({ position: null });
+              setPreference(petMode ? { petPosition: null } : { position: null });
               return;
             }
             if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(e.key)) return;
@@ -2565,7 +2820,9 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   ? t('waterTitle')
                   : editing
                     ? t(data?.configured ? 'settings' : 'setup')
-                    : t('title'),
+                    : petMode
+                      ? t('companionName')
+                      : t('title'),
               ),
               waterEditing
                 ? h(
@@ -2614,9 +2871,10 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                         {
                           type: 'button',
                           className: 'owc-icon',
-                          title: t('collapse'),
-                          'aria-label': t('collapse'),
-                          onClick: () => setPreference({ mini: true }),
+                          title: t(petMode ? 'petClose' : 'collapse'),
+                          'aria-label': t(petMode ? 'petClose' : 'collapse'),
+                          onClick: () =>
+                            petMode ? closePetPanel() : setPreference({ mini: true }),
                         },
                         iconSvg('chevronDown'),
                       ),
@@ -2737,7 +2995,8 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   {
                     type: 'button',
                     className: 'owc-text',
-                    onClick: () => setPreference({ position: null }),
+                    onClick: () =>
+                      setPreference(petMode ? { petPosition: null } : { position: null }),
                   },
                   t('reset'),
                 ),
@@ -2922,10 +3181,11 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   { className: 'owc-check' },
                   h('input', {
                     type: 'checkbox',
+                    name: 'companion',
                     checked: view.companion,
                     onChange: (event) => setPreference({ companion: event.target.checked }),
                   }),
-                  t('companionShow'),
+                  t('petMode'),
                 ),
                 h(
                   'label',
@@ -2937,6 +3197,19 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                     onChange: (event) => setPreference({ companionMotion: event.target.checked }),
                   }),
                   t('companionMotion'),
+                ),
+                label(
+                  t('petSize'),
+                  h('input', {
+                    type: 'range',
+                    min: '80',
+                    max: '180',
+                    step: '4',
+                    value: view.petSize,
+                    'aria-label': t('petSize'),
+                    disabled: !view.companion,
+                    onChange: (event) => setPreference({ petSize: event.target.valueAsNumber }),
+                  }),
                 ),
                 h('p', { className: 'owc-hint' }, t('companionPreferences')),
                 label(
@@ -3018,6 +3291,203 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               state?.error && h('p', { className: 'owc-error', role: 'alert' }, state.error),
               notice && h('p', { className: 'owc-note', role: 'status' }, notice),
               storageError && h('p', { className: 'owc-note' }, t('storage')),
+            );
+
+          function closePetPanel() {
+            if (waterBusy || busy) return;
+            setPetOpen(false);
+            box.current?.querySelector('.owc-pet-handle')?.focus();
+          }
+          function togglePetPanel(event) {
+            if (petDragged.current && event.detail !== 0) {
+              petDragged.current = false;
+              return;
+            }
+            if (editing || waterEditing) return;
+            if (petOpen) closePetPanel();
+            else {
+              setPetOpen(true);
+              requestAnimationFrame(() =>
+                (
+                  petPanel.current?.querySelector('.owc-primary:not(:disabled)') ||
+                  petPanel.current?.querySelector('.owc-title')
+                )?.focus(),
+              );
+            }
+          }
+          const liveFeedback = () =>
+            h(
+              'span',
+              { className: 'owc-sr-only', role: 'status', 'aria-atomic': true },
+              h(
+                'span',
+                {
+                  key: waterPrompt
+                    ? waterState.eventId
+                    : (waterNotice?.token ?? waterNotice?.key ?? 'idle'),
+                },
+                waterPrompt ? t('waterDue') : waterNotice ? t(waterNotice.key) : '',
+              ),
+            );
+          const petShowing = petOpen || editing || waterEditing;
+          const petFloating = petShowing || waterPrompt || !!waterNotice;
+          React.useEffect(() => {
+            if (!petMode || !petFloating || !petPanel.current) return;
+            const element = petPanel.current;
+            const measure = () =>
+              setPetPanelHeight((previous) =>
+                previous === element.offsetHeight ? previous : element.offsetHeight,
+              );
+            const observer =
+              typeof ResizeObserver === 'function' ? new ResizeObserver(measure) : null;
+            observer?.observe(element);
+            measure();
+            return () => observer?.disconnect();
+          }, [petMode, petFloating, petShowing, petDetails, editing, waterEditing]);
+          React.useEffect(() => {
+            if (!petMode || !petShowing) return;
+            const outside = (event) => {
+              if (!box.current?.contains(event.target) && !editing && !waterEditing)
+                setPetOpen(false);
+            };
+            document.addEventListener('pointerdown', outside);
+            return () => document.removeEventListener('pointerdown', outside);
+          }, [petMode, petShowing, editing, waterEditing]);
+
+          if (petMode)
+            return h(
+              'section',
+              {
+                ref: box,
+                className: 'owc-v2 owc-pet-shell',
+                'data-version': '1.0.1',
+                'data-pet-model': PET_MODEL.id,
+                'data-status': safeState.status,
+                'aria-label': t('companionLabel'),
+                style: {
+                  '--owc-alpha': String(view.opacity),
+                  left: petGeometry.x,
+                  top: petGeometry.y,
+                  right: 'auto',
+                  width: petGeometry.petWidth,
+                  height: petGeometry.petHeight,
+                },
+                onPointerDown: dragDown,
+                onPointerMove: dragMove,
+                onPointerUp: dragEnd,
+                onPointerCancel: dragEnd,
+                onLostPointerCapture: dragEnd,
+                onKeyDown: (event) => {
+                  if (event.key !== 'Escape' || event.defaultPrevented || waterBusy || busy) return;
+                  event.preventDefault();
+                  event.stopPropagation();
+                  if (waterEditing) closeWaterEditor();
+                  else if (editing) closeEditor();
+                  else closePetPanel();
+                },
+              },
+              h('style', null, STYLE),
+              liveFeedback(),
+              h(
+                'div',
+                { className: 'owc-pet-stage' },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-pet-handle',
+                    'aria-label': t('petOpen'),
+                    'aria-expanded': !!petShowing,
+                    title: t('companionName') + ' · ' + t('petHint'),
+                    onClick: togglePetPanel,
+                    onKeyDown: gripKeys,
+                  },
+                  petArtwork(h, companion, petGeometry.artworkSize, waterNotice?.token),
+                ),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-pet-clock',
+                    onClick: togglePetPanel,
+                    'aria-label': t('petClock'),
+                  },
+                  iconSvg('alarm', 12),
+                  h('span', { className: 'owc-pet-clock-label' }, t(safeState.status)),
+                  ['done', 'rest'].includes(safeState.status) ? null : h('strong', null, duration),
+                ),
+              ),
+              petFloating &&
+                h(
+                  'div',
+                  {
+                    ref: petPanel,
+                    className: 'owc-pet-panel',
+                    'data-pet-panel': petShowing ? 'open' : 'bubble',
+                    'data-side': petGeometry.panel.side,
+                    role: 'region',
+                    'aria-label': t('petOpen'),
+                    style: {
+                      left: petGeometry.panel.left,
+                      top: petGeometry.panel.top,
+                      width: petGeometry.panel.width,
+                      maxHeight: petGeometry.panel.maxHeight,
+                    },
+                  },
+                  h('div', { className: 'owc-glass', 'aria-hidden': true }),
+                  h(
+                    'div',
+                    { className: 'owc-content' },
+                    petShowing
+                      ? h(
+                          React.Fragment,
+                          null,
+                          panelHead(),
+                          !editing &&
+                            !waterEditing &&
+                            h(
+                              'div',
+                              { className: 'owc-pet-tabs' },
+                              [false, true].map((details) =>
+                                h(
+                                  'button',
+                                  {
+                                    key: String(details),
+                                    type: 'button',
+                                    'aria-pressed': petDetails === details,
+                                    onClick: () => setPetDetails(details),
+                                  },
+                                  t(details ? 'petDetails' : 'petQuick'),
+                                ),
+                              ),
+                            ),
+                          waterEditing
+                            ? waterSettings()
+                            : editing
+                              ? editor()
+                              : h(
+                                  React.Fragment,
+                                  null,
+                                  petDetails && companionCard(true),
+                                  petDetails && panelBody(),
+                                  waterOverview(),
+                                  waterReminder(),
+                                  !petDetails &&
+                                    companion.message &&
+                                    h('div', { className: 'owc-pet-speech' }, t(companion.message)),
+                                ),
+                          notices(),
+                        )
+                      : waterPrompt
+                        ? waterReminder()
+                        : h(
+                            'div',
+                            { className: 'owc-pet-speech' },
+                            h('strong', null, t('companionName')),
+                            waterNotice && t(waterNotice.key),
+                          ),
+                  ),
+                ),
             );
 
           return h(

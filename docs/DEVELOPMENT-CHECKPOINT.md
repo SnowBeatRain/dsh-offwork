@@ -42,7 +42,7 @@
 
 ## 测试与资料
 
-- 最近 `npm run check` 通过，110 项测试；格式、生成物一致性、语法和打包检查均通过。
+- 最近 `npm run check` 通过，113 项测试；格式、生成物一致性、语法和打包检查均通过。
 - 隔离 Harness `0.2.1-rc.5` + Headless Chromium 验证了间隔选择、实际触发、刷新、并发、存储错误、作息变更和秒级倒计时。
 - 测试工具缓存与脚本：`/tmp/offwork-hydration-ux`，独立 Harness 已停止，可由 `start.py` 重启。私有启动地址在 `state.json`，不要打印或分享。
 - 使用前核对旧测试脚本的 UI 选择器是否仍匹配。不要用用户浏览器的 IndexedDB 作为测试夹具。
@@ -75,8 +75,20 @@
 - 110 项检查通过；隔离浏览器脚本 `companion-test.cjs`、`companion-edges.cjs` 和截图位于 `/tmp/offwork-hydration-ux`。两份研究与复审位于 `/tmp/offwork-companion-research`。
 - 详细规则、截图和验收见 `docs/COMPANION.md`。仍保持包版本及客户端标记 `1.0.1`，不推送或发布。
 
+## 最新任务：独立宠物预览
+
+用户已授权“做一版出来看看”。当前开发分支 `feature/independent-pet-preview`，仍在隔离目录 `offwork-hydration-ux` 中修改，验证后快进开发环境分支。
+
+- 新增 pet-view.js：原创全身 SVG 水滴“小歇”、独立宠物舞台、浮层布局、中英文文案与样式。未使用第三方宠物代码、素材或服务。
+- 默认宠物模式：角色独立悬浮，脚下显示倒计时；点击打开“日常陪伴”和“下班与收入”两页，沿用原有喝水/免打扰/工资操作。
+- 支持拖动、刷新记忆、方向键移动、Home 复位、Escape 关闭，设置中可调大小或关闭宠物模式返回计时卡片。
+- View 偏好新增 petPosition 和 petSize，旧 position 保留给原卡片；角色尺寸同时受视口宽高限制，极短视口的面板可覆盖显示并滚动。
+- 113 项检查通过；隔离浏览器脚本 `/tmp/offwork-hydration-ux/pet-test.cjs` 验证拖动不误触、操作与真实到期、多标签页、模式切换、刷新、320px 窄屏。复审记录 `/tmp/offwork-independent-pet-review/review.md`。
+- 本版仅有原创 SVG 模型，未开放外部模型包导入或 Live2D/视频/序列帧渲染。不要将当前原型描述为已支持所有 dshpet 模型。
+- 详细截图与验收记录：docs/PET-PREVIEW.md。保持 1.0.1、不推送或发布，不动第三方宠物安装。
+
 ## 最新澄清：接入 dshpet 模型与桌宠形态
 
 用户已明确只做 Harness 页面宠物，随后进一步强调“重新做、作为新的独立插件，不在别人插件基础上开发”。因此此前建议对接现有 dsh-pet-offwork 的路线已取消。我们自己实现资源加载、角色渲染、拖动、动画、气泡和交互面板，复用自己已经完成的业务模块；第三方插件仅供体验和公开资源格式参考。
 
-环境中已有 `dsh-pet: 0.4.1` 和 `@local/dsh-pet-offwork` 的事实保留用于避免误操作；它们不是开发基础，不修改、替换或卸载。本轮只更新方向，尚未实现新的独立宠物展示。用户没有明确要求换 npm 名称或重置版本，继续保持自己的开发包 1.0.1、不推送、不发布。详见 `docs/PET-INTEGRATION-RESEARCH.md`。
+环境中已有 `dsh-pet: 0.4.1` 和 `@local/dsh-pet-offwork` 的事实保留用于避免误操作；它们不是开发基础，不修改、替换或卸载。此前澄清后，用户已进一步授权制作原型；最新实现见上方“独立宠物预览”。用户没有明确要求换 npm 名称或重置版本，继续保持自己的开发包 1.0.1、不推送、不发布。详见 `docs/PET-INTEGRATION-RESEARCH.md`。
