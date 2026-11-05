@@ -2,7 +2,17 @@
 
 更新于 2026-11-05。此文件用于缩短后续上下文检索，不表示系统对话已经执行压缩。
 
-## 当前开发：立绘交互动作
+## 当前开发：用户视频抠像与播放
+
+用户授权直接处理并使用本轮提供的挥手/喝茶视频。feature/whale-video-actions基于b0b98b8，新增可选“鲸蓝少女 · 动态互动”，不自动替换用户已保存形象。原片ID分别f76a34ba-6a70-423a-8386-933275bde57f、f3235c90-7f69-4f64-bbca-f4aeb67c83b2，归档在offwork-hydration-artifacts/whale-animation-sources。
+
+抠像工具在/tmp/offwork-character-motion：matte_white.py、process-video-actions.py、encode-video-actions.py；模型u2netp仅在本机处理时使用，不随插件运行。逐帧前景参考与白底连通区域结合，保护白裙/杯子，固定缩放留白，最终两段480×768、24fps、5秒、无声VP9透明视频共约3.2MB。缺失鞋尖/尾尖未重绘。当前没有真正的循环待机视频，待机沿用立绘呼吸。
+
+pet-video.js独立实现实际alpha解码探测、一次性播放、抢占、结束回图、失败/超时回退，以及隐藏/减少动态/免打扰/拖动/销毁清理。仅已有喝水事务成功反馈触发喝茶，播放完成不操作业务。外观存储升级v6并兼容v5/v4/v3，隔离旧客户端对新model值的覆盖。版本保持1.1.0，仅更新指定开发环境，不推送或发布新功能。
+
+141项检查通过，隔离浏览器video-test.cjs、video-edges.cjs、video-migration.cjs验证真实透明播放、动作切换、反馈去重、静态回退及迁移。后续归档与候选包在offwork-hydration-artifacts/video-actions；视频下载预览在whale-video-preview。单独的喝茶关键帧4086ea12-dc21-4dc8-aea3-b615ee4c32d4为白底WebP，已归档tea-reference，当前播放使用用户视频。
+
+## 历史：立绘交互动作
 
 用户询问角色能否像dsh-pet一样交互动画。基于263e237创建feature/character-interactions，独立实现pet-motion.js，提供待机呼吸、鼠标靠近、点击回应、拖动倾斜/放下回弹及已确认喝水后的庆祝反馈。图片仍是静态立绘，整体动作不等于人物局部眨眼/摆尾；没有第三方运行时或动画素材，没有声称已完成视频模型。
 

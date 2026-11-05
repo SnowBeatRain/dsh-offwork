@@ -6,6 +6,7 @@ window.__ModuleLoader__.load({
     const h = React.createElement;
     /* PURE_MODULES */
     /* PET_SPRITES */
+    /* PET_CLIPS */
     const messages = {
       zh: {
         ...COMPANION_MESSAGES.zh,
@@ -432,8 +433,9 @@ window.__ModuleLoader__.load({
       apply(ctx) {
         for (const [lang, dict] of Object.entries(messages))
           ctx.effect(() => ctx.locale.register('offwork-clock', lang, dict));
-        const viewKey = 'dsh.offwork-clock.view.v5';
-        const previousViewKey = 'dsh.offwork-clock.view.v4';
+        const viewKey = 'dsh.offwork-clock.view.v6';
+        const previousViewKey = 'dsh.offwork-clock.view.v5';
+        const olderViewKey = 'dsh.offwork-clock.view.v4';
         const legacyKey = 'dsh.offwork-clock.view.v3';
 
         function Clock(props) {
@@ -657,7 +659,10 @@ window.__ModuleLoader__.load({
 
           React.useEffect(() => {
             try {
-              const saved = localStorage.getItem(viewKey) ?? localStorage.getItem(previousViewKey);
+              const saved =
+                localStorage.getItem(viewKey) ??
+                localStorage.getItem(previousViewKey) ??
+                localStorage.getItem(olderViewKey);
               const legacy = !saved ? JSON.parse(localStorage.getItem(legacyKey) || 'null') : null;
               setView(
                 normalizeView(
@@ -1482,7 +1487,14 @@ window.__ModuleLoader__.load({
             if (!petMode) return;
             const artwork = box.current?.querySelector('.owc-pet-handle > .owc-pet-art');
             if (!artwork) return;
-            const controller = createPetMotion(artwork, window, { enabled: false });
+            const base = createPetMotion(artwork, window, { enabled: false });
+            const controller = createPetVideoMotion(
+              artwork,
+              window,
+              base,
+              PET_CLIPS.models[stageModel],
+              PET_CLIPS.probe,
+            );
             petMotion.current = controller;
             return () => {
               controller.destroy();
@@ -2395,7 +2407,7 @@ window.__ModuleLoader__.load({
                     ? petArtwork(
                         h,
                         companion,
-                        view.petSize * (petModel(view.petModel).renderer === 'image' ? 0.65 : 1),
+                        view.petSize * (petModel(view.petModel).renderer === 'svg' ? 1 : 0.65),
                         '',
                         view.petModel,
                         PET_SPRITES,

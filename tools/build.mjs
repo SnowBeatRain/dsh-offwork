@@ -8,6 +8,7 @@ const moduleNames = [
   'companion.js',
   'pet-view.js',
   'pet-motion.js',
+  'pet-video.js',
   'pet-interactions.js',
   'pet-surfaces.js',
   'hydration.js',
@@ -33,7 +34,7 @@ const spriteMarker = '/* PET_SPRITES */';
 if (entry.split(spriteMarker).length !== 2) throw new Error('Expected one sprite marker');
 const sprites = Object.fromEntries(
   await Promise.all(
-    ['whale-dress', 'whale-ornate'].map(async (id) => {
+    ['whale-dress', 'whale-ornate', 'whale-actions'].map(async (id) => {
       const bytes = await readFile(new URL(`assets/characters/${id}.webp`, root));
       if (bytes.toString('ascii', 8, 12) !== 'WEBP' || bytes.length > 200000)
         throw new Error(`Invalid sprite: ${id}`);
@@ -41,11 +42,26 @@ const sprites = Object.fromEntries(
     }),
   ),
 );
+const clipMarker = '/* PET_CLIPS */';
+if (entry.split(clipMarker).length !== 2) throw new Error('Expected one clip marker');
+async function clip(name, maximum) {
+  const bytes = await readFile(new URL(`assets/animations/${name}.webm`, root));
+  if (bytes.readUInt32BE(0) !== 0x1a45dfa3 || bytes.length > maximum)
+    throw new Error(`Invalid or oversized WebM: ${name}`);
+  return 'data:video/webm;base64,' + bytes.toString('base64');
+}
+const [probe, greet, celebrate] = await Promise.all([
+  clip('alpha-probe', 10000),
+  clip('whale-greet', 2000000),
+  clip('whale-drink', 2000000),
+]);
+const clips = { probe, models: { 'whale-actions': { greet, celebrate } } };
 const result =
   banner +
   entry
     .replace(marker, pure)
-    .replace(spriteMarker, `const PET_SPRITES = ${JSON.stringify(sprites)};`);
+    .replace(spriteMarker, () => `const PET_SPRITES = ${JSON.stringify(sprites)};`)
+    .replace(clipMarker, () => `const PET_CLIPS = ${JSON.stringify(clips)};`);
 const output = new URL('client.js', root);
 
 if (process.argv.includes('--check')) {

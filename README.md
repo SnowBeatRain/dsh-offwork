@@ -4,6 +4,8 @@
 
 在 DeepSeek Harness 中查看下班倒计时、记录喝水，并通过独立卡片查看本班收入。
 
+此开发分支另提供 **鲸蓝少女 · 动态互动**：用户视频经白底抠像后用于点击挥手和打卡喝茶，支持透明视频检测、动作开关和静态回退。可从“右键 → 外观 → 角色形象”预览并应用。该功能尚未发布为新npm版本，详情见 [开发预览](docs/PET-PREVIEW.md)。
+
 `dsh-offwork` 提供可拖动的页面陪伴角色与计时卡片，支持月薪 / 日薪、跨午夜班次、无薪休息扣除和工资隐藏。角色可关闭，继续使用原有计时小条。
 
 [GitHub 仓库](https://github.com/SnowBeatRain/dsh-offwork) · [npm 包](https://www.npmjs.com/package/dsh-offwork) · [问题反馈](https://github.com/SnowBeatRain/dsh-offwork/issues) · [迭代路线图](https://github.com/SnowBeatRain/dsh-offwork/blob/main/ROADMAP.md)
@@ -36,7 +38,7 @@
 
 <img src="https://raw.githubusercontent.com/SnowBeatRain/dsh-offwork/main/docs/pet-preview/adaptive-water.png" alt="喝水打卡、倒计时和免打扰卡片" width="336">
 
-角色图片随插件加载。当前人物为透明立绘，支持轻微整体反馈；独立眨眼、摆尾、Live2D 和视频动画尚未提供。
+角色图片随插件加载。1.1.0 已发布版的人物使用透明立绘与轻微整体反馈；本开发分支新增内置挥手/喝茶透明视频形象。独立循环待机视频、Live2D 和外部模型包导入尚未提供。
 
 ## 运行环境
 

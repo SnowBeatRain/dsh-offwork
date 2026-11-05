@@ -2,6 +2,13 @@
 export const PET_MODEL = Object.freeze({ id: 'xiaoxie-original', renderer: 'svg', license: 'MIT' });
 
 export const PET_MODELS = Object.freeze({
+  'whale-actions': {
+    id: 'whale-actions',
+    renderer: 'video',
+    widthScale: 1.3125,
+    heightScale: 2.1,
+    label: 'petWhaleActions',
+  },
   'whale-dress': {
     id: 'whale-dress',
     renderer: 'image',
@@ -115,7 +122,27 @@ export function petArtwork(
 ) {
   const { pose, animate } = presentation;
   const model = petModel(modelId);
-  if (model.renderer === 'image' && sprites[model.id])
+  if (['image', 'video'].includes(model.renderer) && sprites[model.id]) {
+    if (model.renderer === 'video' && interactive)
+      return h(
+        'span',
+        {
+          key: model.id,
+          className: 'owc-pet-art owc-pet-video-art',
+          'aria-hidden': true,
+          'data-interactive': true,
+          'data-pose': pose,
+          'data-animate': animate,
+          style: { width: size * model.widthScale, height: size * model.heightScale },
+        },
+        h('img', {
+          src: sprites[model.id],
+          alt: '',
+          draggable: false,
+          className: 'owc-pet-video-poster',
+        }),
+        h('span', { className: 'owc-pet-video-layer' }),
+      );
     return h('img', {
       key: interactive ? model.id : model.id + ':' + pose + ':' + reaction,
       'data-interactive': interactive || undefined,
@@ -129,6 +156,7 @@ export function petArtwork(
       'data-pose': pose,
       'data-animate': animate,
     });
+  }
   const asleep = ['quiet', 'rest'].includes(pose);
   const path = (d, props = {}) => h('path', { d, ...props });
   return h(
@@ -219,6 +247,7 @@ export const PET_MESSAGES = {
   zh: {
     petOpen: '打开宠物面板',
     petCharacter: '角色形象',
+    petWhaleActions: '鲸蓝少女 · 动态互动',
     petWhaleDress: '鲸蓝少女 · 长裙',
     petWhaleOrnate: '鲸蓝少女 · 礼裙',
     petDroplet: '小歇 · 水滴',
@@ -233,6 +262,7 @@ export const PET_MESSAGES = {
   en: {
     petOpen: 'Open pet panel',
     petCharacter: 'Character',
+    petWhaleActions: 'Blue whale · Animated',
     petWhaleDress: 'Blue whale · Long dress',
     petWhaleOrnate: 'Blue whale · Ornate dress',
     petDroplet: 'Xiaoxie · Droplet',
@@ -252,6 +282,12 @@ export const PET_STYLE = `
 .owc-v2 button.owc-pet-handle{padding:0;background:none!important;border-radius:50%;min-height:0;display:block;cursor:grab;touch-action:none;line-height:0}
 .owc-v2 button.owc-pet-handle:active{cursor:grabbing}
 .owc-pet-art{overflow:visible;pointer-events:none;filter:drop-shadow(0 3px 5px #32557418)}
+.owc-pet-video-art{display:block;position:relative}
+.owc-pet-video-poster,.owc-pet-video-layer,.owc-pet-video-layer video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.owc-pet-video-poster{opacity:1;transition:opacity .12s linear}
+.owc-pet-video-layer video{opacity:0;transition:opacity .12s linear}
+.owc-pet-video-art[data-video-playing=true] .owc-pet-video-poster{opacity:0}
+.owc-pet-video-art[data-video-playing=true] .owc-pet-video-layer video{opacity:1}
 .owc-pet-portrait{display:block;object-fit:contain;transform-origin:50% 90%}
 .owc-pet-portrait[data-animate=true]:not([data-interactive=true]){animation:owc-portrait-thanks .65s ease-in-out 2}
 .owc-pet-art[data-interactive=true]{transform-origin:50% 90%}
