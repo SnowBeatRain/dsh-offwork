@@ -2655,15 +2655,13 @@ window.__ModuleLoader__.load({
           function closePetPanel() {
             navigateScreen(null);
           }
-          function togglePetPanel(event) {
+          function interactWithPet(event) {
             if (petDragged.current && event.detail !== 0) {
               petDragged.current = false;
               return;
             }
-            navigateScreen(
-              event.currentTarget.classList.contains('owc-pet-clock') ? 'income' : 'home',
-              event,
-            );
+            petDragged.current = false;
+            if (!ui.pending) petMotion.current?.play('greet');
           }
           function closePetMenu(restore = true) {
             dispatchUI({ type: 'dismiss-menu' });
@@ -3134,7 +3132,7 @@ window.__ModuleLoader__.load({
               {
                 ref: box,
                 className: 'owc-v2 owc-pet-shell',
-                'data-version': '1.1.0',
+                'data-version': '1.1.1',
                 'data-pet-model': stageModel,
                 'data-status': safeState.status,
                 'aria-label': t('companionLabel'),
@@ -3176,13 +3174,9 @@ window.__ModuleLoader__.load({
                   {
                     type: 'button',
                     className: 'owc-pet-handle',
-                    'aria-label': t('petOpen'),
-                    'aria-expanded': !!petShowing,
+                    'aria-label': t('petGreet'),
                     title: t('companionName') + ' · ' + t('petHint'),
-                    onClick: (event) => {
-                      if (!petDragged.current && !ui.pending) petMotion.current?.play('greet');
-                      togglePetPanel(event);
-                    },
+                    onClick: interactWithPet,
                     onPointerEnter: (event) => {
                       if (event.pointerType === 'mouse' && !dragState.current)
                         petMotion.current?.play('look');
@@ -3200,11 +3194,10 @@ window.__ModuleLoader__.load({
                   ),
                 ),
                 h(
-                  'button',
+                  'div',
                   {
-                    type: 'button',
                     className: 'owc-pet-clock',
-                    onClick: togglePetPanel,
+                    role: 'timer',
                     'aria-label': t('petClock'),
                   },
                   iconSvg('alarm', 12),
@@ -3216,13 +3209,13 @@ window.__ModuleLoader__.load({
                 petShowing &&
                 ui.screen !== 'home' &&
                 h(
-                  'button',
+                  'div',
                   {
-                    type: 'button',
                     className: 'owc-pet-water-alert owc-water-due',
                     'data-water-event': waterState.eventId,
+                    role: 'note',
                     'aria-label': t('petWaterAlert'),
-                    onClick: (event) => navigateScreen('home', event),
+                    title: t('petWaterAlert'),
                     style: {
                       left: waterAlertLayout.left,
                       top: waterAlertLayout.top,
@@ -3329,7 +3322,7 @@ window.__ModuleLoader__.load({
                 (collapsed && waterQuickOpen ? ' owc-quick' : '') +
                 (editing || waterEditing ? ' owc-editing' : ''),
               'aria-label': t('title'),
-              'data-version': '1.1.0',
+              'data-version': '1.1.1',
               'data-status': safeState?.status || 'setup',
               style: cardStyle,
               onPointerDown: dragDown,

@@ -48,7 +48,7 @@ export const PET_INTERACTION_MESSAGES = {
     petWaterCard: '喝水',
     petCountdownCard: '下班倒计时',
     petEarningsCard: '收入',
-    petWaterAlert: '查看喝水提醒',
+    petWaterAlert: '喝水提醒已到，可从右键菜单打开喝水卡片',
     petPausedHint: '本班已暂停，可手动恢复。',
     petMenu: '宠物菜单',
     petBack: '返回',
@@ -77,7 +77,7 @@ export const PET_INTERACTION_MESSAGES = {
     petWaterCard: 'Water',
     petCountdownCard: 'Shift countdown',
     petEarningsCard: 'Earnings',
-    petWaterAlert: 'View water reminder',
+    petWaterAlert: 'Water is due; open Water from the context menu',
     petPausedHint: 'Paused for this shift. Resume when ready.',
     petMenu: 'Pet menu',
     petBack: 'Back',
@@ -106,7 +106,7 @@ export const PET_INTERACTION_MESSAGES = {
 export const PET_INTERACTION_STYLE = `
 .owc-pet-workspace .owc-glass{opacity:var(--owc-alpha)}
 .owc-pet-water-card.owc-water-due{border-radius:14px}
-.owc-pet-water-alert{position:fixed!important;width:140px;box-sizing:border-box;min-height:30px!important;border:1px solid var(--owc-accent)!important;background:var(--dsw-alias-bg-overlay)!important;box-shadow:0 4px 12px #18354b18;font-size:11px!important;z-index:2}
+.owc-pet-water-alert{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border-radius:12px;cursor:default;position:fixed!important;width:140px;box-sizing:border-box;min-height:30px!important;border:1px solid var(--owc-accent)!important;background:var(--dsw-alias-bg-overlay)!important;box-shadow:0 4px 12px #18354b18;font-size:11px!important;z-index:2}
 .owc-pet-panel.owc-pet-workspace{display:flex;flex-direction:column;overflow:hidden}
 .owc-pet-workspace>.owc-head{position:relative;flex:none;min-height:46px;padding:8px 12px;box-sizing:border-box}
 .owc-pet-workspace>.owc-pet-scroll{position:relative;min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:none}

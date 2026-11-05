@@ -252,7 +252,7 @@ export function petArtwork(
 
 export const PET_MESSAGES = {
   zh: {
-    petOpen: '打开宠物面板',
+    petGreet: '与角色互动',
     petCharacter: '角色形象',
     petWhaleActions: '鲸蓝少女 · 长裙动态',
     petWhaleOrnateActions: '鲸蓝少女 · 短裙动态',
@@ -263,12 +263,12 @@ export const PET_MESSAGES = {
     petQuick: '日常陪伴',
     petDetails: '下班与收入',
     petSize: '宠物大小',
-    petHint: '左键喝水 · 右键菜单 · 拖动移动',
+    petHint: '左键互动 · 右键菜单 · 拖动移动',
     petMode: '宠物模式',
     petClock: '下班倒计时',
   },
   en: {
-    petOpen: 'Open pet panel',
+    petGreet: 'Interact with character',
     petCharacter: 'Character',
     petWhaleActions: 'Blue whale · Animated long dress',
     petWhaleOrnateActions: 'Blue whale · Animated short dress',
@@ -279,7 +279,7 @@ export const PET_MESSAGES = {
     petQuick: 'Daily companion',
     petDetails: 'Clock and earnings',
     petSize: 'Pet size',
-    petHint: 'Click for water · right-click for menu · drag to move',
+    petHint: 'Click to interact · right-click for menu · drag to move',
     petMode: 'Pet mode',
     petClock: 'Shift countdown',
   },
@@ -306,7 +306,7 @@ export const PET_STYLE = `
 .owc-pet-art[data-pose=offline]{opacity:.65}
 .owc-pet-art[data-animate=true]:not([data-interactive=true]) .owc-pet-body{transform-origin:80px 150px;animation:owc-pet-thanks .65s ease-in-out 2}
 @keyframes owc-pet-thanks{0%,100%{transform:translateY(0)}45%{transform:translateY(-4px) rotate(-3deg)}75%{transform:rotate(2deg)}}
-.owc-v2 button.owc-pet-clock{padding:4px 10px;min-height:26px;gap:5px;white-space:nowrap;border-radius:999px;font-size:11px;background:var(--dsw-alias-bg-overlay);border:1px solid color-mix(in srgb,var(--owc-accent) 25%,transparent);box-shadow:0 3px 12px #142e4812;font-variant-numeric:tabular-nums;max-width:100%;box-sizing:border-box;overflow:hidden}
+.owc-v2 .owc-pet-clock{display:flex;align-items:center;color:var(--owc-text);line-height:1.5;cursor:default;padding:4px 10px;min-height:26px;gap:5px;white-space:nowrap;border-radius:999px;font-size:11px;background:var(--dsw-alias-bg-overlay);border:1px solid color-mix(in srgb,var(--owc-accent) 25%,transparent);box-shadow:0 3px 12px #142e4812;font-variant-numeric:tabular-nums;max-width:100%;box-sizing:border-box;overflow:hidden}
 .owc-pet-clock-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .owc-pet-clock strong{flex:none}
 .owc-pet-panel{position:fixed;border-radius:20px;cursor:default;touch-action:manipulation;max-width:calc(100vw - 24px)}

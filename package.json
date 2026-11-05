@@ -1,6 +1,6 @@
 {
   "name": "dsh-offwork",
-  "version": "1.1.0",
+  "version": "1.1.1",
   "description": "Harness 页面陪伴角色、下班倒计时、实时收入与喝水提醒。Character companion, clock-out countdown, earnings and hydration reminders for DeepSeek Harness.",
   "type": "module",
   "license": "MIT",

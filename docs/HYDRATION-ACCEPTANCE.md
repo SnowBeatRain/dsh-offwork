@@ -6,7 +6,7 @@
 
 本地分支：`feature/hydration-reminders`。
 
-开发版默认使用独立宠物入口：左键宠物进入喝水卡片，脚下倒计时进入倒计时卡片；右键菜单分别打开倒计时、喝水、收入、外观及作息配置。卡片彼此独立，最新导航与保存规则见 [独立功能卡片](PET-PREVIEW.md)。关闭宠物模式后仍可使用下述卡片入口。
+当前默认使用独立宠物入口：左键仅触发角色回应，脚下倒计时仅显示信息；右键菜单分别打开倒计时、喝水、收入、外观及作息配置。卡片彼此独立，最新导航与保存规则见 [独立功能卡片](PET-PREVIEW.md)。关闭宠物模式后仍可使用下述卡片入口。
 
 ## 功能入口与规则
 
@@ -65,13 +65,13 @@ npm ci --ignore-scripts
 npm run build
 preview_dir=$(mktemp -d /tmp/offwork-hydration-acceptance.XXXXXX)
 npm pack --ignore-scripts --pack-destination "$preview_dir"
-DSH_HOME="$preview_dir/home" dsh plugin --profile web add "$preview_dir/dsh-offwork-1.1.0.tgz" --ignore-scripts
+DSH_HOME="$preview_dir/home" dsh plugin --profile web add "$preview_dir/dsh-offwork-1.1.1.tgz" --ignore-scripts
 DSH_HOME="$preview_dir/home" dsh web --host 127.0.0.1 --port 3081 --no-open
 ```
 
 浏览器打开该进程在终端输出的地址。若通过 SSH 使用服务器，可把服务器 `3081` 端口转发到本机同端口，再打开该地址。启动地址含临时授权信息，不要公开分享。若端口已占用，请更换空闲端口。
 
-首次进入选择一个测试工作区，创建空会话，使用示例薪资完成作息配置。不需要配置模型 API 或发送模型请求。这里测试的是当前源码打出的 `1.1.0` 安装包。
+首次进入选择一个测试工作区，创建空会话，使用示例薪资完成作息配置。不需要配置模型 API 或发送模型请求。这里测试的是当前源码打出的 `1.1.1` 安装包。
 
 ## 建议验收顺序
 

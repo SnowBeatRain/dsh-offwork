@@ -677,7 +677,7 @@ function petArtwork(
 
 const PET_MESSAGES = {
   zh: {
-    petOpen: '打开宠物面板',
+    petGreet: '与角色互动',
     petCharacter: '角色形象',
     petWhaleActions: '鲸蓝少女 · 长裙动态',
     petWhaleOrnateActions: '鲸蓝少女 · 短裙动态',
@@ -688,12 +688,12 @@ const PET_MESSAGES = {
     petQuick: '日常陪伴',
     petDetails: '下班与收入',
     petSize: '宠物大小',
-    petHint: '左键喝水 · 右键菜单 · 拖动移动',
+    petHint: '左键互动 · 右键菜单 · 拖动移动',
     petMode: '宠物模式',
     petClock: '下班倒计时',
   },
   en: {
-    petOpen: 'Open pet panel',
+    petGreet: 'Interact with character',
     petCharacter: 'Character',
     petWhaleActions: 'Blue whale · Animated long dress',
     petWhaleOrnateActions: 'Blue whale · Animated short dress',
@@ -704,7 +704,7 @@ const PET_MESSAGES = {
     petQuick: 'Daily companion',
     petDetails: 'Clock and earnings',
     petSize: 'Pet size',
-    petHint: 'Click for water · right-click for menu · drag to move',
+    petHint: 'Click to interact · right-click for menu · drag to move',
     petMode: 'Pet mode',
     petClock: 'Shift countdown',
   },
@@ -731,7 +731,7 @@ const PET_STYLE = `
 .owc-pet-art[data-pose=offline]{opacity:.65}
 .owc-pet-art[data-animate=true]:not([data-interactive=true]) .owc-pet-body{transform-origin:80px 150px;animation:owc-pet-thanks .65s ease-in-out 2}
 @keyframes owc-pet-thanks{0%,100%{transform:translateY(0)}45%{transform:translateY(-4px) rotate(-3deg)}75%{transform:rotate(2deg)}}
-.owc-v2 button.owc-pet-clock{padding:4px 10px;min-height:26px;gap:5px;white-space:nowrap;border-radius:999px;font-size:11px;background:var(--dsw-alias-bg-overlay);border:1px solid color-mix(in srgb,var(--owc-accent) 25%,transparent);box-shadow:0 3px 12px #142e4812;font-variant-numeric:tabular-nums;max-width:100%;box-sizing:border-box;overflow:hidden}
+.owc-v2 .owc-pet-clock{display:flex;align-items:center;color:var(--owc-text);line-height:1.5;cursor:default;padding:4px 10px;min-height:26px;gap:5px;white-space:nowrap;border-radius:999px;font-size:11px;background:var(--dsw-alias-bg-overlay);border:1px solid color-mix(in srgb,var(--owc-accent) 25%,transparent);box-shadow:0 3px 12px #142e4812;font-variant-numeric:tabular-nums;max-width:100%;box-sizing:border-box;overflow:hidden}
 .owc-pet-clock-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .owc-pet-clock strong{flex:none}
 .owc-pet-panel{position:fixed;border-radius:20px;cursor:default;touch-action:manipulation;max-width:calc(100vw - 24px)}
@@ -1140,7 +1140,7 @@ const PET_INTERACTION_MESSAGES = {
     petWaterCard: '喝水',
     petCountdownCard: '下班倒计时',
     petEarningsCard: '收入',
-    petWaterAlert: '查看喝水提醒',
+    petWaterAlert: '喝水提醒已到，可从右键菜单打开喝水卡片',
     petPausedHint: '本班已暂停，可手动恢复。',
     petMenu: '宠物菜单',
     petBack: '返回',
@@ -1169,7 +1169,7 @@ const PET_INTERACTION_MESSAGES = {
     petWaterCard: 'Water',
     petCountdownCard: 'Shift countdown',
     petEarningsCard: 'Earnings',
-    petWaterAlert: 'View water reminder',
+    petWaterAlert: 'Water is due; open Water from the context menu',
     petPausedHint: 'Paused for this shift. Resume when ready.',
     petMenu: 'Pet menu',
     petBack: 'Back',
@@ -1198,7 +1198,7 @@ const PET_INTERACTION_MESSAGES = {
 const PET_INTERACTION_STYLE = `
 .owc-pet-workspace .owc-glass{opacity:var(--owc-alpha)}
 .owc-pet-water-card.owc-water-due{border-radius:14px}
-.owc-pet-water-alert{position:fixed!important;width:140px;box-sizing:border-box;min-height:30px!important;border:1px solid var(--owc-accent)!important;background:var(--dsw-alias-bg-overlay)!important;box-shadow:0 4px 12px #18354b18;font-size:11px!important;z-index:2}
+.owc-pet-water-alert{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border-radius:12px;cursor:default;position:fixed!important;width:140px;box-sizing:border-box;min-height:30px!important;border:1px solid var(--owc-accent)!important;background:var(--dsw-alias-bg-overlay)!important;box-shadow:0 4px 12px #18354b18;font-size:11px!important;z-index:2}
 .owc-pet-panel.owc-pet-workspace{display:flex;flex-direction:column;overflow:hidden}
 .owc-pet-workspace>.owc-head{position:relative;flex:none;min-height:46px;padding:8px 12px;box-sizing:border-box}
 .owc-pet-workspace>.owc-pet-scroll{position:relative;min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:none}
@@ -1353,7 +1353,7 @@ const PET_SURFACE_STYLE = `
 .owc-v2:not(.owc-pet-shell) .owc-head{position:sticky;top:0;z-index:2;background:var(--owc-surface)}
 .owc-v2:not(.owc-pet-shell) .owc-save{position:sticky;bottom:0;z-index:2;background:var(--owc-surface);padding:12px 0}
 .owc-v2 .owc-pet-toast{overflow-wrap:anywhere;overflow:auto;scrollbar-width:none}
-.owc-v2 button.owc-pet-water-alert{border-color:var(--owc-accent)!important;color:var(--owc-accent)}
+.owc-v2 .owc-pet-water-alert{border-color:var(--owc-accent)!important;color:var(--owc-accent)}
 .owc-v2 .owc-glass{background:var(--owc-surface);border:1px solid var(--owc-border);box-shadow:var(--owc-shadow);opacity:var(--owc-alpha,.94)}
 .owc-v2 .owc-pet-workspace{border-radius:var(--owc-radius);container-type:inline-size}
 .owc-v2 .owc-head{margin:0;padding:10px 16px;gap:8px;min-height:52px;border-bottom:1px solid var(--owc-border);box-sizing:border-box}
@@ -1413,7 +1413,7 @@ const PET_SURFACE_STYLE = `
 .owc-v2 .owc-menu-natural{padding:6px;display:flow-root;box-sizing:border-box;min-width:0}
 .owc-v2 .owc-pet-context button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;justify-content:flex-start;font-size:13px}
 .owc-v2 .owc-pet-context hr{border-color:var(--owc-border);margin:6px 4px}
-.owc-v2 .owc-pet-toast,.owc-v2 button.owc-pet-clock,.owc-v2 button.owc-pet-water-alert{background:var(--owc-surface)!important;color:var(--owc-text);border:1px solid var(--owc-border)!important;box-shadow:var(--owc-shadow)}
+.owc-v2 .owc-pet-toast,.owc-v2 .owc-pet-clock,.owc-v2 .owc-pet-water-alert{background:var(--owc-surface)!important;color:var(--owc-text);border:1px solid var(--owc-border)!important;box-shadow:var(--owc-shadow)}
 .owc-v2 .owc-pet-toast{border-radius:12px;font-size:12px}
 .owc-v2 .owc-pet-unsaved{padding:20px 16px}
 .owc-v2 .owc-pet-unsaved p{font-size:13px;overflow-wrap:anywhere}
@@ -4479,15 +4479,13 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           function closePetPanel() {
             navigateScreen(null);
           }
-          function togglePetPanel(event) {
+          function interactWithPet(event) {
             if (petDragged.current && event.detail !== 0) {
               petDragged.current = false;
               return;
             }
-            navigateScreen(
-              event.currentTarget.classList.contains('owc-pet-clock') ? 'income' : 'home',
-              event,
-            );
+            petDragged.current = false;
+            if (!ui.pending) petMotion.current?.play('greet');
           }
           function closePetMenu(restore = true) {
             dispatchUI({ type: 'dismiss-menu' });
@@ -4958,7 +4956,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               {
                 ref: box,
                 className: 'owc-v2 owc-pet-shell',
-                'data-version': '1.1.0',
+                'data-version': '1.1.1',
                 'data-pet-model': stageModel,
                 'data-status': safeState.status,
                 'aria-label': t('companionLabel'),
@@ -5000,13 +4998,9 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   {
                     type: 'button',
                     className: 'owc-pet-handle',
-                    'aria-label': t('petOpen'),
-                    'aria-expanded': !!petShowing,
+                    'aria-label': t('petGreet'),
                     title: t('companionName') + ' · ' + t('petHint'),
-                    onClick: (event) => {
-                      if (!petDragged.current && !ui.pending) petMotion.current?.play('greet');
-                      togglePetPanel(event);
-                    },
+                    onClick: interactWithPet,
                     onPointerEnter: (event) => {
                       if (event.pointerType === 'mouse' && !dragState.current)
                         petMotion.current?.play('look');
@@ -5024,11 +5018,10 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   ),
                 ),
                 h(
-                  'button',
+                  'div',
                   {
-                    type: 'button',
                     className: 'owc-pet-clock',
-                    onClick: togglePetPanel,
+                    role: 'timer',
                     'aria-label': t('petClock'),
                   },
                   iconSvg('alarm', 12),
@@ -5040,13 +5033,13 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 petShowing &&
                 ui.screen !== 'home' &&
                 h(
-                  'button',
+                  'div',
                   {
-                    type: 'button',
                     className: 'owc-pet-water-alert owc-water-due',
                     'data-water-event': waterState.eventId,
+                    role: 'note',
                     'aria-label': t('petWaterAlert'),
-                    onClick: (event) => navigateScreen('home', event),
+                    title: t('petWaterAlert'),
                     style: {
                       left: waterAlertLayout.left,
                       top: waterAlertLayout.top,
@@ -5153,7 +5146,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 (collapsed && waterQuickOpen ? ' owc-quick' : '') +
                 (editing || waterEditing ? ' owc-editing' : ''),
               'aria-label': t('title'),
-              'data-version': '1.1.0',
+              'data-version': '1.1.1',
               'data-status': safeState?.status || 'setup',
               style: cardStyle,
               onPointerDown: dragDown,
