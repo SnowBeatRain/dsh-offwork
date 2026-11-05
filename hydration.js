@@ -1,5 +1,6 @@
 // Pure hydration rules. Time is measured in paid-work milliseconds from calculate().
-export const HYDRATION_SCHEMA = 1;
+export const HYDRATION_SCHEMA = 2;
+export const HYDRATION_ACTION_LIMIT = 64;
 export const HYDRATION_LEASE_MS = 8000;
 
 export function defaultHydration() {
@@ -17,7 +18,7 @@ export function validateHydration(value) {
     Object.keys(object).every((key) => allowed.includes(key));
   if (
     !keys(value, ['schema', 'revision', 'enabled', 'interval', 'shift']) ||
-    value.schema !== HYDRATION_SCHEMA ||
+    ![1, HYDRATION_SCHEMA].includes(value.schema) ||
     !integer(value.revision) ||
     typeof value.enabled !== 'boolean' ||
     !integer(value.interval, 240) ||
@@ -28,7 +29,17 @@ export function validateHydration(value) {
   const shift = value.shift;
   if (shift !== null) {
     if (
-      !keys(shift, ['id', 'schedule', 'config', 'count', 'paused', 'due', 'sequence', 'claim']) ||
+      !keys(shift, [
+        'id',
+        'schedule',
+        'config',
+        'count',
+        'paused',
+        'due',
+        'sequence',
+        'claim',
+        ...(value.schema === 2 ? ['quietUntil', 'recentActions'] : []),
+      ]) ||
       !text(shift.id) ||
       !text(shift.schedule) ||
       !text(shift.config) ||
@@ -40,6 +51,15 @@ export function validateHydration(value) {
       throw new Error('Invalid hydration shift');
     }
     if (
+      value.schema === 2 &&
+      (!integer(shift.quietUntil) ||
+        !Array.isArray(shift.recentActions) ||
+        shift.recentActions.length > HYDRATION_ACTION_LIMIT ||
+        !shift.recentActions.every((id) => text(id) && id.length <= 128) ||
+        new Set(shift.recentActions).size !== shift.recentActions.length)
+    )
+      throw new Error('Invalid hydration actions');
+    if (
       shift.claim !== null &&
       (!keys(shift.claim, ['owner', 'until', 'sequence']) ||
         !text(shift.claim.owner) ||
@@ -49,7 +69,19 @@ export function validateHydration(value) {
       throw new Error('Invalid hydration claim');
     }
   }
-  return structuredClone(value);
+  const result = structuredClone(value);
+  if (result.schema === 1) {
+    result.schema = HYDRATION_SCHEMA;
+    if (result.shift) {
+      result.shift.quietUntil = 0;
+      result.shift.recentActions = [];
+      result.shift.claim = null;
+      result.shift.sequence++;
+      if (!Number.isSafeInteger(result.shift.sequence))
+        throw new Error('Invalid hydration sequence');
+    }
+  }
+  return result;
 }
 
 export function hydrationContext(settings, clock) {
@@ -75,15 +107,16 @@ export function hydrationContext(settings, clock) {
       clock.shiftEnd,
     ]),
     status: clock.status,
+    end: clock.shiftEnd,
     elapsed: Math.max(0, Math.floor(clock.elapsed * 1000)),
     total: Math.max(0, Math.floor(clock.total * 1000)),
   };
 }
 
-export function reconcileHydration(state, context) {
+export function reconcileHydration(state, context, manual = false) {
   const next = structuredClone(state);
   if (!context) return next;
-  if (!next.enabled) {
+  if (!next.enabled && !manual) {
     if (next.shift) next.shift.claim = null;
     return next;
   }
@@ -100,6 +133,8 @@ export function reconcileHydration(state, context) {
       due: context.elapsed + next.interval * 60000,
       sequence: 0,
       claim: null,
+      quietUntil: 0,
+      recentActions: [],
     };
   } else if (next.shift.schedule !== context.schedule) {
     next.shift.schedule = context.schedule;
@@ -107,12 +142,13 @@ export function reconcileHydration(state, context) {
     next.shift.due = context.elapsed + next.interval * 60000;
     next.shift.sequence++;
     next.shift.claim = null;
+    next.shift.quietUntil = Math.min(next.shift.quietUntil, context.end);
   }
-  if (next.shift && context.status !== 'working') next.shift.claim = null;
+  if (next.shift && (!next.enabled || context.status !== 'working')) next.shift.claim = null;
   return next;
 }
 
-export function hydrationView(state, context) {
+export function hydrationView(state, context, now = 0) {
   const same =
     context && state.shift?.id === context.id && state.shift.schedule === context.schedule;
   const shift = same ? state.shift : null;
@@ -121,14 +157,19 @@ export function hydrationView(state, context) {
   const eventId = shift
     ? JSON.stringify([shift.id, shift.schedule, shift.sequence, shift.due])
     : null;
+  const quietRemaining =
+    shift && ['working', 'lunch'].includes(context.status)
+      ? Math.max(0, Math.min(shift.quietUntil, context.end) - now)
+      : 0;
   let phase = 'waiting';
   if (!state.enabled) phase = 'off';
   else if (shift?.paused) phase = 'paused';
+  else if (quietRemaining > 0) phase = 'quiet';
   else if (context?.status === 'lunch') phase = 'break';
   else if (shift && context.status === 'working') {
     phase = remaining === 0 ? 'due' : shift.due >= context.total ? 'finished' : 'countdown';
   }
-  return { phase, count, remaining, eventId };
+  return { phase, count, remaining, eventId, quietRemaining };
 }
 
 export function transitionHydration(state, context, action, now, owner) {
@@ -144,7 +185,11 @@ export function transitionHydration(state, context, action, now, owner) {
     action.baseSchedule !== state.shift.schedule
   )
     context = null;
-  let next = reconcileHydration(state, context);
+  const manual =
+    action.type === 'manual-drink' &&
+    action.shiftId === context?.id &&
+    ['working', 'lunch'].includes(context?.status);
+  let next = reconcileHydration(state, context, manual);
   const restart = () => {
     if (!next.shift || !context || next.shift.id !== context.id) return;
     next.shift.due = context.elapsed + next.interval * 60000;
@@ -166,7 +211,10 @@ export function transitionHydration(state, context, action, now, owner) {
     next.enabled = enabled;
     next.interval = interval;
     next = reconcileHydration(next, context);
-    if (!next.enabled && next.shift) next.shift.claim = null;
+    if (!next.enabled && next.shift) {
+      next.shift.claim = null;
+      next.shift.quietUntil = 0;
+    }
     if (changed) restart();
     return next;
   }
@@ -176,14 +224,51 @@ export function transitionHydration(state, context, action, now, owner) {
     return next;
   }
   if (!shift || !context || shift.id !== context.id) return next;
-  const view = hydrationView(next, context);
+  if (shift.quietUntil && (now >= shift.quietUntil || now >= context.end)) shift.quietUntil = 0;
+  const view = hydrationView(next, context, now);
   const validClaim =
     shift.claim &&
     shift.claim.owner === owner &&
     shift.claim.sequence === shift.sequence &&
     shift.claim.until > now &&
     shift.claim.until <= now + HYDRATION_LEASE_MS;
-  if (action.type === 'claim' && view.phase === 'due') {
+  if (action.type === 'manual-drink' && manual) {
+    if (
+      typeof action.actionId !== 'string' ||
+      !action.actionId.length ||
+      action.actionId.length > 128
+    )
+      throw new Error('Invalid hydration action id');
+    if (
+      shift.recentActions.includes(action.actionId) ||
+      (action.eventId !== undefined && action.eventId !== view.eventId)
+    )
+      return next;
+    shift.recentActions = [
+      ...shift.recentActions.slice(-(HYDRATION_ACTION_LIMIT - 1)),
+      action.actionId,
+    ];
+    shift.count = Math.min(1000000, shift.count + 1);
+    if (next.enabled && !shift.paused) restart();
+    else {
+      shift.sequence++;
+      shift.claim = null;
+    }
+  } else if (
+    action.type === 'quiet' &&
+    next.enabled &&
+    !shift.paused &&
+    ['working', 'lunch'].includes(context.status)
+  ) {
+    if (![30, 60].includes(action.minutes)) throw new Error('Invalid quiet duration');
+    shift.quietUntil = Math.min(now + action.minutes * 60000, context.end);
+    shift.claim = null;
+    shift.sequence++;
+  } else if (action.type === 'end-quiet' && shift.quietUntil) {
+    shift.quietUntil = 0;
+    shift.claim = null;
+    shift.sequence++;
+  } else if (action.type === 'claim' && view.phase === 'due') {
     const claim = shift.claim;
     if (
       !claim ||
@@ -195,11 +280,12 @@ export function transitionHydration(state, context, action, now, owner) {
     }
   } else if (action.type === 'clear-count') {
     shift.count = 0;
-  } else if (action.type === 'pause') {
+  } else if (action.type === 'pause' && next.enabled && !shift.paused) {
     shift.paused = true;
+    shift.quietUntil = 0;
     shift.claim = null;
     shift.sequence++;
-  } else if (action.type === 'resume') {
+  } else if (action.type === 'resume' && next.enabled && shift.paused) {
     shift.paused = false;
     restart();
   } else if (

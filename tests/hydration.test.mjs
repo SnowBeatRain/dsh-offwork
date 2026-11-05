@@ -33,7 +33,7 @@ const act = (state, at, action, patch = {}, owner = 'tab-a') =>
 const enable = (at = '09:00', interval = 60, patch = {}) =>
   act(defaultHydration(), at, { type: 'preferences', enabled: true, interval }, patch);
 const view = (state, at, patch = {}) =>
-  hydrationView(reconcileHydration(state, context(at, patch)), context(at, patch));
+  hydrationView(reconcileHydration(state, context(at, patch)), context(at, patch), time(at));
 const claim = (state, at, patch = {}, owner = 'tab-a') =>
   act(state, at, { type: 'claim' }, patch, owner);
 
@@ -197,7 +197,8 @@ test('malformed data, unknown schemas and invalid preferences fail closed', () =
     null,
     {},
     [],
-    { ...defaultHydration(), schema: 2 },
+    { ...defaultHydration(), schema: 99 },
+    ,
     { ...defaultHydration(), interval: 0 },
     { ...defaultHydration(), shift: {} },
   ]) {

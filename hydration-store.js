@@ -66,12 +66,16 @@ export function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydrat
                 : validateHydration(request.result);
             const next = validateHydration(reducer(structuredClone(current)));
             const changed = JSON.stringify(next) !== JSON.stringify(current);
-            if (reset || changed) {
+            const migrated =
+              request.result !== undefined && request.result.schema !== current.schema;
+            if (reset || changed || migrated) {
               const previousRevision =
                 Number.isSafeInteger(request.result?.revision) && request.result.revision >= 0
                   ? request.result.revision
                   : current.revision;
               next.revision = previousRevision + 1;
+              if (!Number.isSafeInteger(next.revision))
+                throw new Error('Hydration revision exhausted');
               store.put(next, 'current');
             }
             output = next;

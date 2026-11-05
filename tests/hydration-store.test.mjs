@@ -204,3 +204,84 @@ test('transient opening errors recover and unavailable storage rejects explicitl
   await assert.rejects(read(unavailable), /unavailable/);
   unavailable.close();
 });
+
+test('legacy records migrate atomically once without losing user data', async (t) => {
+  const { indexedDB, first, second } = fixture(t);
+  const legacy = await seed(first);
+  legacy.schema = 1;
+  legacy.revision = 40;
+  legacy.interval = 5;
+  legacy.shift.count = 9;
+  legacy.shift.paused = true;
+  delete legacy.shift.quietUntil;
+  delete legacy.shift.recentActions;
+  await rawWrite(indexedDB, legacy);
+  const [a, b] = await Promise.all([read(first), read(second)]);
+  assert.equal(a.schema, 2);
+  assert.equal(a.revision, 41);
+  assert.deepEqual(a, b);
+  assert.equal(a.interval, 5);
+  assert.equal(a.shift.count, 9);
+  assert.equal(a.shift.paused, true);
+  assert.equal(a.shift.due, legacy.shift.due);
+  assert.deepEqual(await read(second), a);
+});
+
+test('concurrent check-ins deduplicate the same ID but retain independent IDs', async (t) => {
+  const { first, second } = fixture(t);
+  await seed(first);
+  const record = (store, id) =>
+    store.update((s) =>
+      transitionHydration(
+        s,
+        context(begin),
+        {
+          type: 'manual-drink',
+          actionId: id,
+          shiftId: context(begin).id,
+        },
+        begin,
+        'a',
+      ),
+    );
+  await Promise.all([record(first, 'same'), record(second, 'same')]);
+  assert.equal((await read(first)).shift.count, 1);
+  await Promise.all([record(first, 'one'), record(second, 'two')]);
+  assert.equal((await read(first)).shift.count, 3);
+});
+
+test('exhausted revisions abort an update instead of persisting invalid data', async (t) => {
+  const { indexedDB, first } = fixture(t);
+  const current = await seed(first);
+  current.revision = Number.MAX_SAFE_INTEGER;
+  await rawWrite(indexedDB, current);
+  await assert.rejects(
+    first.update((s) => ({ ...s, interval: 5 })),
+    /revision exhausted/,
+  );
+  assert.deepEqual(await read(first), current);
+});
+
+test('quiet and manual actions preserve each other across connections', async (t) => {
+  const { first, second } = fixture(t);
+  await seed(first);
+  await Promise.all([
+    first.update((s) =>
+      transitionHydration(s, context(begin), { type: 'quiet', minutes: 30 }, begin, 'a'),
+    ),
+    second.update((s) =>
+      transitionHydration(
+        s,
+        context(begin),
+        { type: 'manual-drink', actionId: 'cup', shiftId: context(begin).id },
+        begin,
+        'b',
+      ),
+    ),
+  ]);
+  const state = await read(first);
+  assert.equal(state.shift.count, 1);
+  assert.equal(state.shift.quietUntil, begin + 1800000);
+  assert.equal(hydrationView(state, context(begin), begin).phase, 'quiet');
+  assert.deepEqual(await read(second), state);
+});

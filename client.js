@@ -220,7 +220,8 @@ function changedSettings(original, draft) {
 }
 
 // Pure hydration rules. Time is measured in paid-work milliseconds from calculate().
-const HYDRATION_SCHEMA = 1;
+const HYDRATION_SCHEMA = 2;
+const HYDRATION_ACTION_LIMIT = 64;
 const HYDRATION_LEASE_MS = 8000;
 
 function defaultHydration() {
@@ -238,7 +239,7 @@ function validateHydration(value) {
     Object.keys(object).every((key) => allowed.includes(key));
   if (
     !keys(value, ['schema', 'revision', 'enabled', 'interval', 'shift']) ||
-    value.schema !== HYDRATION_SCHEMA ||
+    ![1, HYDRATION_SCHEMA].includes(value.schema) ||
     !integer(value.revision) ||
     typeof value.enabled !== 'boolean' ||
     !integer(value.interval, 240) ||
@@ -249,7 +250,17 @@ function validateHydration(value) {
   const shift = value.shift;
   if (shift !== null) {
     if (
-      !keys(shift, ['id', 'schedule', 'config', 'count', 'paused', 'due', 'sequence', 'claim']) ||
+      !keys(shift, [
+        'id',
+        'schedule',
+        'config',
+        'count',
+        'paused',
+        'due',
+        'sequence',
+        'claim',
+        ...(value.schema === 2 ? ['quietUntil', 'recentActions'] : []),
+      ]) ||
       !text(shift.id) ||
       !text(shift.schedule) ||
       !text(shift.config) ||
@@ -261,6 +272,15 @@ function validateHydration(value) {
       throw new Error('Invalid hydration shift');
     }
     if (
+      value.schema === 2 &&
+      (!integer(shift.quietUntil) ||
+        !Array.isArray(shift.recentActions) ||
+        shift.recentActions.length > HYDRATION_ACTION_LIMIT ||
+        !shift.recentActions.every((id) => text(id) && id.length <= 128) ||
+        new Set(shift.recentActions).size !== shift.recentActions.length)
+    )
+      throw new Error('Invalid hydration actions');
+    if (
       shift.claim !== null &&
       (!keys(shift.claim, ['owner', 'until', 'sequence']) ||
         !text(shift.claim.owner) ||
@@ -270,7 +290,19 @@ function validateHydration(value) {
       throw new Error('Invalid hydration claim');
     }
   }
-  return structuredClone(value);
+  const result = structuredClone(value);
+  if (result.schema === 1) {
+    result.schema = HYDRATION_SCHEMA;
+    if (result.shift) {
+      result.shift.quietUntil = 0;
+      result.shift.recentActions = [];
+      result.shift.claim = null;
+      result.shift.sequence++;
+      if (!Number.isSafeInteger(result.shift.sequence))
+        throw new Error('Invalid hydration sequence');
+    }
+  }
+  return result;
 }
 
 function hydrationContext(settings, clock) {
@@ -296,15 +328,16 @@ function hydrationContext(settings, clock) {
       clock.shiftEnd,
     ]),
     status: clock.status,
+    end: clock.shiftEnd,
     elapsed: Math.max(0, Math.floor(clock.elapsed * 1000)),
     total: Math.max(0, Math.floor(clock.total * 1000)),
   };
 }
 
-function reconcileHydration(state, context) {
+function reconcileHydration(state, context, manual = false) {
   const next = structuredClone(state);
   if (!context) return next;
-  if (!next.enabled) {
+  if (!next.enabled && !manual) {
     if (next.shift) next.shift.claim = null;
     return next;
   }
@@ -321,6 +354,8 @@ function reconcileHydration(state, context) {
       due: context.elapsed + next.interval * 60000,
       sequence: 0,
       claim: null,
+      quietUntil: 0,
+      recentActions: [],
     };
   } else if (next.shift.schedule !== context.schedule) {
     next.shift.schedule = context.schedule;
@@ -328,12 +363,13 @@ function reconcileHydration(state, context) {
     next.shift.due = context.elapsed + next.interval * 60000;
     next.shift.sequence++;
     next.shift.claim = null;
+    next.shift.quietUntil = Math.min(next.shift.quietUntil, context.end);
   }
-  if (next.shift && context.status !== 'working') next.shift.claim = null;
+  if (next.shift && (!next.enabled || context.status !== 'working')) next.shift.claim = null;
   return next;
 }
 
-function hydrationView(state, context) {
+function hydrationView(state, context, now = 0) {
   const same =
     context && state.shift?.id === context.id && state.shift.schedule === context.schedule;
   const shift = same ? state.shift : null;
@@ -342,14 +378,19 @@ function hydrationView(state, context) {
   const eventId = shift
     ? JSON.stringify([shift.id, shift.schedule, shift.sequence, shift.due])
     : null;
+  const quietRemaining =
+    shift && ['working', 'lunch'].includes(context.status)
+      ? Math.max(0, Math.min(shift.quietUntil, context.end) - now)
+      : 0;
   let phase = 'waiting';
   if (!state.enabled) phase = 'off';
   else if (shift?.paused) phase = 'paused';
+  else if (quietRemaining > 0) phase = 'quiet';
   else if (context?.status === 'lunch') phase = 'break';
   else if (shift && context.status === 'working') {
     phase = remaining === 0 ? 'due' : shift.due >= context.total ? 'finished' : 'countdown';
   }
-  return { phase, count, remaining, eventId };
+  return { phase, count, remaining, eventId, quietRemaining };
 }
 
 function transitionHydration(state, context, action, now, owner) {
@@ -365,7 +406,11 @@ function transitionHydration(state, context, action, now, owner) {
     action.baseSchedule !== state.shift.schedule
   )
     context = null;
-  let next = reconcileHydration(state, context);
+  const manual =
+    action.type === 'manual-drink' &&
+    action.shiftId === context?.id &&
+    ['working', 'lunch'].includes(context?.status);
+  let next = reconcileHydration(state, context, manual);
   const restart = () => {
     if (!next.shift || !context || next.shift.id !== context.id) return;
     next.shift.due = context.elapsed + next.interval * 60000;
@@ -387,7 +432,10 @@ function transitionHydration(state, context, action, now, owner) {
     next.enabled = enabled;
     next.interval = interval;
     next = reconcileHydration(next, context);
-    if (!next.enabled && next.shift) next.shift.claim = null;
+    if (!next.enabled && next.shift) {
+      next.shift.claim = null;
+      next.shift.quietUntil = 0;
+    }
     if (changed) restart();
     return next;
   }
@@ -397,14 +445,51 @@ function transitionHydration(state, context, action, now, owner) {
     return next;
   }
   if (!shift || !context || shift.id !== context.id) return next;
-  const view = hydrationView(next, context);
+  if (shift.quietUntil && (now >= shift.quietUntil || now >= context.end)) shift.quietUntil = 0;
+  const view = hydrationView(next, context, now);
   const validClaim =
     shift.claim &&
     shift.claim.owner === owner &&
     shift.claim.sequence === shift.sequence &&
     shift.claim.until > now &&
     shift.claim.until <= now + HYDRATION_LEASE_MS;
-  if (action.type === 'claim' && view.phase === 'due') {
+  if (action.type === 'manual-drink' && manual) {
+    if (
+      typeof action.actionId !== 'string' ||
+      !action.actionId.length ||
+      action.actionId.length > 128
+    )
+      throw new Error('Invalid hydration action id');
+    if (
+      shift.recentActions.includes(action.actionId) ||
+      (action.eventId !== undefined && action.eventId !== view.eventId)
+    )
+      return next;
+    shift.recentActions = [
+      ...shift.recentActions.slice(-(HYDRATION_ACTION_LIMIT - 1)),
+      action.actionId,
+    ];
+    shift.count = Math.min(1000000, shift.count + 1);
+    if (next.enabled && !shift.paused) restart();
+    else {
+      shift.sequence++;
+      shift.claim = null;
+    }
+  } else if (
+    action.type === 'quiet' &&
+    next.enabled &&
+    !shift.paused &&
+    ['working', 'lunch'].includes(context.status)
+  ) {
+    if (![30, 60].includes(action.minutes)) throw new Error('Invalid quiet duration');
+    shift.quietUntil = Math.min(now + action.minutes * 60000, context.end);
+    shift.claim = null;
+    shift.sequence++;
+  } else if (action.type === 'end-quiet' && shift.quietUntil) {
+    shift.quietUntil = 0;
+    shift.claim = null;
+    shift.sequence++;
+  } else if (action.type === 'claim' && view.phase === 'due') {
     const claim = shift.claim;
     if (
       !claim ||
@@ -416,11 +501,12 @@ function transitionHydration(state, context, action, now, owner) {
     }
   } else if (action.type === 'clear-count') {
     shift.count = 0;
-  } else if (action.type === 'pause') {
+  } else if (action.type === 'pause' && next.enabled && !shift.paused) {
     shift.paused = true;
+    shift.quietUntil = 0;
     shift.claim = null;
     shift.sequence++;
-  } else if (action.type === 'resume') {
+  } else if (action.type === 'resume' && next.enabled && shift.paused) {
     shift.paused = false;
     restart();
   } else if (
@@ -504,12 +590,16 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 : validateHydration(request.result);
             const next = validateHydration(reducer(structuredClone(current)));
             const changed = JSON.stringify(next) !== JSON.stringify(current);
-            if (reset || changed) {
+            const migrated =
+              request.result !== undefined && request.result.schema !== current.schema;
+            if (reset || changed || migrated) {
               const previousRevision =
                 Number.isSafeInteger(request.result?.revision) && request.result.revision >= 0
                   ? request.result.revision
                   : current.revision;
               next.revision = previousRevision + 1;
+              if (!Number.isSafeInteger(next.revision))
+                throw new Error('Hydration revision exhausted');
               store.put(next, 'current');
             }
             output = next;
@@ -616,6 +706,18 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
         waterPause: '本班暂停',
         waterResume: '恢复本班提醒',
         waterCount: '本班打卡',
+        waterManual: '喝了一杯',
+        waterRecorded: '这杯记下啦。',
+        waterRecordHint: '工作和午休期间可以打卡，关闭提醒也能记录。',
+        waterActionStale: '状态已变化，请再试一次。',
+        waterQuiet: '免打扰',
+        waterQuietAdjust: '调整时长',
+        waterQuiet30: '30 分钟',
+        waterQuiet60: '1 小时',
+        waterQuietEnd: '结束免打扰',
+        waterQuietStarted: '好，先安静一会儿，到时再提醒你。',
+        waterQuietEnded: '免打扰已结束。',
+        waterQuietHint: '按自然时间，到期自动恢复；已到期的提醒只提示一次。',
         waterOff: '提醒已关闭',
         waterWaiting: '等待工作时段',
         waterBreak: '休息中，提醒计时暂停',
@@ -719,6 +821,19 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
         waterPause: 'Pause this shift',
         waterResume: 'Resume this shift',
         waterCount: 'Drinks this shift',
+        waterManual: 'Had a glass',
+        waterRecorded: 'Got it, your drink is recorded.',
+        waterRecordHint: 'Check in during work or breaks, even with reminders off.',
+        waterActionStale: 'The state changed. Please try again.',
+        waterQuiet: 'Quiet time',
+        waterQuietAdjust: 'Change duration',
+        waterQuiet30: '30 minutes',
+        waterQuiet60: '1 hour',
+        waterQuietEnd: 'End quiet time',
+        waterQuietStarted: 'Enjoy some quiet. I’ll remind you when it ends.',
+        waterQuietEnded: 'Quiet time has ended.',
+        waterQuietHint:
+          'Uses clock time. Resumes automatically, with just one reminder if overdue.',
         waterOff: 'Reminders off',
         waterWaiting: 'Waiting for working hours',
         waterBreak: 'On break; reminder timer paused',
@@ -839,6 +954,9 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
 .owc-water-confirm{padding:8px;border:1px solid var(--owc-accent);border-radius:8px}
 .owc-water-head{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .owc-water-head strong{display:flex;align-items:center;gap:5px;font-size:12px}
+.owc-water-quiet{margin:0!important;align-self:center;flex:1;min-width:90px}
+.owc-water-quiet summary{cursor:pointer;font-size:11px;padding:6px}
+.owc-water-quiet[open]{flex-basis:100%}
 .owc-water-overview{padding:12px 17px}
 .owc-water-overview .owc-water-status{font-size:12px;font-variant-numeric:tabular-nums;margin:7px 0}
 .owc-water-meta{display:flex;justify-content:space-between;gap:8px;color:var(--dsw-alias-label-secondary);font-size:11px}
@@ -949,6 +1067,9 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           const [waterEditing, setWaterEditing] = React.useState(false);
           const [waterEnabledDraft, setWaterEnabledDraft] = React.useState(false);
           const waterPending = React.useRef(false);
+          const manualAttempt = React.useRef(null);
+          const waterPreferencesBase = React.useRef(null);
+          const editorWasOpen = React.useRef(false);
           const [waterInvalid, setWaterInvalid] = React.useState(false);
           const [waterConfirm, setWaterConfirm] = React.useState(null);
           const [waterNotice, setWaterNotice] = React.useState(false);
@@ -1057,7 +1178,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
 
           React.useEffect(() => {
             let active = true;
-            let running = false;
+            let running = 0;
             let failed = false;
             let store;
             let channel;
@@ -1080,7 +1201,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             };
             const update = async (action = { type: 'tick' }, automatic = false) => {
               if (!active || (automatic && (running || failed))) return;
-              running = true;
+              running++;
               try {
                 if (action.type === 'retry') {
                   store.close();
@@ -1141,7 +1262,11 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 setWater(result);
                 setWaterReady(true);
                 setWaterError(false);
-                if (changed || action.type === 'reset') channel?.postMessage('changed');
+                if (changed || action.type === 'reset') {
+                  try {
+                    channel?.postMessage('changed');
+                  } catch {}
+                }
                 return result;
               } catch (waterFailure) {
                 console.warn(
@@ -1155,7 +1280,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   setWaterReady(true);
                 }
               } finally {
-                running = false;
+                running--;
               }
             };
             const tick = () => {
@@ -1206,7 +1331,14 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             waterRuntime.current?.tick();
           }, [settings, editing, waterEditing, error]);
 
+          React.useEffect(() => {
+            if (!waterNotice) return;
+            const timer = setTimeout(() => setWaterNotice(false), 5000);
+            return () => clearTimeout(timer);
+          }, [waterNotice]);
+
           function openWaterEditor(event) {
+            waterPreferencesBase.current = { enabled: water.enabled, interval: water.interval };
             focusReturn.current = event?.currentTarget;
             setWaterInterval(String(water.interval));
             setWaterEnabledDraft(water.enabled);
@@ -1233,8 +1365,10 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             }
             const result = await waterAction({
               type: 'preferences',
-              enabled: waterEnabledDraft,
-              interval,
+              ...(waterEnabledDraft !== waterPreferencesBase.current?.enabled
+                ? { enabled: waterEnabledDraft }
+                : {}),
+              ...(interval !== waterPreferencesBase.current?.interval ? { interval } : {}),
             });
             if (result) setWaterEditing(false);
           }
@@ -1252,8 +1386,28 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               if (result) {
                 setWaterConfirm(null);
                 setNow(Date.now());
-                if (action.type === 'preferences') setWaterNotice(true);
+                if (action.type === 'preferences') setWaterNotice(t('waterChanged'));
+                if (action.type === 'manual-drink') {
+                  setWaterNotice(
+                    t(
+                      result.shift?.recentActions.includes(action.actionId)
+                        ? 'waterRecorded'
+                        : 'waterActionStale',
+                    ),
+                  );
+                  manualAttempt.current = null;
+                }
+                if (action.type === 'quiet')
+                  setWaterNotice(
+                    t(
+                      result.shift?.quietUntil > Date.now()
+                        ? 'waterQuietStarted'
+                        : 'waterActionStale',
+                    ),
+                  );
+                if (action.type === 'end-quiet') setWaterNotice(t('waterQuietEnded'));
                 if (action.type === 'reset') {
+                  manualAttempt.current = null;
                   setWaterInterval('60');
                   setWaterEnabledDraft(false);
                   setWaterInvalid(false);
@@ -1310,9 +1464,13 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           }, [clamp]);
 
           React.useEffect(() => {
+            const wasOpen = editorWasOpen.current;
+            editorWasOpen.current = editing || waterEditing;
             if (!editing && !waterEditing) {
+              if (!wasOpen) return;
               if (focusReturn.current?.isConnected) focusReturn.current.focus?.();
               else box.current?.querySelector('.owc-grip,.owc-title')?.focus?.();
+              focusReturn.current = null;
               return;
             }
             box.current?.querySelector('form input,form select')?.focus?.();
@@ -1548,7 +1706,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
 
           const waterContext =
             data?.configured && safeState && !error ? hydrationContext(settings, safeState) : null;
-          const waterState = hydrationView(water, waterContext);
+          const waterState = hydrationView(water, waterContext, now);
           const waterClaim = water.shift?.claim;
           const waterPrompt =
             waterReady &&
@@ -1580,14 +1738,87 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               finished: 'waterFinished',
               due: waterPrompt ? 'waterDue' : 'waterOther',
             };
+            if (waterState.phase === 'quiet')
+              return t('waterQuiet') + ' · ' + formatDuration(waterState.quietRemaining / 1000);
             return waterState.phase === 'countdown'
               ? t('waterNext') + ' · ' + formatDuration(waterState.remaining / 1000)
               : t(labels[waterState.phase]);
+          };
+          const waterCanRecord =
+            waterReady &&
+            !waterError &&
+            data?.configured &&
+            ['working', 'lunch'].includes(waterContext?.status) &&
+            (!water.shift || water.shift.config === waterContext.config);
+          const waterCanQuiet = waterCanRecord && water.enabled && !water.shift?.paused;
+          const recordWater = (event) => {
+            if (event.detail > 1) return;
+            if (!manualAttempt.current)
+              manualAttempt.current = {
+                type: 'manual-drink',
+                shiftId: waterContext.id,
+                actionId: window.crypto?.randomUUID?.() || String(Math.random()) + Date.now(),
+                ...(waterState.phase === 'due' ? { eventId: waterState.eventId } : {}),
+              };
+            void waterAction(manualAttempt.current);
           };
           const waterControls = () =>
             h(
               'div',
               { className: 'owc-water-actions' },
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'owc-primary',
+                  disabled: !waterCanRecord || waterBusy,
+                  onClick: recordWater,
+                },
+                t('waterManual'),
+              ),
+              waterState.phase === 'quiet' &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    disabled: waterBusy || waterError,
+                    onClick: () => waterAction({ type: 'end-quiet' }),
+                  },
+                  t('waterQuietEnd'),
+                ),
+              waterCanQuiet &&
+                h(
+                  'details',
+                  { className: 'owc-water-quiet' },
+                  h(
+                    'summary',
+                    null,
+                    t(waterState.phase === 'quiet' ? 'waterQuietAdjust' : 'waterQuiet'),
+                  ),
+                  h(
+                    'div',
+                    { className: 'owc-water-actions' },
+                    [30, 60].map((minutes) =>
+                      h(
+                        'button',
+                        {
+                          key: minutes,
+                          type: 'button',
+                          disabled: waterBusy,
+                          onClick: (event) => {
+                            const menu = event.currentTarget.closest('details');
+                            menu.open = false;
+                            menu.querySelector('summary')?.focus();
+                            void waterAction({ type: 'quiet', minutes });
+                          },
+                        },
+                        t(minutes === 30 ? 'waterQuiet30' : 'waterQuiet60'),
+                      ),
+                    ),
+                  ),
+                  waterState.phase !== 'quiet' &&
+                    h('p', { className: 'owc-hint' }, t('waterQuietHint')),
+                ),
               water.enabled &&
                 h(
                   'button',
@@ -1646,7 +1877,11 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 h('span', { 'data-water-count': true }, t('waterCount') + ': ' + waterState.count),
               ),
               waterControls(),
-              waterNotice && h('p', { role: 'status' }, t('waterChanged')),
+              !['working', 'lunch'].includes(waterContext?.status) &&
+                h('p', { className: 'owc-hint' }, t('waterRecordHint')),
+              waterState.phase === 'quiet' &&
+                h('p', { className: 'owc-hint' }, t('waterQuietHint')),
+              waterNotice && h('p', { role: 'status' }, waterNotice),
             );
 
           const waterSettings = () =>
@@ -1909,20 +2144,24 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                           title: waterSummary(),
                         },
                         iconSvg('water', 13),
-                        waterState.phase === 'countdown' && !waterError
-                          ? formatDuration(waterState.remaining / 1000).replace(/^00:/, '')
-                          : t(
-                              waterError
-                                ? 'waterTitle'
-                                : {
-                                    paused: 'waterPaused',
-                                    break: 'lunch',
-                                    waiting: 'waterWaiting',
-                                    finished: 'waterFinished',
-                                    due: 'waterDue',
-                                    off: 'waterOff',
-                                  }[waterState.phase],
-                            ),
+                        waterState.phase === 'quiet' && !waterError
+                          ? t('waterQuiet') +
+                              ' ' +
+                              formatDuration(waterState.quietRemaining / 1000).replace(/^00:/, '')
+                          : waterState.phase === 'countdown' && !waterError
+                            ? formatDuration(waterState.remaining / 1000).replace(/^00:/, '')
+                            : t(
+                                waterError
+                                  ? 'waterTitle'
+                                  : {
+                                      paused: 'waterPaused',
+                                      break: 'lunch',
+                                      waiting: 'waterWaiting',
+                                      finished: 'waterFinished',
+                                      due: 'waterDue',
+                                      off: 'waterOff',
+                                    }[waterState.phase],
+                              ),
                       ),
                   ),
             );
