@@ -8,7 +8,9 @@
 
 角色左键/Enter/Space仅回应，去掉aria-expanded；计时徽标改为非按钮timer，到期徽标改为非按钮note。主动打开卡片统一使用右键菜单；原自动提醒仍按设置显示。拖动后点击抑制与键盘重新激活、草稿保护保留。package/lock/client均更新1.1.1，纳入本轮全部独立交互与两套透明视频形象。
 
-146项检查通过，实际安装包隔离浏览器release-1.1.1-interactions.cjs验证五形象点击/键盘/拖动、菜单五卡片、草稿、到期提示及窄屏；release-1.1.1-ornate.cjs和release-1.1.1-long.cjs验证视频完整流程。发布材料与日志 /tmp/offwork-release-1.1.1，最终发布记录 docs/RELEASE-1.1.1.md。仅重启指定xxy服务，保留私人薪资文件。
+146项检查通过，实际安装包隔离浏览器release-1.1.1-interactions.cjs验证五形象点击/键盘/拖动、菜单五卡片、草稿、到期提示及窄屏；release-1.1.1-ornate.cjs和release-1.1.1-long.cjs验证视频完整流程；release-1.1.1-cards.cjs验证独立卡片和双标签提醒。
+
+已完成正式发布：提交1b0fa0e、标签v1.1.1、GitHub Release，Actions 42132251469成功。2026-11-05 23:52 UTC确认npm latest=1.1.1，下载包SHA-512及逐文件内容与验证包一致，GitHub附件也一致。xxy实例已更新为1.1.1，私人薪资文件保留，隔离验证服务已停止。归档offwork-hydration-artifacts/release-1.1.1，发布记录docs/RELEASE-1.1.1.md。
 
 ## 历史：短裙四份素材与循环待机
 

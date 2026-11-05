@@ -37,4 +37,15 @@
 - [GitHub Release v1.1.1](https://github.com/SnowBeatRain/dsh-offwork/releases/tag/v1.1.1)
 - [发布工作流](https://github.com/SnowBeatRain/dsh-offwork/actions/workflows/publish.yml)
 
-使用仓库现有标签发布流程，发布后核对npm latest及压缩包内容。
+## 发布结果
+
+- 发布提交`1b0fa0e`已推送main和`v1.1.1`标签。
+- [标签发布工作流](https://github.com/SnowBeatRain/dsh-offwork/actions/runs/42132251469)的测试与npm发布任务均成功；GitHub Release和安装包已公开。
+- 2026-11-05 23:52 UTC，npm公开注册表确认latest=1.1.1；实际下载压缩包的SHA-512及全部文件与本地验证包一致。GitHub附件下载也通过一致性校验。
+- 指定xxy开发实例已更新至1.1.1并正常运行。隔离验证服务已停止，发布日志与浏览器结果已归档。
+
+安装包SHA-512：
+
+```text
+sha512-d3Laavx3FsijEEBbD8OyVs4bEbLm5489En7PSlutQbCDAZoiwxZx7L8GfBUIqpZgGIOYQLhbnBU2eprzn/3axQ==
+```
