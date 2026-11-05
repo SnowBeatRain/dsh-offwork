@@ -7,6 +7,7 @@ window.__ModuleLoader__.load({
     /* PURE_MODULES */
     const messages = {
       zh: {
+        ...COMPANION_MESSAGES.zh,
         title: '下班计时器',
         working: '距离下班',
         before: '距离开工',
@@ -123,6 +124,7 @@ window.__ModuleLoader__.load({
         waterStale: '作息已变化，请点击“读取最新配置”后继续提醒。',
       },
       en: {
+        ...COMPANION_MESSAGES.en,
         title: 'Offwork Clock',
         working: 'Until clock-out',
         before: 'Until work starts',
@@ -243,7 +245,8 @@ window.__ModuleLoader__.load({
         waterStale: 'Schedule changed. Reload the latest settings to continue reminders.',
       },
     };
-    const STYLE = `
+    const STYLE =
+      `
 .owc-v2{--owc-accent:color-mix(in srgb,var(--dsw-alias-brand-primary) 65%,#2563eb);pointer-events:auto;position:fixed;top:96px;right:24px;z-index:40;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);border-radius:20px;color:var(--dsw-alias-label-primary);font:13px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;cursor:grab;touch-action:manipulation;user-select:none;-webkit-user-select:none}
 .owc-v2:active{cursor:grabbing}
 .owc-v2.owc-compact{touch-action:none;border-radius:18px}
@@ -361,7 +364,7 @@ window.__ModuleLoader__.load({
 .owc-pill-water{font-size:11px!important;gap:4px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .owc-water-summary{justify-content:flex-start!important}
 @media(max-width:420px){.owc-pill{min-width:136px;padding:8px 8px 7px 12px}.owc-pill-status{display:none}.owc-pill-time{font-size:22px}.owc-main,.owc-form{padding-left:14px;padding-right:14px}.owc-time{font-size:31px}}
-`;
+` + COMPANION_STYLE;
     const ICONS = {
       water: [
         ['path', { d: 'M8 1.5C6.6 4 3.5 7.1 3.5 10a4.5 4.5 0 0 0 9 0C12.5 7.1 9.4 4 8 1.5Z' }],
@@ -452,6 +455,7 @@ window.__ModuleLoader__.load({
           const [waterInterval, setWaterInterval] = React.useState('60');
           const [waterEditing, setWaterEditing] = React.useState(false);
           const [waterQuickOpen, setWaterQuickOpen] = React.useState(false);
+          const waterQuickTrigger = React.useRef(null);
           const [waterEnabledDraft, setWaterEnabledDraft] = React.useState(false);
           const waterPending = React.useRef(false);
           const manualAttempt = React.useRef(null);
@@ -460,6 +464,7 @@ window.__ModuleLoader__.load({
           const [waterInvalid, setWaterInvalid] = React.useState(false);
           const [waterConfirm, setWaterConfirm] = React.useState(null);
           const [waterNotice, setWaterNotice] = React.useState(false);
+          const reactionState = React.useRef(null);
           const waterRuntime = React.useRef(null);
           const waterOwner = React.useRef(null);
           if (!waterOwner.current)
@@ -599,6 +604,8 @@ window.__ModuleLoader__.load({
                   }
                 }
                 let changed = false;
+                let recorded = false;
+                let quietChanged = false;
                 let usedPermit = null;
                 const result = await store.update(
                   (current) => {
@@ -617,6 +624,13 @@ window.__ModuleLoader__.load({
                       time,
                       waterOwner.current,
                     );
+                    recorded =
+                      ['drink', 'manual-drink'].includes(action.type) &&
+                      next.shift?.count >
+                        (current.shift?.id === next.shift?.id ? (current.shift?.count ?? 0) : 0);
+                    quietChanged =
+                      ['quiet', 'end-quiet'].includes(action.type) &&
+                      next.shift?.quietUntil !== current.shift?.quietUntil;
                     if (automatic) {
                       const allow = !document.hidden && !waterInputs.current.editing;
                       next = transitionHydration(
@@ -654,7 +668,7 @@ window.__ModuleLoader__.load({
                     channel?.postMessage('changed');
                   } catch {}
                 }
-                return result;
+                return { state: result, recorded, quietChanged };
               } catch (waterFailure) {
                 console.warn(
                   'Water reminder storage failed:',
@@ -727,17 +741,23 @@ window.__ModuleLoader__.load({
           React.useEffect(() => {
             if (!waterQuickOpen || !collapsed) return;
             const closeOutside = (event) => {
-              if (!event.target.closest?.('[data-water-quick],.owc-pill-water'))
-                setWaterQuickOpen(false);
+              if (!box.current?.contains(event.target)) setWaterQuickOpen(false);
             };
             document.addEventListener('pointerdown', closeOutside);
             return () => document.removeEventListener('pointerdown', closeOutside);
           }, [waterQuickOpen, collapsed]);
 
+          function toggleWaterQuick(event) {
+            waterQuickTrigger.current = event.currentTarget;
+            setWaterQuickOpen((open) => !open);
+          }
+
           function closeWaterQuick() {
             setWaterQuickOpen(false);
             (
+              (waterQuickTrigger.current?.isConnected ? waterQuickTrigger.current : null) ||
               box.current?.querySelector('.owc-pill-water') ||
+              box.current?.querySelector('.owc-companion-trigger') ||
               box.current?.querySelector('.owc-grip')
             )?.focus();
           }
@@ -783,41 +803,63 @@ window.__ModuleLoader__.load({
             waterPending.current = true;
             setWaterBusy(true);
             setWaterNotice(false);
-            const hadFocus = box.current
-              ?.querySelector('.owc-water-due')
-              ?.contains(document.activeElement);
+            const actionFocus = document.activeElement;
+            const hadFocus = box.current?.querySelector('.owc-water-due')?.contains(actionFocus);
             try {
-              const result = await waterRuntime.current?.update(action);
+              const outcome = await waterRuntime.current?.update(action);
+              const result = outcome?.state;
               if (result) {
                 setWaterConfirm(null);
                 setNow(Date.now());
-                if (action.type === 'preferences') setWaterNotice(t('waterChanged'));
+                if (action.type === 'preferences')
+                  setWaterNotice({ key: 'waterChanged', kind: 'notice' });
+                if (action.type === 'drink' && outcome.recorded)
+                  setWaterNotice({ key: 'waterRecorded', kind: 'drink', token: result.revision });
                 if (action.type === 'manual-drink') {
-                  setWaterNotice(
-                    t(
-                      result.shift?.recentActions.includes(action.actionId)
-                        ? 'waterRecorded'
-                        : 'waterActionStale',
-                    ),
-                  );
+                  setWaterNotice({
+                    key: result.shift?.recentActions.includes(action.actionId)
+                      ? 'waterRecorded'
+                      : 'waterActionStale',
+                    kind: outcome.recorded ? 'drink' : 'notice',
+                    token: result.revision,
+                  });
                   manualAttempt.current = null;
                 }
                 if (action.type === 'quiet')
-                  setWaterNotice(
-                    t(
-                      result.shift?.quietUntil > Date.now()
+                  setWaterNotice({
+                    key:
+                      outcome.quietChanged && result.shift?.quietUntil > Date.now()
                         ? 'waterQuietStarted'
                         : 'waterActionStale',
-                    ),
-                  );
-                if (action.type === 'end-quiet') setWaterNotice(t('waterQuietEnded'));
+                    kind: 'notice',
+                  });
+                if (action.type === 'end-quiet')
+                  setWaterNotice({
+                    key: outcome.quietChanged ? 'waterQuietEnded' : 'waterActionStale',
+                    kind: 'notice',
+                  });
                 if (action.type === 'reset') {
                   manualAttempt.current = null;
                   setWaterInterval('60');
                   setWaterEnabledDraft(false);
                   setWaterInvalid(false);
                 }
-                if (hadFocus) box.current?.querySelector('.owc-grip,.owc-title')?.focus();
+                if (hadFocus || ['end-quiet', 'clear-count', 'reset'].includes(action.type)) {
+                  requestAnimationFrame(() => {
+                    const active = document.activeElement;
+                    if (
+                      active !== actionFocus &&
+                      (actionFocus?.isConnected || active?.tagName !== 'BODY')
+                    )
+                      return;
+                    const target = hadFocus
+                      ? '.owc-grip,.owc-title'
+                      : action.type === 'end-quiet'
+                        ? '.owc-water-quiet summary'
+                        : '.owc-water-form details > summary';
+                    box.current?.querySelector(target)?.focus();
+                  });
+                }
                 waterRuntime.current?.tick();
               }
               return result;
@@ -855,10 +897,17 @@ window.__ModuleLoader__.load({
           }, []);
 
           React.useEffect(() => {
-            const resize = () =>
-              setView((current) =>
-                current.position ? { ...current, position: clamp(current.position) } : current,
-              );
+            const resize = () => {
+              const rect = box.current?.getBoundingClientRect();
+              if (!rect) return;
+              setView((current) => {
+                const previous = current.position ?? { x: rect.left, y: rect.top };
+                const position = clamp(previous);
+                return position.x === previous.x && position.y === previous.y
+                  ? current
+                  : { ...current, position };
+              });
+            };
             const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(resize) : null;
             if (box.current) ro?.observe(box.current);
             window.addEventListener('resize', resize);
@@ -907,8 +956,8 @@ window.__ModuleLoader__.load({
             setBusy(true);
             setError('');
             try {
-              const baseSchedule = (await waterRuntime.current?.update({ type: 'sync' }))?.shift
-                ?.schedule;
+              const baseSchedule = (await waterRuntime.current?.update({ type: 'sync' }))?.state
+                ?.shift?.schedule;
               if (token !== generation.current) return;
               const next = await request('get');
               if (token !== generation.current) return;
@@ -939,8 +988,8 @@ window.__ModuleLoader__.load({
             setError('');
             const token = ++generation.current;
             try {
-              const baseSchedule = (await waterRuntime.current?.update({ type: 'sync' }))?.shift
-                ?.schedule;
+              const baseSchedule = (await waterRuntime.current?.update({ type: 'sync' }))?.state
+                ?.shift?.schedule;
               if (token !== generation.current) return;
               const next = await request('set', changedSettings(settings, draft));
               if (token === generation.current) {
@@ -1127,6 +1176,61 @@ window.__ModuleLoader__.load({
             waterClaim.sequence === water.shift.sequence &&
             waterClaim.until > Date.now() &&
             waterClaim.until <= Date.now() + HYDRATION_LEASE_MS;
+          const reactionSurface = [
+            collapsed,
+            editing,
+            waterEditing,
+            view.companion,
+            view.companionMotion,
+            waterVisible,
+          ].join(':');
+          if (reactionState.current?.token !== waterNotice?.token) {
+            reactionState.current = {
+              token: waterNotice?.token,
+              surface: reactionSurface,
+              stopped: ['quiet', 'paused', 'break'].includes(waterState.phase),
+            };
+          } else if (reactionState.current && reactionState.current.surface !== reactionSurface) {
+            reactionState.current.stopped = true;
+          }
+          const companion = companionPresentation({
+            workStatus: safeState?.status,
+            phase: waterState.phase,
+            ownsPrompt: waterPrompt,
+            ready: waterReady && !!safeState,
+            failed: waterError || !!error,
+            feedback: waterNotice || null,
+            visible: view.companion,
+            motion: view.companionMotion && !reactionState.current?.stopped,
+            pageVisible: waterVisible && !document.hidden && !editing && !waterEditing,
+          });
+          const companionCard = (compact = false) =>
+            companion.visible &&
+            h(
+              'div',
+              { className: 'owc-companion', 'data-companion': companion.pose },
+              !compact && companionArtwork(h, companion, 52, waterNotice?.token),
+              h(
+                'div',
+                { className: 'owc-companion-copy' },
+                h(
+                  'div',
+                  { className: 'owc-companion-name' },
+                  t('companionName'),
+                  h('span', null, t('companionLabel')),
+                ),
+                companion.message &&
+                  h(
+                    'p',
+                    {
+                      key: companion.announce
+                        ? 'feedback:' + (waterNotice?.token ?? companion.message)
+                        : 'ambient',
+                    },
+                    t(companion.message),
+                  ),
+              ),
+            );
           const waterSummary = () => {
             if (!waterReady) return t('waterLoading');
             if (waterError) return t('waterUnavailable');
@@ -1300,7 +1404,13 @@ window.__ModuleLoader__.load({
                     iconSvg('close', 14),
                   ),
               ),
-              h('p', { className: 'owc-water-status', 'data-water-status': true }, waterSummary()),
+              quick && companionCard(true),
+              !waterPrompt &&
+                h(
+                  'p',
+                  { className: 'owc-water-status', 'data-water-status': true },
+                  waterSummary(),
+                ),
               h(
                 'div',
                 { className: 'owc-water-meta' },
@@ -1316,7 +1426,7 @@ window.__ModuleLoader__.load({
                 h('p', { className: 'owc-hint' }, t('waterRecordHint')),
               waterState.phase === 'quiet' &&
                 h('p', { className: 'owc-hint' }, t('waterQuietHint')),
-              waterNotice && h('p', { role: 'status' }, waterNotice),
+              waterNotice && !view.companion && h('p', null, t(waterNotice.key)),
             );
 
           const waterSettings = () =>
@@ -1487,7 +1597,7 @@ window.__ModuleLoader__.load({
             h(
               'div',
               { className: 'owc-water owc-water-due', 'data-water-event': waterState.eventId },
-              h('p', { role: 'status' }, iconSvg('water', 14), ' ' + t('waterDue')),
+              h('p', null, iconSvg('water', 14), ' ' + t('waterDue')),
               h(
                 'div',
                 { className: 'owc-water-actions' },
@@ -1519,7 +1629,28 @@ window.__ModuleLoader__.load({
               h(
                 'div',
                 { className: 'owc-pill-top' },
-                iconSvg('alarm', 16),
+                companion.visible
+                  ? h(
+                      'button',
+                      {
+                        type: 'button',
+                        className: 'owc-companion-trigger',
+                        'aria-label': t('companionOpen'),
+                        'aria-expanded': waterQuickOpen,
+                        title:
+                          t('companionName') +
+                          (companion.message ? ' · ' + t(companion.message) : ''),
+                        onClick: toggleWaterQuick,
+                        onKeyDown: (event) => {
+                          if (event.key === 'Escape' && waterQuickOpen) {
+                            event.preventDefault();
+                            closeWaterQuick();
+                          }
+                        },
+                      },
+                      companionArtwork(h, companion, 36, waterNotice?.token),
+                    )
+                  : iconSvg('alarm', 16),
                 h(
                   'span',
                   { className: 'owc-grip', tabIndex: 0, title: t('drag'), onKeyDown: gripKeys },
@@ -1577,7 +1708,7 @@ window.__ModuleLoader__.load({
                         {
                           type: 'button',
                           className: 'owc-pill-water',
-                          onClick: () => setWaterQuickOpen((open) => !open),
+                          onClick: toggleWaterQuick,
                           'aria-label': t('waterQuick'),
                           'aria-expanded': waterQuickOpen,
                           onKeyDown: (event) => {
@@ -1979,6 +2110,28 @@ window.__ModuleLoader__.load({
                 'fieldset',
                 { className: 'owc-setting-group' },
                 h('legend', null, t('appearanceGroup')),
+                h(
+                  'label',
+                  { className: 'owc-check' },
+                  h('input', {
+                    type: 'checkbox',
+                    checked: view.companion,
+                    onChange: (event) => setPreference({ companion: event.target.checked }),
+                  }),
+                  t('companionShow'),
+                ),
+                h(
+                  'label',
+                  { className: 'owc-check' },
+                  h('input', {
+                    type: 'checkbox',
+                    checked: view.companionMotion,
+                    disabled: !view.companion,
+                    onChange: (event) => setPreference({ companionMotion: event.target.checked }),
+                  }),
+                  t('companionMotion'),
+                ),
+                h('p', { className: 'owc-hint' }, t('companionPreferences')),
                 label(
                   t('opacity'),
                   h(
@@ -2084,12 +2237,35 @@ window.__ModuleLoader__.load({
             h(
               'div',
               { className: 'owc-content' },
+              h(
+                'span',
+                { className: 'owc-sr-only', role: 'status', 'aria-atomic': true },
+                h(
+                  'span',
+                  {
+                    key: waterPrompt
+                      ? waterState.eventId
+                      : (waterNotice?.token ?? waterNotice?.key ?? 'idle'),
+                  },
+                  waterPrompt ? t('waterDue') : waterNotice ? t(waterNotice.key) : '',
+                ),
+              ),
               collapsed
-                ? h(React.Fragment, null, strip(), waterQuickOpen && waterOverview(true))
+                ? h(
+                    React.Fragment,
+                    null,
+                    strip(),
+                    waterQuickOpen && waterOverview(true),
+                    !waterQuickOpen &&
+                      waterNotice &&
+                      (!view.companion || companion.announce) &&
+                      h('p', { className: 'owc-mini-feedback' }, t(waterNotice.key)),
+                  )
                 : h(
                     React.Fragment,
                     null,
                     panelHead(),
+                    !editing && !waterEditing && companionCard(),
                     waterEditing ? waterSettings() : editing ? editor() : panelBody(),
                     notices(),
                     !editing && !waterEditing && waterOverview(),

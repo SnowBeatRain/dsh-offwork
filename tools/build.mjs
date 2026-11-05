@@ -5,6 +5,7 @@ const moduleNames = [
   'client.source.js',
   'clock.js',
   'ui-utils.js',
+  'companion.js',
   'hydration.js',
   'hydration-store.js',
 ];

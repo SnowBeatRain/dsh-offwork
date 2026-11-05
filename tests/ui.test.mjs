@@ -27,16 +27,25 @@ test('position stays visible when viewport shrinks', () => {
     y: 12,
   });
 });
-test('view defaults: compact, salary hidden, 82% glass', () => {
+test('view defaults: compact, salary hidden, 82% glass and companion enabled', () => {
   assert.deepEqual(normalizeView(null), {
     mini: true,
     masked: true,
+    companion: true,
+    companionMotion: true,
     opacity: 0.82,
     position: null,
   });
   assert.deepEqual(
     normalizeView({ mini: false, masked: false, opacity: 0.5, position: { x: 1, y: 2 } }),
-    { mini: false, masked: false, opacity: 0.5, position: { x: 1, y: 2 } },
+    {
+      mini: false,
+      masked: false,
+      companion: true,
+      companionMotion: true,
+      opacity: 0.5,
+      position: { x: 1, y: 2 },
+    },
   );
   assert.equal(normalizeView({ mini: 'yes' }).mini, true);
   assert.equal(normalizeView({ masked: 'false' }).masked, true);
@@ -45,6 +54,8 @@ test('malformed positions and opacity are repaired, not trusted', () => {
   assert.deepEqual(normalizeView({ mini: 'yes', masked: true, position: { x: 'oops', y: 2 } }), {
     mini: true,
     masked: true,
+    companion: true,
+    companionMotion: true,
     opacity: 0.82,
     position: null,
   });

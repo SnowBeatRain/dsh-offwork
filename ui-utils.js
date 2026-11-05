@@ -29,6 +29,8 @@ export function normalizeView(value) {
   return {
     mini: value?.mini !== false,
     masked: value?.masked !== false,
+    companion: value?.companion !== false,
+    companionMotion: value?.companionMotion !== false,
     opacity: clampOpacity(value?.opacity),
     position:
       Number.isFinite(value?.position?.x) && Number.isFinite(value?.position?.y)
