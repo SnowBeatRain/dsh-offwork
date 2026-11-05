@@ -4495,7 +4495,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               {
                 ref: box,
                 className: 'owc-v2 owc-pet-shell',
-                'data-version': '1.0.1',
+                'data-version': '1.1.0',
                 'data-pet-model': stageModel,
                 'data-status': safeState.status,
                 'aria-label': t('companionLabel'),
@@ -4682,7 +4682,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 (collapsed && waterQuickOpen ? ' owc-quick' : '') +
                 (editing || waterEditing ? ' owc-editing' : ''),
               'aria-label': t('title'),
-              'data-version': '1.0.1',
+              'data-version': '1.1.0',
               'data-status': safeState?.status || 'setup',
               style: cardStyle,
               onPointerDown: dragDown,

@@ -1,6 +1,6 @@
 # 喝水提醒：本地验收说明
 
-状态：本地开发，待用户验收，`dsh.toolscc.cn` 测试账号按用户要求加载开发目录。尚未推送、合并到主分支、打标签或发布 npm。当前 package.json、锁文件和客户端版本标记仍为 `1.0.1`；候选发布版本为 `1.0.2`，验收后再处理。
+状态：已完成开发验收，纳入 `1.1.0` 发布。本文保留功能规则与隔离验收方法，发布结果见 [1.1.0 发布记录](RELEASE-1.1.0.md)。
 
 开发目录：`/opt/dsh/users/xxy/workspace/dsh/offwork-hydration-dev`。
 
@@ -27,7 +27,7 @@
 
 ## 拟人化表现
 
-开发版已加入原创角色“小歇”。角色复用这里的计时与事务结果，支持隐藏和关闭动作；详细说明见 [拟人化验收](COMPANION.md)。
+当前包含鲸系少女立绘与原创水滴“小歇”。角色复用这里的计时与事务结果，支持隐藏和关闭动作；最新说明见 [角色与卡片](PET-PREVIEW.md)。
 
 ## 效果截图
 
@@ -65,13 +65,13 @@ npm ci --ignore-scripts
 npm run build
 preview_dir=$(mktemp -d /tmp/offwork-hydration-acceptance.XXXXXX)
 npm pack --ignore-scripts --pack-destination "$preview_dir"
-DSH_HOME="$preview_dir/home" dsh plugin --profile web add "$preview_dir/dsh-offwork-1.0.1.tgz" --ignore-scripts
+DSH_HOME="$preview_dir/home" dsh plugin --profile web add "$preview_dir/dsh-offwork-1.1.0.tgz" --ignore-scripts
 DSH_HOME="$preview_dir/home" dsh web --host 127.0.0.1 --port 3081 --no-open
 ```
 
 浏览器打开该进程在终端输出的地址。若通过 SSH 使用服务器，可把服务器 `3081` 端口转发到本机同端口，再打开该地址。启动地址含临时授权信息，不要公开分享。若端口已占用，请更换空闲端口。
 
-首次进入选择一个测试工作区，创建空会话，使用示例薪资完成作息配置。不需要配置模型 API 或发送模型请求。打包文件沿用 `1.0.1` 仅因为本轮保持版本不变，它是本地候选文件，不是 npm 公共版本。
+首次进入选择一个测试工作区，创建空会话，使用示例薪资完成作息配置。不需要配置模型 API 或发送模型请求。这里测试的是当前源码打出的 `1.1.0` 安装包。
 
 ## 建议验收顺序
 

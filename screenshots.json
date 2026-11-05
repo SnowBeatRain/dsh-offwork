@@ -1,1 +1,7 @@
-["assets/screenshot-compact.png", "assets/screenshot-detail.png", "assets/screenshot-settings.png"]
+[
+  "docs/pet-preview/whale-default.png",
+  "docs/pet-preview/whale-appearance.png",
+  "docs/pet-preview/adaptive-water.png",
+  "docs/pet-preview/adaptive-clock.png",
+  "docs/pet-preview/cards-earnings.png"
+]

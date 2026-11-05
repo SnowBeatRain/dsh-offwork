@@ -1,7 +1,7 @@
 {
   "name": "dsh-offwork",
-  "version": "1.0.1",
-  "description": "下班倒计时与实时工资悬浮窗：可拖动、可调透明度、工资可隐藏。A draggable countdown and salary overlay for DeepSeek Harness.",
+  "version": "1.1.0",
+  "description": "Harness 页面陪伴角色、下班倒计时、实时收入与喝水提醒。Character companion, clock-out countdown, earnings and hydration reminders for DeepSeek Harness.",
   "type": "module",
   "license": "MIT",
   "author": "now",
