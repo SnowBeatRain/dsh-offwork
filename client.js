@@ -573,7 +573,7 @@ const PET_MESSAGES = {
     petQuick: '日常陪伴',
     petDetails: '下班与收入',
     petSize: '宠物大小',
-    petHint: '左键日常 · 右键菜单 · 拖动移动',
+    petHint: '左键喝水 · 右键菜单 · 拖动移动',
     petMode: '宠物模式',
     petClock: '下班倒计时',
   },
@@ -583,7 +583,7 @@ const PET_MESSAGES = {
     petQuick: 'Daily companion',
     petDetails: 'Clock and earnings',
     petSize: 'Pet size',
-    petHint: 'Click for daily actions · right-click for menu · drag to move',
+    petHint: 'Click for water · right-click for menu · drag to move',
     petMode: 'Pet mode',
     petClock: 'Shift countdown',
   },
@@ -616,7 +616,7 @@ const PET_STYLE = `
 
 // Ephemeral UI navigation only. Business data stays in its existing stores.
 const PET_EDITOR_SCREENS = ['water', 'schedule', 'appearance'];
-const initialPetUI = { screen: null, back: 'home', menu: null, pending: null };
+const initialPetUI = { screen: null, back: null, menu: null, pending: null };
 function petUIReducer(state, action) {
   switch (action.type) {
     case 'menu':
@@ -626,15 +626,23 @@ function petUIReducer(state, action) {
     case 'stay':
       return { ...state, pending: null };
     case 'navigate': {
-      if (![null, 'home', 'income', ...PET_EDITOR_SCREENS].includes(action.screen)) return state;
-      if (state.screen === action.screen) return { ...state, menu: null, pending: null };
+      if (![null, 'home', 'income', 'earnings', ...PET_EDITOR_SCREENS].includes(action.screen))
+        return state;
+      if (state.screen === action.screen)
+        return { ...state, back: action.root ? null : state.back, menu: null, pending: null };
       if (action.dirty && !action.discard)
-        return { ...state, menu: null, pending: { screen: action.screen } };
-      const back = PET_EDITOR_SCREENS.includes(action.screen)
-        ? PET_EDITOR_SCREENS.includes(state.screen)
-          ? state.back
-          : (state.screen ?? 'home')
-        : state.back;
+        return {
+          ...state,
+          menu: null,
+          pending: { screen: action.screen, ...(action.root ? { root: true } : {}) },
+        };
+      const back = action.root
+        ? null
+        : PET_EDITOR_SCREENS.includes(action.screen)
+          ? PET_EDITOR_SCREENS.includes(state.screen)
+            ? state.back
+            : state.screen
+          : state.back;
       return { screen: action.screen, back, menu: null, pending: null };
     }
     default:
@@ -651,7 +659,7 @@ function appearanceValues(view) {
 }
 function petMenuLayout(point, viewport, avoid = null) {
   const width = Math.min(196, Math.max(1, viewport.width - 24));
-  const maxHeight = Math.min(202, Math.max(1, viewport.height - 24));
+  const maxHeight = Math.min(240, Math.max(1, viewport.height - 24));
   let x = point.x,
     y = point.y;
   if (avoid) {
@@ -670,7 +678,12 @@ function petMenuLayout(point, viewport, avoid = null) {
 }
 const PET_INTERACTION_MESSAGES = {
   zh: {
-    petHome: '日常',
+    petHome: '喝水',
+    petWaterCard: '喝水',
+    petCountdownCard: '下班倒计时',
+    petEarningsCard: '收入',
+    petWaterAlert: '查看喝水提醒',
+    petPausedHint: '本班已暂停，可手动恢复。',
     petMenu: '宠物菜单',
     petBack: '返回',
     petCloseAll: '关闭面板',
@@ -694,7 +707,12 @@ const PET_INTERACTION_MESSAGES = {
     petDismissReminder: '稍后处理',
   },
   en: {
-    petHome: 'Daily',
+    petHome: 'Water',
+    petWaterCard: 'Water',
+    petCountdownCard: 'Shift countdown',
+    petEarningsCard: 'Earnings',
+    petWaterAlert: 'View water reminder',
+    petPausedHint: 'Paused for this shift. Resume when ready.',
     petMenu: 'Pet menu',
     petBack: 'Back',
     petCloseAll: 'Close panel',
@@ -722,6 +740,7 @@ const PET_INTERACTION_MESSAGES = {
 const PET_INTERACTION_STYLE = `
 .owc-pet-workspace .owc-glass{opacity:var(--owc-alpha)}
 .owc-pet-water-card.owc-water-due{border-radius:14px}
+.owc-pet-water-alert{position:fixed!important;width:140px;box-sizing:border-box;min-height:30px!important;border:1px solid var(--owc-accent)!important;background:var(--dsw-alias-bg-overlay)!important;box-shadow:0 4px 12px #18354b18;font-size:11px!important;z-index:2}
 .owc-pet-panel.owc-pet-workspace{display:flex;flex-direction:column;overflow:hidden}
 .owc-pet-workspace>.owc-head{position:relative;flex:none;min-height:46px;padding:8px 12px;box-sizing:border-box}
 .owc-pet-workspace>.owc-pet-scroll{position:relative;min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}
@@ -1668,11 +1687,13 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             data?.configured &&
             !!safeState &&
             (appearanceOnly ? appearanceWasPet.current : view.companion);
+          const cardRoot = PET_EDITOR_SCREENS.includes(ui.screen) ? ui.back : ui.screen;
+          const petCardHeight = ['home', 'income', 'earnings'].includes(cardRoot) ? 360 : 440;
           const petGeometry = petLayout(
             dragPosition ?? view.petPosition,
             viewport,
             view.petSize,
-            petOpen ? 440 : 150,
+            petOpen ? petCardHeight : 150,
           );
           const placementKey = [
             viewport.width,
@@ -2346,7 +2367,8 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               return openAppearanceContext(event);
             return false;
           }
-          function performNavigation(screen) {
+          function performNavigation(screen, root = false) {
+            if (root) panelPlacement.current = null;
             if (screen !== ui.screen) {
               if (screen === 'water') {
                 waterPreferencesBase.current = { enabled: water.enabled, interval: water.interval };
@@ -2371,18 +2393,19 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               }
               if (ui.screen === 'appearance') setAppearanceDraft(null);
             }
-            dispatchUI({ type: 'navigate', screen, discard: true });
+            dispatchUI({ type: 'navigate', screen, discard: true, root });
             setWaterConfirm(null);
           }
           function navigateScreen(screen, event) {
             if (!data?.configured && screen !== 'schedule') return;
             if (busy || waterBusy || requestBusy.current || waterPending.current) return;
+            const root = event?.currentTarget?.getAttribute?.('role') === 'menuitem';
             if (event?.currentTarget) focusReturn.current = event.currentTarget;
             if (screen !== ui.screen && draftChanged()) {
-              dispatchUI({ type: 'navigate', screen, dirty: true });
+              dispatchUI({ type: 'navigate', screen, dirty: true, root });
               return;
             }
-            performNavigation(screen);
+            performNavigation(screen, root);
           }
           function draftChanged() {
             if (waterEditing && waterPreferencesBase.current)
@@ -2413,7 +2436,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               : appearanceOnly
                 ? applyAppearance()
                 : await save({ preventDefault() {} });
-            if (result) performNavigation(destination);
+            if (result) performNavigation(destination, ui.pending.root);
             else dispatchUI({ type: 'stay' });
           }
           function updateAppearance(patch) {
@@ -3188,7 +3211,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                     ),
             );
 
-          const panelBody = () => {
+          const panelBody = (section = 'all') => {
             if (!safeState)
               return h(
                 'div',
@@ -3220,48 +3243,58 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             return h(
               'div',
               { className: 'owc-main' },
-              status &&
+              section !== 'earnings' &&
+                status &&
                 h('div', { className: 'owc-status' }, h('span', { className: 'owc-dot' }), status),
-              h('div', { className: 'owc-time', 'aria-label': status + ' ' + duration }, duration),
-              h(
-                'div',
-                {
-                  className: 'owc-progress',
-                  role: 'progressbar',
-                  'aria-label': t('progress'),
-                  'aria-valuenow': Math.floor(safeState.progress * 100),
-                  'aria-valuemin': 0,
-                  'aria-valuemax': 100,
-                },
-                h('div', { style: { width: safeState.progress * 100 + '%' } }),
-              ),
-              h(
-                'div',
-                { className: 'owc-earn-row' },
-                h('span', { className: 'owc-muted' }, t('earned')),
-                salaryToggle(),
-              ),
-              h(
-                'div',
-                { className: 'owc-money', 'aria-label': view.masked ? t('masked') : moneyText },
-                moneyText,
-              ),
-              h(
-                'div',
-                { className: 'owc-stats' },
+              section !== 'earnings' &&
                 h(
                   'div',
-                  null,
-                  h('span', null, t('daily')),
-                  h('strong', null, money(safeState.daily)),
+                  { className: 'owc-time', 'aria-label': status + ' ' + duration },
+                  duration,
                 ),
+              section !== 'earnings' &&
                 h(
                   'div',
-                  null,
-                  h('span', null, t('hourly')),
-                  h('strong', null, money(safeState.hourly)),
+                  {
+                    className: 'owc-progress',
+                    role: 'progressbar',
+                    'aria-label': t('progress'),
+                    'aria-valuenow': Math.floor(safeState.progress * 100),
+                    'aria-valuemin': 0,
+                    'aria-valuemax': 100,
+                  },
+                  h('div', { style: { width: safeState.progress * 100 + '%' } }),
                 ),
-              ),
+              section !== 'clock' &&
+                h(
+                  'div',
+                  { className: 'owc-earn-row' },
+                  h('span', { className: 'owc-muted' }, t('earned')),
+                  salaryToggle(),
+                ),
+              section !== 'clock' &&
+                h(
+                  'div',
+                  { className: 'owc-money', 'aria-label': view.masked ? t('masked') : moneyText },
+                  moneyText,
+                ),
+              section !== 'clock' &&
+                h(
+                  'div',
+                  { className: 'owc-stats' },
+                  h(
+                    'div',
+                    null,
+                    h('span', null, t('daily')),
+                    h('strong', null, money(safeState.daily)),
+                  ),
+                  h(
+                    'div',
+                    null,
+                    h('span', null, t('hourly')),
+                    h('strong', null, money(safeState.hourly)),
+                  ),
+                ),
               h(
                 'div',
                 { className: 'owc-meta' },
@@ -3297,16 +3330,23 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   iconSvg('refresh', 12),
                   t('refresh'),
                 ),
-                h(
-                  'button',
-                  {
-                    type: 'button',
-                    className: 'owc-text',
-                    onClick: () =>
-                      setPreference(petMode ? { petPosition: null } : { position: null }),
-                  },
-                  t('reset'),
-                ),
+                petMode &&
+                  h(
+                    'button',
+                    { type: 'button', className: 'owc-text', onClick: openEditor },
+                    t('petWorkSettings'),
+                  ),
+                !petMode &&
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'owc-text',
+                      onClick: () =>
+                        setPreference(petMode ? { petPosition: null } : { position: null }),
+                    },
+                    t('reset'),
+                  ),
               ),
             );
           };
@@ -3641,7 +3681,10 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               petDragged.current = false;
               return;
             }
-            navigateScreen('home', event);
+            navigateScreen(
+              event.currentTarget.classList.contains('owc-pet-clock') ? 'income' : 'home',
+              event,
+            );
           }
           function closePetMenu(restore = true) {
             dispatchUI({ type: 'dismiss-menu' });
@@ -3721,7 +3764,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 {
                   type: 'button',
                   disabled: busy || waterBusy,
-                  onClick: () => performNavigation(ui.pending.screen),
+                  onClick: () => performNavigation(ui.pending.screen, ui.pending.root),
                 },
                 t('petDiscard'),
               ),
@@ -3737,8 +3780,9 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               ),
             );
           const petPageTitle = {
-            home: 'companionName',
-            income: 'petDetails',
+            home: 'petWaterCard',
+            income: 'petCountdownCard',
+            earnings: 'petEarningsCard',
             water: 'petWaterSettings',
             appearance: 'petAppearance',
             schedule: 'petWorkSettings',
@@ -3747,14 +3791,15 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             h(
               'div',
               { className: 'owc-head' },
-              ui.screen !== 'home' &&
+              PET_EDITOR_SCREENS.includes(ui.screen) &&
+                ui.back !== null &&
                 h(
                   'button',
                   {
                     type: 'button',
                     className: 'owc-text',
                     disabled: busy || waterBusy,
-                    onClick: () => navigateScreen(editing || waterEditing ? ui.back : 'home'),
+                    onClick: () => navigateScreen(ui.back),
                     'aria-label': t('petBack'),
                   },
                   '← ',
@@ -3781,12 +3826,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             h(
               'div',
               { className: 'owc-pet-home', 'data-pet-home': true },
-              h(
-                'div',
-                { className: 'owc-pet-home-clock' },
-                t(safeState.status),
-                h('strong', null, duration),
-              ),
+
               h(
                 'div',
                 {
@@ -3852,15 +3892,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                       t('waterSnooze'),
                     )
                   : water.shift?.paused
-                    ? h(
-                        'button',
-                        {
-                          type: 'button',
-                          disabled: waterBusy,
-                          onClick: () => waterAction({ type: 'resume' }),
-                        },
-                        t('petResume'),
-                      )
+                    ? t('petPausedHint')
                     : waterState.phase === 'quiet'
                       ? h(
                           React.Fragment,
@@ -3902,21 +3934,21 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               h(
                 'div',
                 { className: 'owc-pet-home-links' },
-                [
-                  ['income', 'petDetails'],
-                  ['water', 'petWaterSettings'],
-                  ['appearance', 'petAppearance'],
-                  ['schedule', 'petWorkSettings'],
-                ].map(([screen, label]) =>
-                  h(
-                    'button',
-                    {
-                      key: screen,
-                      type: 'button',
-                      onClick: (event) => navigateScreen(screen, event),
-                    },
-                    t(label),
-                  ),
+                h('button', { type: 'button', onClick: openWaterEditor }, t('petWaterSettings')),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    disabled:
+                      !water.enabled ||
+                      busy ||
+                      waterBusy ||
+                      waterError ||
+                      !waterContext ||
+                      water.shift?.id !== waterContext.id,
+                    onClick: () => waterAction({ type: water.shift?.paused ? 'resume' : 'pause' }),
+                  },
+                  t(water.shift?.paused ? 'waterResume' : 'waterPause'),
                 ),
               ),
             );
@@ -3968,8 +4000,10 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 },
               },
               [
+                ['income', 'petCountdownCard'],
+                ['home', 'petWaterCard'],
+                ['earnings', 'petEarningsCard'],
                 ['appearance', 'petAppearance'],
-                ['water', 'petWaterSettings'],
                 ['schedule', 'petWorkSettings'],
               ].map(([screen, label]) =>
                 h(
@@ -3985,26 +4019,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   t(label),
                 ),
               ),
-              h(
-                'button',
-                {
-                  type: 'button',
-                  role: 'menuitem',
-                  tabIndex: -1,
-                  disabled:
-                    !water.enabled ||
-                    busy ||
-                    waterBusy ||
-                    waterError ||
-                    !waterContext ||
-                    water.shift?.id !== waterContext.id,
-                  onClick: () => {
-                    closePetMenu();
-                    void waterAction({ type: water.shift?.paused ? 'resume' : 'pause' });
-                  },
-                },
-                t(water.shift?.paused ? 'waterResume' : 'waterPause'),
-              ),
+
               h('hr', null),
               h(
                 'button',
@@ -4090,6 +4105,37 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   ['done', 'rest'].includes(safeState.status) ? null : h('strong', null, duration),
                 ),
               ),
+              waterPrompt &&
+                petShowing &&
+                ui.screen !== 'home' &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-pet-water-alert owc-water-due',
+                    'data-water-event': waterState.eventId,
+                    'aria-label': t('petWaterAlert'),
+                    onClick: (event) => navigateScreen('home', event),
+                    style: {
+                      left: Math.max(
+                        12,
+                        Math.min(
+                          petGeometry.x + (petGeometry.petWidth - 140) / 2,
+                          viewport.width - 152,
+                        ),
+                      ),
+                      top:
+                        petGeometry.y >= 50
+                          ? petGeometry.y - 38
+                          : Math.min(
+                              viewport.height - 44,
+                              petGeometry.y + petGeometry.petHeight + 6,
+                            ),
+                    },
+                  },
+                  iconSvg('water', 13),
+                  t('waterDue'),
+                ),
               contextMenu(),
               !petShowing &&
                 !waterPrompt &&
@@ -4127,7 +4173,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                       left: floatingPanel.left,
                       top: floatingPanel.top,
                       width: floatingPanel.width,
-                      height: Math.min(petShowing ? 440 : 150, floatingPanel.maxHeight),
+                      height: Math.min(petShowing ? petCardHeight : 150, floatingPanel.maxHeight),
                       maxHeight: floatingPanel.maxHeight,
                     },
                   },
@@ -4165,8 +4211,10 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                               : editing
                                 ? editor()
                                 : petDetails
-                                  ? h(React.Fragment, null, waterReminder(), panelBody())
-                                  : petHome(),
+                                  ? panelBody('clock')
+                                  : ui.screen === 'earnings'
+                                    ? panelBody('earnings')
+                                    : petHome(),
                           notices(),
                         )
                       : waterReminder(),

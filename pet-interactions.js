@@ -1,6 +1,6 @@
 // Ephemeral UI navigation only. Business data stays in its existing stores.
 export const PET_EDITOR_SCREENS = ['water', 'schedule', 'appearance'];
-export const initialPetUI = { screen: null, back: 'home', menu: null, pending: null };
+export const initialPetUI = { screen: null, back: null, menu: null, pending: null };
 export function petUIReducer(state, action) {
   switch (action.type) {
     case 'menu':
@@ -10,15 +10,23 @@ export function petUIReducer(state, action) {
     case 'stay':
       return { ...state, pending: null };
     case 'navigate': {
-      if (![null, 'home', 'income', ...PET_EDITOR_SCREENS].includes(action.screen)) return state;
-      if (state.screen === action.screen) return { ...state, menu: null, pending: null };
+      if (![null, 'home', 'income', 'earnings', ...PET_EDITOR_SCREENS].includes(action.screen))
+        return state;
+      if (state.screen === action.screen)
+        return { ...state, back: action.root ? null : state.back, menu: null, pending: null };
       if (action.dirty && !action.discard)
-        return { ...state, menu: null, pending: { screen: action.screen } };
-      const back = PET_EDITOR_SCREENS.includes(action.screen)
-        ? PET_EDITOR_SCREENS.includes(state.screen)
-          ? state.back
-          : (state.screen ?? 'home')
-        : state.back;
+        return {
+          ...state,
+          menu: null,
+          pending: { screen: action.screen, ...(action.root ? { root: true } : {}) },
+        };
+      const back = action.root
+        ? null
+        : PET_EDITOR_SCREENS.includes(action.screen)
+          ? PET_EDITOR_SCREENS.includes(state.screen)
+            ? state.back
+            : state.screen
+          : state.back;
       return { screen: action.screen, back, menu: null, pending: null };
     }
     default:
@@ -35,7 +43,7 @@ export function appearanceValues(view) {
 }
 export function petMenuLayout(point, viewport, avoid = null) {
   const width = Math.min(196, Math.max(1, viewport.width - 24));
-  const maxHeight = Math.min(202, Math.max(1, viewport.height - 24));
+  const maxHeight = Math.min(240, Math.max(1, viewport.height - 24));
   let x = point.x,
     y = point.y;
   if (avoid) {
@@ -54,7 +62,12 @@ export function petMenuLayout(point, viewport, avoid = null) {
 }
 export const PET_INTERACTION_MESSAGES = {
   zh: {
-    petHome: '日常',
+    petHome: '喝水',
+    petWaterCard: '喝水',
+    petCountdownCard: '下班倒计时',
+    petEarningsCard: '收入',
+    petWaterAlert: '查看喝水提醒',
+    petPausedHint: '本班已暂停，可手动恢复。',
     petMenu: '宠物菜单',
     petBack: '返回',
     petCloseAll: '关闭面板',
@@ -78,7 +91,12 @@ export const PET_INTERACTION_MESSAGES = {
     petDismissReminder: '稍后处理',
   },
   en: {
-    petHome: 'Daily',
+    petHome: 'Water',
+    petWaterCard: 'Water',
+    petCountdownCard: 'Shift countdown',
+    petEarningsCard: 'Earnings',
+    petWaterAlert: 'View water reminder',
+    petPausedHint: 'Paused for this shift. Resume when ready.',
     petMenu: 'Pet menu',
     petBack: 'Back',
     petCloseAll: 'Close panel',
@@ -106,6 +124,7 @@ export const PET_INTERACTION_MESSAGES = {
 export const PET_INTERACTION_STYLE = `
 .owc-pet-workspace .owc-glass{opacity:var(--owc-alpha)}
 .owc-pet-water-card.owc-water-due{border-radius:14px}
+.owc-pet-water-alert{position:fixed!important;width:140px;box-sizing:border-box;min-height:30px!important;border:1px solid var(--owc-accent)!important;background:var(--dsw-alias-bg-overlay)!important;box-shadow:0 4px 12px #18354b18;font-size:11px!important;z-index:2}
 .owc-pet-panel.owc-pet-workspace{display:flex;flex-direction:column;overflow:hidden}
 .owc-pet-workspace>.owc-head{position:relative;flex:none;min-height:46px;padding:8px 12px;box-sizing:border-box}
 .owc-pet-workspace>.owc-pet-scroll{position:relative;min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:thin}

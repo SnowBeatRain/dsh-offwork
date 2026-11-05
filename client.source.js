@@ -517,11 +517,13 @@ window.__ModuleLoader__.load({
             data?.configured &&
             !!safeState &&
             (appearanceOnly ? appearanceWasPet.current : view.companion);
+          const cardRoot = PET_EDITOR_SCREENS.includes(ui.screen) ? ui.back : ui.screen;
+          const petCardHeight = ['home', 'income', 'earnings'].includes(cardRoot) ? 360 : 440;
           const petGeometry = petLayout(
             dragPosition ?? view.petPosition,
             viewport,
             view.petSize,
-            petOpen ? 440 : 150,
+            petOpen ? petCardHeight : 150,
           );
           const placementKey = [
             viewport.width,
@@ -1195,7 +1197,8 @@ window.__ModuleLoader__.load({
               return openAppearanceContext(event);
             return false;
           }
-          function performNavigation(screen) {
+          function performNavigation(screen, root = false) {
+            if (root) panelPlacement.current = null;
             if (screen !== ui.screen) {
               if (screen === 'water') {
                 waterPreferencesBase.current = { enabled: water.enabled, interval: water.interval };
@@ -1220,18 +1223,19 @@ window.__ModuleLoader__.load({
               }
               if (ui.screen === 'appearance') setAppearanceDraft(null);
             }
-            dispatchUI({ type: 'navigate', screen, discard: true });
+            dispatchUI({ type: 'navigate', screen, discard: true, root });
             setWaterConfirm(null);
           }
           function navigateScreen(screen, event) {
             if (!data?.configured && screen !== 'schedule') return;
             if (busy || waterBusy || requestBusy.current || waterPending.current) return;
+            const root = event?.currentTarget?.getAttribute?.('role') === 'menuitem';
             if (event?.currentTarget) focusReturn.current = event.currentTarget;
             if (screen !== ui.screen && draftChanged()) {
-              dispatchUI({ type: 'navigate', screen, dirty: true });
+              dispatchUI({ type: 'navigate', screen, dirty: true, root });
               return;
             }
-            performNavigation(screen);
+            performNavigation(screen, root);
           }
           function draftChanged() {
             if (waterEditing && waterPreferencesBase.current)
@@ -1262,7 +1266,7 @@ window.__ModuleLoader__.load({
               : appearanceOnly
                 ? applyAppearance()
                 : await save({ preventDefault() {} });
-            if (result) performNavigation(destination);
+            if (result) performNavigation(destination, ui.pending.root);
             else dispatchUI({ type: 'stay' });
           }
           function updateAppearance(patch) {
@@ -2037,7 +2041,7 @@ window.__ModuleLoader__.load({
                     ),
             );
 
-          const panelBody = () => {
+          const panelBody = (section = 'all') => {
             if (!safeState)
               return h(
                 'div',
@@ -2069,48 +2073,58 @@ window.__ModuleLoader__.load({
             return h(
               'div',
               { className: 'owc-main' },
-              status &&
+              section !== 'earnings' &&
+                status &&
                 h('div', { className: 'owc-status' }, h('span', { className: 'owc-dot' }), status),
-              h('div', { className: 'owc-time', 'aria-label': status + ' ' + duration }, duration),
-              h(
-                'div',
-                {
-                  className: 'owc-progress',
-                  role: 'progressbar',
-                  'aria-label': t('progress'),
-                  'aria-valuenow': Math.floor(safeState.progress * 100),
-                  'aria-valuemin': 0,
-                  'aria-valuemax': 100,
-                },
-                h('div', { style: { width: safeState.progress * 100 + '%' } }),
-              ),
-              h(
-                'div',
-                { className: 'owc-earn-row' },
-                h('span', { className: 'owc-muted' }, t('earned')),
-                salaryToggle(),
-              ),
-              h(
-                'div',
-                { className: 'owc-money', 'aria-label': view.masked ? t('masked') : moneyText },
-                moneyText,
-              ),
-              h(
-                'div',
-                { className: 'owc-stats' },
+              section !== 'earnings' &&
                 h(
                   'div',
-                  null,
-                  h('span', null, t('daily')),
-                  h('strong', null, money(safeState.daily)),
+                  { className: 'owc-time', 'aria-label': status + ' ' + duration },
+                  duration,
                 ),
+              section !== 'earnings' &&
                 h(
                   'div',
-                  null,
-                  h('span', null, t('hourly')),
-                  h('strong', null, money(safeState.hourly)),
+                  {
+                    className: 'owc-progress',
+                    role: 'progressbar',
+                    'aria-label': t('progress'),
+                    'aria-valuenow': Math.floor(safeState.progress * 100),
+                    'aria-valuemin': 0,
+                    'aria-valuemax': 100,
+                  },
+                  h('div', { style: { width: safeState.progress * 100 + '%' } }),
                 ),
-              ),
+              section !== 'clock' &&
+                h(
+                  'div',
+                  { className: 'owc-earn-row' },
+                  h('span', { className: 'owc-muted' }, t('earned')),
+                  salaryToggle(),
+                ),
+              section !== 'clock' &&
+                h(
+                  'div',
+                  { className: 'owc-money', 'aria-label': view.masked ? t('masked') : moneyText },
+                  moneyText,
+                ),
+              section !== 'clock' &&
+                h(
+                  'div',
+                  { className: 'owc-stats' },
+                  h(
+                    'div',
+                    null,
+                    h('span', null, t('daily')),
+                    h('strong', null, money(safeState.daily)),
+                  ),
+                  h(
+                    'div',
+                    null,
+                    h('span', null, t('hourly')),
+                    h('strong', null, money(safeState.hourly)),
+                  ),
+                ),
               h(
                 'div',
                 { className: 'owc-meta' },
@@ -2146,16 +2160,23 @@ window.__ModuleLoader__.load({
                   iconSvg('refresh', 12),
                   t('refresh'),
                 ),
-                h(
-                  'button',
-                  {
-                    type: 'button',
-                    className: 'owc-text',
-                    onClick: () =>
-                      setPreference(petMode ? { petPosition: null } : { position: null }),
-                  },
-                  t('reset'),
-                ),
+                petMode &&
+                  h(
+                    'button',
+                    { type: 'button', className: 'owc-text', onClick: openEditor },
+                    t('petWorkSettings'),
+                  ),
+                !petMode &&
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'owc-text',
+                      onClick: () =>
+                        setPreference(petMode ? { petPosition: null } : { position: null }),
+                    },
+                    t('reset'),
+                  ),
               ),
             );
           };
@@ -2490,7 +2511,10 @@ window.__ModuleLoader__.load({
               petDragged.current = false;
               return;
             }
-            navigateScreen('home', event);
+            navigateScreen(
+              event.currentTarget.classList.contains('owc-pet-clock') ? 'income' : 'home',
+              event,
+            );
           }
           function closePetMenu(restore = true) {
             dispatchUI({ type: 'dismiss-menu' });
@@ -2570,7 +2594,7 @@ window.__ModuleLoader__.load({
                 {
                   type: 'button',
                   disabled: busy || waterBusy,
-                  onClick: () => performNavigation(ui.pending.screen),
+                  onClick: () => performNavigation(ui.pending.screen, ui.pending.root),
                 },
                 t('petDiscard'),
               ),
@@ -2586,8 +2610,9 @@ window.__ModuleLoader__.load({
               ),
             );
           const petPageTitle = {
-            home: 'companionName',
-            income: 'petDetails',
+            home: 'petWaterCard',
+            income: 'petCountdownCard',
+            earnings: 'petEarningsCard',
             water: 'petWaterSettings',
             appearance: 'petAppearance',
             schedule: 'petWorkSettings',
@@ -2596,14 +2621,15 @@ window.__ModuleLoader__.load({
             h(
               'div',
               { className: 'owc-head' },
-              ui.screen !== 'home' &&
+              PET_EDITOR_SCREENS.includes(ui.screen) &&
+                ui.back !== null &&
                 h(
                   'button',
                   {
                     type: 'button',
                     className: 'owc-text',
                     disabled: busy || waterBusy,
-                    onClick: () => navigateScreen(editing || waterEditing ? ui.back : 'home'),
+                    onClick: () => navigateScreen(ui.back),
                     'aria-label': t('petBack'),
                   },
                   '← ',
@@ -2630,12 +2656,7 @@ window.__ModuleLoader__.load({
             h(
               'div',
               { className: 'owc-pet-home', 'data-pet-home': true },
-              h(
-                'div',
-                { className: 'owc-pet-home-clock' },
-                t(safeState.status),
-                h('strong', null, duration),
-              ),
+
               h(
                 'div',
                 {
@@ -2701,15 +2722,7 @@ window.__ModuleLoader__.load({
                       t('waterSnooze'),
                     )
                   : water.shift?.paused
-                    ? h(
-                        'button',
-                        {
-                          type: 'button',
-                          disabled: waterBusy,
-                          onClick: () => waterAction({ type: 'resume' }),
-                        },
-                        t('petResume'),
-                      )
+                    ? t('petPausedHint')
                     : waterState.phase === 'quiet'
                       ? h(
                           React.Fragment,
@@ -2751,21 +2764,21 @@ window.__ModuleLoader__.load({
               h(
                 'div',
                 { className: 'owc-pet-home-links' },
-                [
-                  ['income', 'petDetails'],
-                  ['water', 'petWaterSettings'],
-                  ['appearance', 'petAppearance'],
-                  ['schedule', 'petWorkSettings'],
-                ].map(([screen, label]) =>
-                  h(
-                    'button',
-                    {
-                      key: screen,
-                      type: 'button',
-                      onClick: (event) => navigateScreen(screen, event),
-                    },
-                    t(label),
-                  ),
+                h('button', { type: 'button', onClick: openWaterEditor }, t('petWaterSettings')),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    disabled:
+                      !water.enabled ||
+                      busy ||
+                      waterBusy ||
+                      waterError ||
+                      !waterContext ||
+                      water.shift?.id !== waterContext.id,
+                    onClick: () => waterAction({ type: water.shift?.paused ? 'resume' : 'pause' }),
+                  },
+                  t(water.shift?.paused ? 'waterResume' : 'waterPause'),
                 ),
               ),
             );
@@ -2817,8 +2830,10 @@ window.__ModuleLoader__.load({
                 },
               },
               [
+                ['income', 'petCountdownCard'],
+                ['home', 'petWaterCard'],
+                ['earnings', 'petEarningsCard'],
                 ['appearance', 'petAppearance'],
-                ['water', 'petWaterSettings'],
                 ['schedule', 'petWorkSettings'],
               ].map(([screen, label]) =>
                 h(
@@ -2834,26 +2849,7 @@ window.__ModuleLoader__.load({
                   t(label),
                 ),
               ),
-              h(
-                'button',
-                {
-                  type: 'button',
-                  role: 'menuitem',
-                  tabIndex: -1,
-                  disabled:
-                    !water.enabled ||
-                    busy ||
-                    waterBusy ||
-                    waterError ||
-                    !waterContext ||
-                    water.shift?.id !== waterContext.id,
-                  onClick: () => {
-                    closePetMenu();
-                    void waterAction({ type: water.shift?.paused ? 'resume' : 'pause' });
-                  },
-                },
-                t(water.shift?.paused ? 'waterResume' : 'waterPause'),
-              ),
+
               h('hr', null),
               h(
                 'button',
@@ -2939,6 +2935,37 @@ window.__ModuleLoader__.load({
                   ['done', 'rest'].includes(safeState.status) ? null : h('strong', null, duration),
                 ),
               ),
+              waterPrompt &&
+                petShowing &&
+                ui.screen !== 'home' &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-pet-water-alert owc-water-due',
+                    'data-water-event': waterState.eventId,
+                    'aria-label': t('petWaterAlert'),
+                    onClick: (event) => navigateScreen('home', event),
+                    style: {
+                      left: Math.max(
+                        12,
+                        Math.min(
+                          petGeometry.x + (petGeometry.petWidth - 140) / 2,
+                          viewport.width - 152,
+                        ),
+                      ),
+                      top:
+                        petGeometry.y >= 50
+                          ? petGeometry.y - 38
+                          : Math.min(
+                              viewport.height - 44,
+                              petGeometry.y + petGeometry.petHeight + 6,
+                            ),
+                    },
+                  },
+                  iconSvg('water', 13),
+                  t('waterDue'),
+                ),
               contextMenu(),
               !petShowing &&
                 !waterPrompt &&
@@ -2976,7 +3003,7 @@ window.__ModuleLoader__.load({
                       left: floatingPanel.left,
                       top: floatingPanel.top,
                       width: floatingPanel.width,
-                      height: Math.min(petShowing ? 440 : 150, floatingPanel.maxHeight),
+                      height: Math.min(petShowing ? petCardHeight : 150, floatingPanel.maxHeight),
                       maxHeight: floatingPanel.maxHeight,
                     },
                   },
@@ -3014,8 +3041,10 @@ window.__ModuleLoader__.load({
                               : editing
                                 ? editor()
                                 : petDetails
-                                  ? h(React.Fragment, null, waterReminder(), panelBody())
-                                  : petHome(),
+                                  ? panelBody('clock')
+                                  : ui.screen === 'earnings'
+                                    ? panelBody('earnings')
+                                    : petHome(),
                           notices(),
                         )
                       : waterReminder(),

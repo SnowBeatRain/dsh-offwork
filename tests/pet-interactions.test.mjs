@@ -20,7 +20,7 @@ test('one screen is active and editor navigation retains a predictable parent', 
   assert.equal(s.screen, 'income');
   s = go(s, null);
   assert.equal(s.screen, null);
-  assert.equal(go(initialPetUI, 'appearance').back, 'home');
+  assert.equal(go(initialPetUI, 'appearance').back, null);
 });
 test('dirty navigation preserves the editor until save or explicit discard', () => {
   const editing = go(go(initialPetUI, 'home'), 'water');
@@ -50,6 +50,26 @@ test('reopening the current page preserves drafts and unsupported navigation is 
   assert.deepEqual(go(s, 'water', { dirty: true }), s);
   assert.equal(go(s, 'unknown'), s);
 });
+test('menu cards are independent roots while reminder settings return only to water', () => {
+  const water = go(initialPetUI, 'home', { root: true });
+  const settings = go(water, 'water');
+  assert.equal(settings.back, 'home');
+  const clock = go(settings, 'income', { root: true, discard: true });
+  assert.equal(clock.back, null);
+  const appearance = go(clock, 'appearance', { root: true });
+  assert.equal(appearance.back, null);
+  assert.equal(go(appearance, appearance.back).screen, null);
+  assert.equal(go(initialPetUI, 'earnings', { root: true }).screen, 'earnings');
+});
+test('dirty navigation retains the root destination for explicit save or discard', () => {
+  const settings = go(go(initialPetUI, 'home'), 'water');
+  const pending = go(settings, 'appearance', { root: true, dirty: true });
+  assert.deepEqual(pending.pending, { screen: 'appearance', root: true });
+  const next = go(pending, pending.pending.screen, { root: pending.pending.root, discard: true });
+  assert.equal(next.back, null);
+  assert.equal(next.screen, 'appearance');
+});
+
 test('appearance snapshots omit position and salary preferences', () => {
   assert.deepEqual(
     appearanceValues({
