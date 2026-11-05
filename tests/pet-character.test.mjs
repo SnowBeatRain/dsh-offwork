@@ -15,7 +15,13 @@ test('existing preferences gain the long dress without losing privacy, position 
   const next = normalizeView(old);
   assert.equal(next.petModel, 'whale-dress');
   for (const k of Object.keys(old)) assert.deepEqual(next[k], old[k]);
-  for (const id of ['whale-dress', 'whale-ornate', 'whale-actions', 'xiaoxie-original'])
+  for (const id of [
+    'whale-dress',
+    'whale-ornate',
+    'whale-actions',
+    'whale-ornate-actions',
+    'xiaoxie-original',
+  ])
     assert.equal(normalizeView({ ...next, petModel: id }).petModel, id);
   for (const id of ['unknown', '__proto__', 'toString']) {
     assert.equal(normalizeView({ petModel: id }).petModel, 'whale-dress');
@@ -23,7 +29,7 @@ test('existing preferences gain the long dress without losing privacy, position 
   }
 });
 test('portrait layout fits the complete figure and badge in narrow, short and offset viewports', () => {
-  for (const id of ['whale-dress', 'whale-ornate', 'whale-actions'])
+  for (const id of ['whale-dress', 'whale-ornate', 'whale-actions', 'whale-ornate-actions'])
     for (const size of [80, 132, 180])
       for (const viewport of [
         { width: 1440, height: 1000 },

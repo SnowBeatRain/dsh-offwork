@@ -51,17 +51,45 @@ export function createPetVideoMotion(element, host, base, clips, probeSource) {
   const retired = new Map();
   let enabled = false,
     resting = false,
+    dragging = false,
+    unsupported = false,
+    idleTimer = null,
     destroyed = false,
     current = null;
   const allowed = () => enabled && !destroyed && !document.hidden && !reduced?.matches;
+  function clearIdleTimer() {
+    host.clearTimeout(idleTimer);
+    idleTimer = null;
+  }
+  function startIdle() {
+    if (
+      allowed() &&
+      !resting &&
+      !dragging &&
+      !current &&
+      !unsupported &&
+      Object.hasOwn(clips, 'idle') &&
+      !failed.has('idle')
+    )
+      play('idle');
+  }
+  function scheduleIdle(delay = 0) {
+    clearIdleTimer();
+    if (!Object.hasOwn(clips, 'idle') || failed.has('idle') || unsupported || destroyed) return;
+    idleTimer = host.setTimeout(() => {
+      idleTimer = null;
+      startIdle();
+    }, delay);
+  }
   function dispose(video) {
-    video.onplaying = video.onended = video.onerror = null;
+    video.onplaying = video.onended = video.onerror = video.onwaiting = video.onstalled = null;
     video.pause();
     video.removeAttribute('src');
     video.load();
     video.remove();
   }
   function stop(fade = false) {
+    clearIdleTimer();
     const run = current;
     if (!run) return;
     current = null;
@@ -70,7 +98,7 @@ export function createPetVideoMotion(element, host, base, clips, probeSource) {
     if (element.dataset.action === run.action) delete element.dataset.action;
     if (!run.video) return;
     const video = run.video;
-    video.onplaying = video.onended = video.onerror = null;
+    video.onplaying = video.onended = video.onerror = video.onwaiting = video.onstalled = null;
     video.pause();
     video.style.opacity = '0';
     if (fade && allowed()) {
@@ -85,10 +113,14 @@ export function createPetVideoMotion(element, host, base, clips, probeSource) {
     if (current !== run) return;
     if (broken) failed.add(run.action);
     stop();
-    if (allowed()) base.play(run.action);
+    if (allowed() && run.action !== 'idle') {
+      base.play(run.action);
+      scheduleIdle(1400);
+    }
   }
   function play(action) {
-    if (!allowed() || element.dataset.action === 'drag') return false;
+    if (!allowed() || dragging || element.dataset.action === 'drag') return false;
+    if (action === 'idle' && (resting || current || unsupported)) return false;
     if (
       current &&
       (action === 'look' ||
@@ -96,7 +128,13 @@ export function createPetVideoMotion(element, host, base, clips, probeSource) {
         (current.action === 'celebrate' && action === 'greet'))
     )
       return false;
-    if (!Object.hasOwn(clips, action) || failed.has(action)) return base.play(action);
+    if (!Object.hasOwn(clips, action) || failed.has(action) || unsupported) {
+      if (action === 'idle') return false;
+      if (current?.action === 'idle') stop();
+      const played = base.play(action);
+      if (played) scheduleIdle(1400);
+      return played;
+    }
     stop();
     base.release(true);
     const run = { action, video: null, timer: null };
@@ -105,21 +143,41 @@ export function createPetVideoMotion(element, host, base, clips, probeSource) {
     run.timer = host.setTimeout(() => fallback(run, true), 9000);
     capability.then((supported) => {
       if (current !== run || !allowed()) return;
-      if (!supported) return fallback(run);
+      if (!supported) {
+        unsupported = true;
+        return fallback(run);
+      }
       const video = document.createElement('video');
       run.video = video;
       video.muted = true;
       video.defaultMuted = true;
       video.playsInline = true;
+      video.loop = action === 'idle';
       video.disablePictureInPicture = true;
       video.preload = 'auto';
       video.setAttribute('aria-hidden', 'true');
       video.setAttribute('playsinline', '');
       video.onplaying = () => {
-        if (current === run && allowed()) element.dataset.videoPlaying = 'true';
+        if (current !== run || !allowed()) return;
+        if (!Number.isFinite(video.duration) || video.duration <= 0 || video.duration > 15)
+          return fallback(run, true);
+        host.clearTimeout(run.timer);
+        run.timer =
+          action === 'idle'
+            ? null
+            : host.setTimeout(() => fallback(run, true), video.duration * 1000 + 2000);
+        element.dataset.videoPlaying = 'true';
+      };
+      video.onwaiting = video.onstalled = () => {
+        if (current !== run) return;
+        host.clearTimeout(run.timer);
+        run.timer = host.setTimeout(() => fallback(run, true), 4000);
       };
       video.onended = () => {
-        if (current === run) stop(true);
+        if (current === run) {
+          stop(true);
+          scheduleIdle();
+        }
       };
       video.onerror = () => fallback(run, true);
       video.src = clips[action];
@@ -134,6 +192,7 @@ export function createPetVideoMotion(element, host, base, clips, probeSource) {
   }
   const visibility = () => {
     if (!allowed()) stop();
+    else scheduleIdle();
   };
   document.addEventListener('visibilitychange', visibility);
   reduced?.addEventListener?.('change', visibility);
@@ -144,13 +203,17 @@ export function createPetVideoMotion(element, host, base, clips, probeSource) {
       enabled = next.enabled;
       resting = next.resting;
       base.configure(next);
+      startIdle();
     },
     drag(direction) {
+      dragging = true;
       stop();
       base.drag(direction);
     },
     release(cancelled) {
+      dragging = false;
       base.release(cancelled);
+      scheduleIdle(cancelled ? 0 : 650);
     },
     destroy() {
       destroyed = true;

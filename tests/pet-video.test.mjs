@@ -5,7 +5,7 @@ import { createPetVideoMotion, petVideoAlphaSupported } from '../pet-video.js';
 const flush = async () => {
   for (let i = 0; i < 5; i++) await Promise.resolve();
 };
-function fixture({ alpha = true, rejectPlay = false } = {}) {
+function fixture({ alpha = true, rejectPlay = false, idle = false } = {}) {
   const media = Object.assign(new EventTarget(), { matches: false });
   const document = Object.assign(new EventTarget(), { hidden: false });
   const videos = [],
@@ -23,6 +23,7 @@ function fixture({ alpha = true, rejectPlay = false } = {}) {
     const video = {
       style: {},
       paused: false,
+      duration: 5,
       removed: false,
       canPlayType: () => 'probably',
       setAttribute() {},
@@ -78,7 +79,7 @@ function fixture({ alpha = true, rejectPlay = false } = {}) {
     element,
     host,
     base,
-    { greet: 'greet-data', celebrate: 'drink-data' },
+    { greet: 'greet-data', celebrate: 'drink-data', ...(idle ? { idle: 'idle-data' } : {}) },
     'probe',
   );
   motion.configure({ enabled: true, resting: false });
@@ -196,4 +197,141 @@ test('unsupported alpha, rejected playback and a stalled clip fall back without 
     f.motion.destroy();
     assert.equal(f.timers.size, 0);
   }
+});
+
+async function fireTimer(f, milliseconds) {
+  const found = [...f.timers].find(([, timer]) => timer.ms === milliseconds);
+  assert.ok(found, `Expected ${milliseconds}ms timer`);
+  f.timers.delete(found[0]);
+  found[1].fn();
+  await flush();
+}
+
+test('idle loops are interrupted by actions and resume once after action completion', async () => {
+  const f = fixture({ idle: true });
+  await flush();
+  const idle = f.videos.at(-1);
+  idle.onplaying();
+  assert.equal(idle.loop, true);
+  assert.equal(f.timers.size, 0);
+  assert.equal(f.motion.play('look'), false);
+  f.motion.play('greet');
+  await flush();
+  const greet = f.videos.at(-1);
+  greet.onplaying();
+  assert.equal(idle.removed, true);
+  assert.equal(greet.loop, false);
+  const oldEnd = greet.onended;
+  f.motion.play('celebrate');
+  await flush();
+  const drink = f.videos.at(-1);
+  drink.duration = 7.5;
+  drink.onplaying();
+  assert.ok([...f.timers.values()].some((t) => t.ms === 9500));
+  oldEnd();
+  assert.equal(f.element.dataset.action, 'celebrate');
+  drink.onended();
+  await fireTimer(f, 0);
+  assert.equal(f.videos.at(-1).src, 'idle-data');
+  assert.equal(f.videos.at(-1).loop, true);
+  f.motion.destroy();
+  assert.equal(f.timers.size, 0);
+});
+
+test('returning from hidden or reduced-motion state starts idle rather than replaying an action', async () => {
+  const f = fixture({ idle: true });
+  await flush();
+  f.motion.play('greet');
+  await flush();
+  f.document.hidden = true;
+  f.document.dispatchEvent(new Event('visibilitychange'));
+  assert.equal(f.element.dataset.action, undefined);
+  f.document.hidden = false;
+  f.document.dispatchEvent(new Event('visibilitychange'));
+  await fireTimer(f, 0);
+  assert.equal(f.videos.at(-1).src, 'idle-data');
+  f.media.matches = true;
+  f.media.dispatchEvent(new Event('change'));
+  const count = f.videos.length;
+  f.motion.configure({ enabled: true, resting: false });
+  await flush();
+  assert.equal(f.videos.length, count);
+  f.media.matches = false;
+  f.media.dispatchEvent(new Event('change'));
+  await fireTimer(f, 0);
+  assert.equal(f.videos.at(-1).src, 'idle-data');
+  f.motion.destroy();
+  assert.equal(f.timers.size, 0);
+});
+
+test('quiet state and a held drag suppress idle until they finish', async () => {
+  const f = fixture({ idle: true });
+  await flush();
+  f.motion.configure({ enabled: true, resting: true });
+  const count = f.videos.length;
+  await flush();
+  assert.equal(f.videos.length, count);
+  f.motion.play('greet');
+  await flush();
+  f.videos.at(-1).onended();
+  await fireTimer(f, 0);
+  assert.equal(f.element.dataset.action, undefined);
+  f.motion.configure({ enabled: true, resting: false });
+  await flush();
+  f.motion.drag(1);
+  const before = f.videos.length;
+  f.motion.configure({ enabled: true, resting: false });
+  await flush();
+  assert.equal(f.videos.length, before);
+  assert.equal(f.element.dataset.action, 'drag');
+  f.motion.release(false);
+  await fireTimer(f, 650);
+  assert.equal(f.videos.at(-1).src, 'idle-data');
+  f.motion.destroy();
+  assert.equal(f.timers.size, 0);
+});
+
+test('a stalled idle clip fails closed without disabling usable action clips', async () => {
+  const f = fixture({ idle: true });
+  await flush();
+  const idle = f.videos.at(-1);
+  idle.onplaying();
+  idle.onwaiting();
+  await fireTimer(f, 4000);
+  assert.equal(idle.removed, true);
+  const count = f.videos.length;
+  f.motion.configure({ enabled: true, resting: false });
+  await flush();
+  assert.equal(f.videos.length, count);
+  f.motion.play('greet');
+  await flush();
+  const greet = f.videos.at(-1);
+  greet.onplaying();
+  greet.onended();
+  await flush();
+  assert.equal(f.element.dataset.action, undefined);
+  f.motion.destroy();
+  assert.equal(f.timers.size, 0);
+});
+
+test('failed action fallback suspends idle during CSS feedback and then returns to idle', async () => {
+  const f = fixture({ idle: true });
+  await flush();
+  f.motion.play('greet');
+  await flush();
+  f.videos.at(-1).onerror();
+  assert.deepEqual(f.calls, ['greet']);
+  await fireTimer(f, 1400);
+  const idle = f.videos.at(-1);
+  idle.onplaying();
+  const count = f.videos.length;
+  f.motion.play('greet');
+  await flush();
+  assert.equal(idle.removed, true);
+  assert.equal(f.videos.length, count);
+  assert.deepEqual(f.calls, ['greet', 'greet']);
+  await fireTimer(f, 1400);
+  assert.equal(f.videos.at(-1).src, 'idle-data');
+  f.motion.destroy();
+  assert.equal(f.timers.size, 0);
 });

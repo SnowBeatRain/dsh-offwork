@@ -2,7 +2,19 @@
 
 更新于 2026-11-05。此文件用于缩短后续上下文检索，不表示系统对话已经执行压缩。
 
-## 当前开发：用户视频抠像与播放
+## 当前开发：短裙四份素材与循环待机
+
+本轮输入52b82668…为1280×1920白底持杯WebP；42d37cf6…喝茶文件名写5s但实际10秒；c77cae16…待机6秒；7482c445…挥手5秒。原件归档offwork-hydration-artifacts/ornate-intake。完整分析见docs/ORNATE-ASSET-ANALYSIS.md。
+
+feature/ornate-video-set基于cf522a8。新增whale-ornate-actions（短裙动态），原whale-actions标签改为长裙动态，保留所有旧形象与用户已保存选择。短裙输出400×640/24fps：待机取前41帧无闪光片段做平缓往返4秒循环；挥手取前55帧补回程形成5秒；喝茶保留前7.5秒。持杯图导出完整尺寸透明PNG。原片边缘缺失不补画。
+
+pet-video.js增加循环待机、动作结束恢复待机、根据实际时长设置超时、等待超时回退，以及后台/拖动/安静状态暂停。旧动作不重播；坏待机不阻断其他可用动作，坏动作回退后可以恢复待机。外观存储升级v7，兼容v6/v5/v4/v3并隔离旧客户端写入。
+
+146项检查通过。ornate-test.cjs验证两个循环不重建节点、挥手/7.5秒喝茶完成后返回待机、反馈到期不截断视频、只记一次、各种暂停恢复、窄屏与刷新。ornate-migration.cjs验证旧偏好与标签隔离，ornate-fallback.cjs验证自动循环不会反复重试失败媒体。长裙播放及失败回退回归通过。
+
+处理脚本/tmp/offwork-character-motion/process-ornate-set.py，结果/tmp/offwork-ornate-matting；最终归档ornate-video-actions，下载素材包ornate-video-preview。保持1.1.0，仅更新指定开发预览；不推送新功能、不发布npm。文件站交付沿用账号内私有文档方式，已上传并逐文件校验导出内容，链接记录见offwork-hydration-artifacts/ornate-delivery-links.json。
+
+## 历史：用户视频抠像与播放
 
 用户授权直接处理并使用本轮提供的挥手/喝茶视频。feature/whale-video-actions基于b0b98b8，新增可选“鲸蓝少女 · 动态互动”，不自动替换用户已保存形象。原片ID分别f76a34ba-6a70-423a-8386-933275bde57f、f3235c90-7f69-4f64-bbca-f4aeb67c83b2，归档在offwork-hydration-artifacts/whale-animation-sources。
 

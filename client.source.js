@@ -433,9 +433,10 @@ window.__ModuleLoader__.load({
       apply(ctx) {
         for (const [lang, dict] of Object.entries(messages))
           ctx.effect(() => ctx.locale.register('offwork-clock', lang, dict));
-        const viewKey = 'dsh.offwork-clock.view.v6';
-        const previousViewKey = 'dsh.offwork-clock.view.v5';
-        const olderViewKey = 'dsh.offwork-clock.view.v4';
+        const viewKey = 'dsh.offwork-clock.view.v7';
+        const previousViewKey = 'dsh.offwork-clock.view.v6';
+        const olderViewKey = 'dsh.offwork-clock.view.v5';
+        const oldestViewKey = 'dsh.offwork-clock.view.v4';
         const legacyKey = 'dsh.offwork-clock.view.v3';
 
         function Clock(props) {
@@ -662,7 +663,8 @@ window.__ModuleLoader__.load({
               const saved =
                 localStorage.getItem(viewKey) ??
                 localStorage.getItem(previousViewKey) ??
-                localStorage.getItem(olderViewKey);
+                localStorage.getItem(olderViewKey) ??
+                localStorage.getItem(oldestViewKey);
               const legacy = !saved ? JSON.parse(localStorage.getItem(legacyKey) || 'null') : null;
               setView(
                 normalizeView(

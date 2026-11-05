@@ -2,6 +2,13 @@
 export const PET_MODEL = Object.freeze({ id: 'xiaoxie-original', renderer: 'svg', license: 'MIT' });
 
 export const PET_MODELS = Object.freeze({
+  'whale-ornate-actions': {
+    id: 'whale-ornate-actions',
+    renderer: 'video',
+    widthScale: 1.3125,
+    heightScale: 2.1,
+    label: 'petWhaleOrnateActions',
+  },
   'whale-actions': {
     id: 'whale-actions',
     renderer: 'video',
@@ -247,7 +254,8 @@ export const PET_MESSAGES = {
   zh: {
     petOpen: '打开宠物面板',
     petCharacter: '角色形象',
-    petWhaleActions: '鲸蓝少女 · 动态互动',
+    petWhaleActions: '鲸蓝少女 · 长裙动态',
+    petWhaleOrnateActions: '鲸蓝少女 · 短裙动态',
     petWhaleDress: '鲸蓝少女 · 长裙',
     petWhaleOrnate: '鲸蓝少女 · 礼裙',
     petDroplet: '小歇 · 水滴',
@@ -262,7 +270,8 @@ export const PET_MESSAGES = {
   en: {
     petOpen: 'Open pet panel',
     petCharacter: 'Character',
-    petWhaleActions: 'Blue whale · Animated',
+    petWhaleActions: 'Blue whale · Animated long dress',
+    petWhaleOrnateActions: 'Blue whale · Animated short dress',
     petWhaleDress: 'Blue whale · Long dress',
     petWhaleOrnate: 'Blue whale · Ornate dress',
     petDroplet: 'Xiaoxie · Droplet',

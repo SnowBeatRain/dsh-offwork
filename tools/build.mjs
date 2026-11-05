@@ -34,7 +34,7 @@ const spriteMarker = '/* PET_SPRITES */';
 if (entry.split(spriteMarker).length !== 2) throw new Error('Expected one sprite marker');
 const sprites = Object.fromEntries(
   await Promise.all(
-    ['whale-dress', 'whale-ornate', 'whale-actions'].map(async (id) => {
+    ['whale-dress', 'whale-ornate', 'whale-actions', 'whale-ornate-actions'].map(async (id) => {
       const bytes = await readFile(new URL(`assets/characters/${id}.webp`, root));
       if (bytes.toString('ascii', 8, 12) !== 'WEBP' || bytes.length > 200000)
         throw new Error(`Invalid sprite: ${id}`);
@@ -50,12 +50,21 @@ async function clip(name, maximum) {
     throw new Error(`Invalid or oversized WebM: ${name}`);
   return 'data:video/webm;base64,' + bytes.toString('base64');
 }
-const [probe, greet, celebrate] = await Promise.all([
+const [probe, greet, celebrate, ornateIdle, ornateGreet, ornateDrink] = await Promise.all([
   clip('alpha-probe', 10000),
   clip('whale-greet', 2000000),
   clip('whale-drink', 2000000),
+  clip('ornate-idle', 2000000),
+  clip('ornate-greet', 2000000),
+  clip('ornate-drink', 2000000),
 ]);
-const clips = { probe, models: { 'whale-actions': { greet, celebrate } } };
+const clips = {
+  probe,
+  models: {
+    'whale-actions': { greet, celebrate },
+    'whale-ornate-actions': { idle: ornateIdle, greet: ornateGreet, celebrate: ornateDrink },
+  },
+};
 const result =
   banner +
   entry
