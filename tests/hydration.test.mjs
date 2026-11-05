@@ -45,6 +45,26 @@ test('off by default; enabling mid-shift starts a full interval, not catch-up', 
   assert.equal(view(state, '11:15').phase, 'due');
 });
 
+for (const interval of [5, 15, 17, 30, 45, 60, 90, 120, 240]) {
+  test(`saving ${interval} minutes applies that interval instead of the 60-minute default`, () => {
+    const initial = enable('09:00');
+    const saved = act(initial, '09:10', { type: 'preferences', enabled: true, interval });
+    assert.equal(saved.interval, interval);
+    const elapsed = context('09:10').elapsed;
+    // Saving an unchanged 60-minute interval keeps the existing cycle.
+    const anchor = interval === 60 ? 0 : elapsed;
+    assert.equal(saved.shift.due, anchor + interval * 60000);
+    const reopened = validateHydration(JSON.parse(JSON.stringify(saved)));
+    assert.equal(reopened.interval, interval);
+    const deadline =
+      time('09:00') + saved.shift.due + (saved.shift.due >= 3 * 3600000 ? 3600000 : 0);
+    const before = hydrationContext(settings, calculate(settings, deadline - 1));
+    const atDue = hydrationContext(settings, calculate(settings, deadline));
+    assert.equal(hydrationView(reopened, before).phase, 'countdown');
+    assert.equal(hydrationView(reopened, atDue).phase, 'due');
+  });
+}
+
 test('break freezes working-time countdown; snooze crosses break', () => {
   const state = enable('11:10');
   assert.equal(view(state, '12:00').phase, 'break');
