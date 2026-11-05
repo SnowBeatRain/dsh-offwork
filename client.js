@@ -854,7 +854,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
 .owc-water-form .owc-save{margin:12px 0}
 .owc-water-form details{margin-top:14px;padding-top:10px;border-top:1px solid color-mix(in srgb,var(--dsw-alias-label-primary) 10%,transparent)}
 .owc-pill-salary{display:flex;align-items:center;gap:3px}
-.owc-pill-water{font-size:11px!important;gap:4px;white-space:nowrap}
+.owc-pill-water{font-size:11px!important;gap:4px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .owc-water-summary{justify-content:flex-start!important}
 @media(max-width:420px){.owc-pill{min-width:136px;padding:8px 8px 7px 12px}.owc-pill-status{display:none}.owc-pill-time{font-size:22px}.owc-main,.owc-form{padding-left:14px;padding-right:14px}.owc-time{font-size:31px}}
 `;
@@ -1910,7 +1910,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                         },
                         iconSvg('water', 13),
                         waterState.phase === 'countdown' && !waterError
-                          ? Math.ceil(waterState.remaining / 60000) + ' ' + t('waterMinutes')
+                          ? formatDuration(waterState.remaining / 1000).replace(/^00:/, '')
                           : t(
                               waterError
                                 ? 'waterTitle'
