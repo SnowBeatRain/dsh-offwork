@@ -2139,18 +2139,17 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
 
           function openAppearanceContext(event) {
             if (
-              editing ||
-              waterEditing ||
-              waterBusy ||
-              busy ||
-              !data?.configured ||
-              !event.target.closest?.(
-                '.owc-pet-handle,.owc-pet-clock,.owc-pill,.owc-head,.owc-time',
+              !box.current?.contains(event.target) ||
+              event.target.closest?.(
+                'textarea,select,input:not([type=checkbox]):not([type=radio]):not([type=range]),[contenteditable=true],[contenteditable=""]',
               )
             )
               return false;
+            // Consume our context menu before considering editing/busy guards.
+            // Repeated right-clicks must not fall through to the browser menu.
             event.preventDefault();
             event.stopPropagation();
+            if (editing || waterEditing || waterBusy || busy || !data?.configured) return true;
             petDragged.current = false;
             const trigger =
               event.target.closest('button,.owc-grip,.owc-title') ||
@@ -3453,7 +3452,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 onPointerUp: dragEnd,
                 onPointerCancel: dragEnd,
                 onLostPointerCapture: dragEnd,
-                onContextMenu: openAppearanceContext,
+                onContextMenuCapture: openAppearanceContext,
                 onKeyDown: (event) => {
                   if (appearanceShortcut(event)) return;
                   if (event.key !== 'Escape' || event.defaultPrevented || waterBusy || busy) return;
@@ -3586,7 +3585,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               onPointerUp: dragEnd,
               onPointerCancel: dragEnd,
               onLostPointerCapture: dragEnd,
-              onContextMenu: openAppearanceContext,
+              onContextMenuCapture: openAppearanceContext,
               onKeyDown: appearanceShortcut,
             },
             h('style', null, STYLE),
