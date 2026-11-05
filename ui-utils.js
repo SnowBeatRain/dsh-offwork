@@ -11,11 +11,13 @@ export function clampPosition(position, viewport, size) {
   const width = Math.max(0, viewport.width),
     height = Math.max(0, viewport.height);
   const edge = Math.min(12, width / 2, height / 2);
-  const maxX = Math.max(edge, width - size.width - edge);
-  const maxY = Math.max(edge, height - size.height - edge);
+  const left = viewport.left ?? 0,
+    top = viewport.top ?? 0;
+  const maxX = Math.max(left + edge, left + width - size.width - edge);
+  const maxY = Math.max(top + edge, top + height - size.height - edge);
   return {
-    x: Math.max(edge, Math.min(Number.isFinite(position?.x) ? position.x : maxX, maxX)),
-    y: Math.max(edge, Math.min(Number.isFinite(position?.y) ? position.y : 88, maxY)),
+    x: Math.max(left + edge, Math.min(Number.isFinite(position?.x) ? position.x : maxX, maxX)),
+    y: Math.max(top + edge, Math.min(Number.isFinite(position?.y) ? position.y : top + 88, maxY)),
   };
 }
 

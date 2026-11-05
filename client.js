@@ -169,11 +169,13 @@ function clampPosition(position, viewport, size) {
   const width = Math.max(0, viewport.width),
     height = Math.max(0, viewport.height);
   const edge = Math.min(12, width / 2, height / 2);
-  const maxX = Math.max(edge, width - size.width - edge);
-  const maxY = Math.max(edge, height - size.height - edge);
+  const left = viewport.left ?? 0,
+    top = viewport.top ?? 0;
+  const maxX = Math.max(left + edge, left + width - size.width - edge);
+  const maxY = Math.max(top + edge, top + height - size.height - edge);
   return {
-    x: Math.max(edge, Math.min(Number.isFinite(position?.x) ? position.x : maxX, maxX)),
-    y: Math.max(edge, Math.min(Number.isFinite(position?.y) ? position.y : 88, maxY)),
+    x: Math.max(left + edge, Math.min(Number.isFinite(position?.x) ? position.x : maxX, maxX)),
+    y: Math.max(top + edge, Math.min(Number.isFinite(position?.y) ? position.y : top + 88, maxY)),
   };
 }
 
@@ -416,6 +418,8 @@ const COMPANION_STYLE = `
 const PET_MODEL = Object.freeze({ id: 'xiaoxie-original', renderer: 'svg', license: 'MIT' });
 
 function petLayout(position, viewport, size = 132, contentHeight = 420) {
+  const originX = viewport.left ?? 0,
+    originY = viewport.top ?? 0;
   const edge = 12,
     gap = 12;
   const width = Math.max(1, viewport.width),
@@ -432,11 +436,11 @@ function petLayout(position, viewport, size = 132, contentHeight = 420) {
   const petHeight = Math.ceil(artworkSize * 1.1) + 30;
   const bound = (n, max) => Math.max(Math.min(edge, max), Math.min(n, max));
   const x = bound(
-    Number.isFinite(position?.x) ? position.x : width - petWidth - 32,
+    Number.isFinite(position?.x) ? position.x - originX : width - petWidth - 32,
     Math.max(0, width - petWidth - edge),
   );
   const y = bound(
-    Number.isFinite(position?.y) ? position.y : height - petHeight - 36,
+    Number.isFinite(position?.y) ? position.y - originY : height - petHeight - 36,
     Math.max(0, height - petHeight - edge),
   );
   const panelWidth = Math.min(296, Math.max(1, width - edge * 2));
@@ -469,12 +473,18 @@ function petLayout(position, viewport, size = 132, contentHeight = 420) {
     );
   }
   return {
-    x,
-    y,
+    x: x + originX,
+    y: y + originY,
     petWidth,
     artworkSize,
     petHeight,
-    panel: { left, top: Math.max(0, top), width: panelWidth, maxHeight, side },
+    panel: {
+      left: left + originX,
+      top: Math.max(0, top) + originY,
+      width: panelWidth,
+      maxHeight,
+      side,
+    },
   };
 }
 
@@ -657,25 +667,6 @@ function appearanceValues(view) {
     opacity: view.opacity,
   };
 }
-function petMenuLayout(point, viewport, avoid = null) {
-  const width = Math.min(196, Math.max(1, viewport.width - 24));
-  const maxHeight = Math.min(240, Math.max(1, viewport.height - 24));
-  let x = point.x,
-    y = point.y;
-  if (avoid) {
-    if (avoid.x >= width + 24) x = avoid.x - width - 12;
-    else if (viewport.width - avoid.x - avoid.width >= width + 24) x = avoid.x + avoid.width + 12;
-    else if (avoid.y >= maxHeight + 24) y = avoid.y - maxHeight - 12;
-    else if (viewport.height - avoid.y - avoid.height >= maxHeight + 24)
-      y = avoid.y + avoid.height + 12;
-  }
-  return {
-    left: Math.max(12, Math.min(x, viewport.width - width - 12)),
-    top: Math.max(12, Math.min(y, viewport.height - maxHeight - 12)),
-    width,
-    maxHeight,
-  };
-}
 const PET_INTERACTION_MESSAGES = {
   zh: {
     petHome: '喝水',
@@ -769,6 +760,200 @@ const PET_INTERACTION_STYLE = `
 .owc-pet-unsaved p{font-size:12px;color:var(--dsw-alias-label-secondary)}
 .owc-pet-unsaved button{width:100%;margin-top:8px;min-height:36px}
 .owc-pet-toast{position:fixed;width:208px;padding:9px 12px;box-sizing:border-box;border-radius:12px;background:var(--dsw-alias-bg-overlay);border:1px solid color-mix(in srgb,var(--owc-accent) 18%,transparent);font-size:11px;line-height:1.5;box-shadow:0 5px 16px #18354b18;pointer-events:none}
+`;
+
+// Shared layout for our own pet cards and context menu.
+function petViewport(host) {
+  const visual = host.visualViewport;
+  return {
+    width: Math.max(1, Math.min(host.innerWidth, visual?.width ?? host.innerWidth)),
+    height: Math.max(1, Math.min(host.innerHeight, visual?.height ?? host.innerHeight)),
+    left: Math.max(0, visual?.offsetLeft ?? 0),
+    top: Math.max(0, visual?.offsetTop ?? 0),
+  };
+}
+function petSurfaceWidth(screen, viewport) {
+  const ideal =
+    {
+      income: 320,
+      earnings: 320,
+      home: 336,
+      water: 360,
+      appearance: 360,
+      schedule: 400,
+      menu: 224,
+      reminder: 304,
+    }[screen] ?? 336;
+  return Math.max(1, Math.min(ideal, viewport.width - 24));
+}
+function placePetSurface(
+  anchor,
+  viewport,
+  { width, height, kind = 'card', previous = null, point = null, obstacles = [] },
+) {
+  const edge = Math.min(
+      12,
+      Math.max(0, (viewport.width - 1) / 2),
+      Math.max(0, (viewport.height - 1) / 2),
+    ),
+    gap = 12;
+  const left = (viewport.left ?? 0) + edge,
+    top = (viewport.top ?? 0) + edge;
+  const right = (viewport.left ?? 0) + viewport.width - edge;
+  const bottom = (viewport.top ?? 0) + viewport.height - edge;
+  const w = Math.max(1, Math.min(width, right - left));
+  const natural = Math.max(1, height),
+    available = Math.max(1, bottom - top);
+  const full = Math.min(natural, available);
+  const clamp = (value, min, max) => Math.max(min, Math.min(value, max));
+  const candidates = [];
+  const add = (x, y, h, side) => {
+    h = Math.max(1, Math.min(h, available));
+    x = clamp(x, left, right - w);
+    y = clamp(y, top, bottom - h);
+    const intersection = (rect) =>
+      Math.max(0, Math.min(x + w, rect.x + rect.width) - Math.max(x, rect.x)) *
+      Math.max(0, Math.min(y + h, rect.y + rect.height) - Math.max(y, rect.y));
+    const overlap =
+      intersection(anchor) +
+      obstacles.reduce(
+        (sum, rect) =>
+          sum + intersection({ x: rect.left, y: rect.top, width: rect.width, height: rect.height }),
+        0,
+      );
+    const distance = previous ? Math.abs(previous.left - x) + Math.abs(previous.top - y) : 0;
+    candidates.push({
+      left: x,
+      top: y,
+      width: w,
+      height: h,
+      maxHeight: h,
+      side: overlap ? 'overlay' : side,
+      overlap,
+      clipped: natural - h,
+      distance,
+      order: candidates.length,
+    });
+  };
+  if (previous && Math.abs(previous.width - w) < 1)
+    add(previous.left, previous.top, full, previous.side);
+  if (kind === 'menu' && point) {
+    add(point.x + 8, point.y + 8, full, 'context-right');
+    add(point.x - w - 8, point.y + 8, full, 'context-left');
+    add(point.x + 8, point.y - full - 8, full, 'context-above-right');
+    add(point.x - w - 8, point.y - full - 8, full, 'context-above-left');
+  }
+  const preferredY = kind === 'menu' && point ? point.y + 6 : anchor.y + anchor.height - full;
+  add(anchor.x - w - gap, preferredY, full, 'left');
+  add(anchor.x + anchor.width + gap, preferredY, full, 'right');
+  const centered = anchor.x + anchor.width / 2 - w / 2;
+  add(centered, anchor.y - gap - full, full, 'above');
+  add(centered, anchor.y + anchor.height + gap, full, 'below');
+  const above = anchor.y - gap - top,
+    below = bottom - anchor.y - anchor.height - gap;
+  const minimum = Math.min(full, kind === 'menu' ? 160 : 240);
+  if (above >= minimum && above < full) add(centered, top, above, 'above');
+  if (below >= minimum && below < full)
+    add(centered, anchor.y + anchor.height + gap, below, 'below');
+  candidates.sort(
+    (a, b) =>
+      Number(a.overlap > 0) - Number(b.overlap > 0) ||
+      a.overlap - b.overlap ||
+      a.clipped - b.clipped ||
+      a.distance - b.distance ||
+      a.order - b.order,
+  );
+  const { overlap, clipped, distance, order, ...result } = candidates[0];
+  return result;
+}
+const PET_SURFACE_MESSAGES = {
+  zh: {
+    petAppearancePreview: '角色预览',
+    petWaterBadge: '该喝水啦',
+    petClassicPreview: '应用后使用计时卡片',
+    petSurfaceHint: '内容较长时可用滚轮或触控滚动',
+  },
+  en: {
+    petAppearancePreview: 'Character preview',
+    petWaterBadge: 'Time for water',
+    petClassicPreview: 'Apply to use the clock card',
+    petSurfaceHint: 'Scroll with the wheel or touch when content is longer',
+  },
+};
+const PET_SURFACE_STYLE = `
+.owc-v2{--owc-accent:#2563eb;--owc-on-accent:#fff;--owc-surface:var(--dsw-alias-bg-overlay,#fff);--owc-text:var(--dsw-alias-label-primary,#172033);--owc-muted:var(--dsw-alias-label-secondary,#526074);--owc-border:color-mix(in srgb,var(--owc-text) 13%,transparent);--owc-subtle:color-mix(in srgb,var(--owc-text) 4%,var(--owc-surface));--owc-hover:color-mix(in srgb,var(--owc-accent) 8%,var(--owc-surface));--owc-radius:16px;--owc-control-radius:10px;--owc-shadow:0 10px 32px color-mix(in srgb,var(--owc-text) 13%,transparent);--owc-control-height:36px;color:var(--owc-text);line-height:1.5}
+.owc-v2 .owc-content{max-height:var(--owc-viewport-height,calc(100dvh - 24px))}
+.owc-v2:not(.owc-pet-shell) .owc-head{position:sticky;top:0;z-index:2;background:var(--owc-surface)}
+.owc-v2:not(.owc-pet-shell) .owc-save{position:sticky;bottom:0;z-index:2;background:var(--owc-surface);padding:12px 0}
+.owc-v2 .owc-pet-toast{overflow-wrap:anywhere;overflow:auto;scrollbar-width:none}
+.owc-v2 button.owc-pet-water-alert{border-color:var(--owc-accent)!important;color:var(--owc-accent)}
+.owc-v2 .owc-glass{background:var(--owc-surface);border:1px solid var(--owc-border);box-shadow:var(--owc-shadow);opacity:var(--owc-alpha,.94)}
+.owc-v2 .owc-pet-workspace{border-radius:var(--owc-radius);container-type:inline-size}
+.owc-v2 .owc-head{margin:0;padding:10px 16px;gap:8px;min-height:52px;border-bottom:1px solid var(--owc-border);box-sizing:border-box}
+.owc-v2 [data-pet-page-title]{font-size:14px!important;line-height:1.4;min-width:0;overflow-wrap:anywhere;font-weight:600}
+.owc-v2 [data-pet-page-title]:focus{outline:none}
+.owc-v2 :is(.owc-pet-workspace,.owc-pet-context) button{min-height:var(--owc-control-height);padding:7px 10px;font-size:13px;line-height:1.4;border-radius:var(--owc-control-radius);box-sizing:border-box}
+.owc-v2 :is(.owc-pet-workspace,.owc-pet-context) button:hover:not(:disabled){background:var(--owc-hover)}
+.owc-v2 button.owc-primary{min-height:40px;background:var(--owc-accent);color:var(--owc-on-accent);border-radius:var(--owc-control-radius);font-size:13px}
+.owc-v2 button.owc-primary:hover:not(:disabled){background:color-mix(in srgb,var(--owc-accent) 88%,#000)}
+.owc-v2 :is(button,input,select,summary):focus-visible{outline:2px solid var(--owc-accent);outline-offset:2px}
+.owc-v2 .owc-icon{flex:none;min-width:36px;padding:7px}
+.owc-v2 .owc-main,.owc-v2 .owc-form,.owc-v2 .owc-water-form,.owc-v2 .owc-pet-home{padding:16px;min-width:0;box-sizing:border-box}
+.owc-v2 .owc-main .owc-time{font-size:clamp(28px,10cqw,40px);font-weight:500;letter-spacing:-.5px;overflow-wrap:anywhere}
+.owc-v2 .owc-money{font-size:clamp(24px,9cqw,34px);overflow-wrap:anywhere;line-height:1.35}
+.owc-v2 :is(.owc-hint,.owc-muted,.owc-meta span,.owc-field>span,.owc-stats span,.owc-status,.owc-error,.owc-note){font-size:12px;line-height:1.55;color:var(--owc-muted)}
+.owc-v2 .owc-error{color:var(--dsw-alias-state-error-primary,#dc2626)}
+.owc-v2 .owc-meta span{white-space:normal;overflow:visible;text-overflow:clip;overflow-wrap:anywhere}
+.owc-v2 .owc-row-actions{flex-wrap:wrap;gap:4px;margin:12px 0 0}
+.owc-v2 .owc-stats{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;border-color:var(--owc-border)}
+.owc-v2 .owc-stats>div{min-width:0;background:var(--owc-subtle);border:1px solid var(--owc-border);border-radius:12px;padding:12px}
+.owc-v2 .owc-stats strong{font-size:14px;overflow-wrap:anywhere}
+.owc-v2 .owc-setting-group{padding:14px 12px 4px;background:var(--owc-subtle);border-color:var(--owc-border);border-radius:12px}
+.owc-v2 .owc-setting-group legend{font-size:13px}
+.owc-v2 .owc-field{margin-bottom:12px;min-width:0}
+.owc-v2 .owc-row2{grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.owc-v2 :is(input[type=text],input[type=time],input[type=number],select){max-width:100%;min-width:0;min-height:var(--owc-control-height);font-size:13px;border-color:var(--owc-border);border-radius:var(--owc-control-radius);background:var(--owc-surface);color:var(--owc-text)}
+.owc-v2 :is(input[type=checkbox],input[type=radio],input[type=range]){accent-color:var(--owc-accent)}
+.owc-v2 .owc-check{min-height:30px;font-size:13px;gap:9px}
+.owc-v2 .owc-private{flex-wrap:wrap;border-color:var(--owc-border);background:var(--owc-surface);border-radius:var(--owc-control-radius)}
+.owc-v2 .owc-days{gap:4px}
+.owc-v2 .owc-days button{min-width:0;padding:5px 2px;font-size:12px}
+.owc-v2 .owc-seg button{min-width:0}
+.owc-v2 .owc-water-presets{gap:8px}
+.owc-v2 .owc-water-presets button{font-size:12px;padding:7px 4px;border-color:var(--owc-border);white-space:normal}
+.owc-v2 .owc-water-form p{font-size:12px;line-height:1.55;overflow-wrap:anywhere}
+.owc-v2 .owc-water-card,.owc-v2 .owc-pet-water-card{padding:14px;border-color:var(--owc-border);background:var(--owc-subtle);border-radius:12px}
+.owc-v2 .owc-pet-water-card .owc-water-status{height:auto;min-height:40px;overflow:visible;font-size:13px;line-height:1.5;overflow-wrap:anywhere;margin-bottom:10px}
+.owc-v2 .owc-pet-water-row{font-size:12px;flex-wrap:wrap}
+.owc-v2 .owc-pet-water-row .owc-primary{min-width:120px}
+.owc-v2 .owc-pet-quiet-row{gap:8px;margin-top:14px}
+.owc-v2 .owc-pet-quiet-row button{min-width:0;font-size:12px;white-space:normal;border-color:var(--owc-border)}
+.owc-v2 .owc-pet-quiet-status{min-height:38px;height:auto;flex-wrap:wrap;font-size:12px;line-height:1.5;color:var(--owc-muted)}
+.owc-v2 .owc-pet-feedback{height:auto;min-height:36px;overflow:visible;font-size:12px;line-height:1.5;margin:8px 0;overflow-wrap:anywhere}
+.owc-v2 .owc-pet-home-links{gap:8px}
+.owc-v2 .owc-pet-home-links button{font-size:12px;background:var(--owc-subtle);border:1px solid var(--owc-border)}
+.owc-v2 .owc-pet-scroll{scrollbar-width:none;scroll-padding-block:12px 64px}
+.owc-v2 .owc-pet-natural{display:flow-root;min-width:0;width:100%}
+.owc-v2 .owc-pet-natural>.owc-form:last-child,.owc-v2 .owc-pet-natural>.owc-water-form:last-child{padding-bottom:0}
+.owc-v2 .owc-pet-scroll .owc-save{background:var(--owc-surface);padding:12px 0;border-top:1px solid var(--owc-border);gap:8px;flex-wrap:wrap}
+.owc-v2 .owc-save button{min-width:72px}
+.owc-v2 .owc-appearance-preview{height:210px;display:flex;align-items:center;justify-content:center;border-radius:12px;background:var(--owc-subtle);margin-bottom:16px;overflow:hidden}
+.owc-v2 .owc-appearance-preview svg{flex:none}
+.owc-v2 .owc-appearance-preview p{font-size:13px;color:var(--owc-muted);padding:16px;text-align:center}
+.owc-v2 .owc-pet-context{padding:0;background:var(--owc-surface);border:1px solid var(--owc-border);border-radius:var(--owc-radius);box-shadow:var(--owc-shadow);scrollbar-width:none}
+.owc-v2 .owc-pet-context::-webkit-scrollbar{display:none}
+.owc-v2 .owc-menu-natural{padding:6px;display:flow-root;box-sizing:border-box;min-width:0}
+.owc-v2 .owc-pet-context button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;justify-content:flex-start;font-size:13px}
+.owc-v2 .owc-pet-context hr{border-color:var(--owc-border);margin:6px 4px}
+.owc-v2 .owc-pet-toast,.owc-v2 button.owc-pet-clock,.owc-v2 button.owc-pet-water-alert{background:var(--owc-surface)!important;color:var(--owc-text);border:1px solid var(--owc-border)!important;box-shadow:var(--owc-shadow)}
+.owc-v2 .owc-pet-toast{border-radius:12px;font-size:12px}
+.owc-v2 .owc-pet-unsaved{padding:20px 16px}
+.owc-v2 .owc-pet-unsaved p{font-size:13px;overflow-wrap:anywhere}
+@container (max-width:310px){.owc-v2 .owc-row2{grid-template-columns:1fr}.owc-v2 .owc-stats{gap:8px}.owc-v2 .owc-days{gap:2px}.owc-v2 .owc-days button{font-size:11px}}
+@media (pointer:coarse){.owc-v2{--owc-control-height:44px}.owc-v2 .owc-icon{min-width:44px}.owc-v2 button.owc-primary{min-height:44px}.owc-v2 :is(input[type=text],input[type=time],input[type=number],select){font-size:16px}.owc-v2 input[type=range]{min-height:36px}.owc-v2 .owc-check{min-height:44px}}
+@media (max-height:600px){.owc-v2 .owc-appearance-preview{height:120px}.owc-v2 .owc-appearance-preview svg{transform:scale(.55)}}
+@media (prefers-contrast:more){.owc-v2{--owc-border:var(--owc-text)}.owc-v2 .owc-glass{opacity:1!important}}
+@media (prefers-reduced-transparency:reduce){.owc-v2 .owc-glass{opacity:1!important;backdrop-filter:none;-webkit-backdrop-filter:none}}
 `;
 
 // Pure hydration rules. Time is measured in paid-work milliseconds from calculate().
@@ -1181,6 +1366,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
         ...COMPANION_MESSAGES.zh,
         ...PET_MESSAGES.zh,
         ...PET_INTERACTION_MESSAGES.zh,
+        ...PET_SURFACE_MESSAGES.zh,
         title: '下班计时器',
         working: '距离下班',
         before: '距离开工',
@@ -1301,6 +1487,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
         ...COMPANION_MESSAGES.en,
         ...PET_MESSAGES.en,
         ...PET_INTERACTION_MESSAGES.en,
+        ...PET_SURFACE_MESSAGES.en,
         title: 'Offwork Clock',
         working: 'Until clock-out',
         before: 'Until work starts',
@@ -1545,7 +1732,8 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
 ` +
       COMPANION_STYLE +
       PET_STYLE +
-      PET_INTERACTION_STYLE;
+      PET_INTERACTION_STYLE +
+      PET_SURFACE_STYLE;
     const ICONS = {
       water: [
         ['path', { d: 'M8 1.5C6.6 4 3.5 7.1 3.5 10a4.5 4.5 0 0 0 9 0C12.5 7.1 9.4 4 8 1.5Z' }],
@@ -1636,14 +1824,18 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           const [ready, setReady] = React.useState(false);
           const box = React.useRef(null);
           const petPanel = React.useRef(null);
+          const cardContent = React.useRef(null);
+          const menuContent = React.useRef(null);
+          const toastContent = React.useRef(null);
+          const [toastHeight, setToastHeight] = React.useState(48);
+          const [cardMeasure, setCardMeasure] = React.useState({ key: '', height: 320 });
+          const [menuMeasure, setMenuMeasure] = React.useState({ width: 0, height: 260 });
           const panelPlacement = React.useRef(null);
           const petDragged = React.useRef(false);
           const petOpen = ui.screen !== null;
           const petDetails = ui.screen === 'income';
-          const [viewport, setViewport] = React.useState({
-            width: window.innerWidth,
-            height: window.innerHeight,
-          });
+          const [classicSize, setClassicSize] = React.useState({ width: 340, height: 240 });
+          const [viewport, setViewport] = React.useState(() => petViewport(window));
           const dragState = React.useRef(null);
           const lastPosition = React.useRef(null);
           const generation = React.useRef(0);
@@ -1689,24 +1881,62 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             data?.configured &&
             !!safeState &&
             (appearanceOnly ? appearanceWasPet.current : view.companion);
-          const cardRoot = PET_EDITOR_SCREENS.includes(ui.screen) ? ui.back : ui.screen;
-          const petCardHeight = ['home', 'income', 'earnings'].includes(cardRoot) ? 360 : 440;
           const petGeometry = petLayout(
             dragPosition ?? view.petPosition,
             viewport,
-            view.petSize,
-            petOpen ? petCardHeight : 150,
+            appearanceOnly ? savedView.petSize : view.petSize,
           );
+          const surfaceScreen = ui.screen || 'reminder';
+          const surfaceWidth = petSurfaceWidth(surfaceScreen, viewport);
+          const measureKey = [surfaceScreen, surfaceWidth, locale.active].join(':');
+          const measured = cardMeasure.key === measureKey;
+          const naturalHeight = measured ? cardMeasure.height : 320;
+          const anchor = {
+            x: petGeometry.x,
+            y: petGeometry.y,
+            width: petGeometry.petWidth,
+            height: petGeometry.petHeight,
+          };
           const placementKey = [
+            measureKey,
             viewport.width,
             viewport.height,
+            viewport.left,
+            viewport.top,
             (dragPosition ?? savedView.petPosition)?.x,
             (dragPosition ?? savedView.petPosition)?.y,
           ].join(':');
+          const previousPlacement =
+            panelPlacement.current?.key === placementKey ? panelPlacement.current.panel : null;
+          const floatingPanel = placePetSurface(anchor, viewport, {
+            width: surfaceWidth,
+            height: naturalHeight,
+            previous: previousPlacement,
+          });
           if (!petMode || !petOpen) panelPlacement.current = null;
-          else if (panelPlacement.current?.key !== placementKey)
-            panelPlacement.current = { key: placementKey, panel: petGeometry.panel };
-          const floatingPanel = panelPlacement.current?.panel ?? petGeometry.panel;
+          else if (measured) panelPlacement.current = { key: placementKey, panel: floatingPanel };
+          const menuWidth = petSurfaceWidth('menu', viewport);
+          const menuLayout = placePetSurface(anchor, viewport, {
+            width: menuWidth,
+            height: menuMeasure.width === menuWidth ? menuMeasure.height : 260,
+            kind: 'menu',
+            point: ui.menu,
+          });
+          const alertRoom = Math.max(
+            anchor.x - viewport.left - 24,
+            viewport.left + viewport.width - anchor.x - anchor.width - 24,
+          );
+          const waterAlertLayout = placePetSurface(anchor, viewport, {
+            width: Math.min(140, Math.max(110, alertRoom)),
+            height: 34,
+            kind: 'menu',
+            obstacles: [...(petOpen ? [floatingPanel] : []), ...(ui.menu ? [menuLayout] : [])],
+          });
+          const toastLayout = placePetSurface(anchor, viewport, {
+            width: Math.min(224, viewport.width - 24),
+            height: toastHeight,
+            kind: 'menu',
+          });
           const collapsed =
             !petMode &&
             !!safeState &&
@@ -1733,10 +1963,23 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           );
           const money = (value) => (view.masked ? '••••' : formatMoney.format(value));
           const moneyText = safeState ? money(safeState.earned) : '—';
-          const cardStyle = Object.assign(
-            { '--owc-alpha': String(view.opacity) },
-            view.position ? { left: view.position.x, top: view.position.y, right: 'auto' } : {},
+          const classicPosition = clampPosition(
+            view.position ?? {
+              x: viewport.left + viewport.width - classicSize.width - 24,
+              y: viewport.top + 96,
+            },
+            viewport,
+            classicSize,
           );
+          const cardStyle = {
+            '--owc-alpha': String(view.opacity),
+            '--owc-viewport-height': Math.max(1, viewport.height - 24) + 'px',
+            left: classicPosition.x,
+            top: classicPosition.y,
+            right: 'auto',
+            maxWidth: Math.max(1, viewport.width - 24),
+            maxHeight: Math.max(1, viewport.height - 24),
+          };
 
           function safeCalculate(value) {
             try {
@@ -1754,14 +1997,10 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
 
           const clamp = React.useCallback(
             (position) =>
-              clampPosition(
-                position,
-                { width: window.innerWidth, height: window.innerHeight },
-                {
-                  width: box.current?.offsetWidth || 300,
-                  height: box.current?.offsetHeight || 200,
-                },
-              ),
+              clampPosition(position, petViewport(window), {
+                width: box.current?.offsetWidth || 300,
+                height: box.current?.offsetHeight || 200,
+              }),
             [],
           );
 
@@ -2125,29 +2364,33 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             };
           }, []);
 
-          React.useEffect(() => {
+          React.useLayoutEffect(() => {
             const resize = () => {
               const rect = box.current?.getBoundingClientRect();
+              const nextViewport = petViewport(window);
               setViewport((current) =>
-                current.width === window.innerWidth && current.height === window.innerHeight
+                Object.keys(nextViewport).every((key) => current[key] === nextViewport[key])
                   ? current
-                  : { width: window.innerWidth, height: window.innerHeight },
+                  : nextViewport,
               );
               if (!rect || petMode) return;
-              setView((current) => {
-                const previous = current.position ?? { x: rect.left, y: rect.top };
-                const position = clamp(previous);
-                return position.x === previous.x && position.y === previous.y
-                  ? current
-                  : { ...current, position };
-              });
+              const width = box.current.offsetWidth,
+                height = box.current.offsetHeight;
+              setClassicSize((current) =>
+                current.width === width && current.height === height ? current : { width, height },
+              );
             };
             const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(resize) : null;
             if (box.current) ro?.observe(box.current);
+            resize();
             window.addEventListener('resize', resize);
+            window.visualViewport?.addEventListener('resize', resize);
+            window.visualViewport?.addEventListener('scroll', resize);
             return () => {
               ro?.disconnect();
               window.removeEventListener('resize', resize);
+              window.visualViewport?.removeEventListener('resize', resize);
+              window.visualViewport?.removeEventListener('scroll', resize);
             };
           }, [clamp, petMode]);
 
@@ -2346,15 +2589,21 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             event.preventDefault();
             event.stopPropagation();
             petDragged.current = false;
+            if (ui.pending) return true;
             if (!petMode) {
               if (!busy && !waterBusy) navigateScreen('appearance', event);
               return true;
             }
             const trigger =
-              event.target.closest('button,.owc-title') ||
+              event.target.closest('button,.owc-title,[data-pet-page-title]') ||
+              event.target
+                .closest('.owc-pet-panel')
+                ?.querySelector('[data-pet-page-title],.owc-head button') ||
               box.current.querySelector('.owc-pet-handle');
             menuTrigger.current = menuBox.current?.contains(trigger)
-              ? box.current?.querySelector('.owc-pet-handle')
+              ? menuTrigger.current?.isConnected
+                ? menuTrigger.current
+                : box.current?.querySelector('.owc-pet-handle')
               : trigger;
             const rect = trigger?.getBoundingClientRect();
             const point =
@@ -2400,7 +2649,8 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           }
           function navigateScreen(screen, event) {
             if (!data?.configured && screen !== 'schedule') return;
-            if (busy || waterBusy || requestBusy.current || waterPending.current) return;
+            if (ui.pending || busy || waterBusy || requestBusy.current || waterPending.current)
+              return;
             const root = event?.currentTarget?.getAttribute?.('role') === 'menuitem';
             if (event?.currentTarget) focusReturn.current = event.currentTarget;
             if (screen !== ui.screen && draftChanged()) {
@@ -3424,22 +3674,15 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               return h(
                 'div',
                 { className: 'owc-form owc-appearance', 'data-appearance-settings': true },
+                h('p', { className: 'owc-hint' }, t('petAppearancePreview')),
+                h(
+                  'div',
+                  { 'data-appearance-preview': true, className: 'owc-appearance-preview' },
+                  view.companion
+                    ? petArtwork(h, companion, view.petSize)
+                    : h('p', null, t('petClassicPreview')),
+                ),
                 appearanceFields(),
-                !appearanceWasPet.current &&
-                  view.companion &&
-                  h(
-                    'div',
-                    {
-                      'data-appearance-preview': true,
-                      style: {
-                        height: 210,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      },
-                    },
-                    petArtwork(h, companion, view.petSize),
-                  ),
                 h(
                   'div',
                   { className: 'owc-save' },
@@ -3712,6 +3955,93 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             );
           const petShowing = petOpen;
           const petFloating = petShowing || waterPrompt;
+          React.useLayoutEffect(() => {
+            if (!petMode || !petFloating || !cardContent.current) return;
+            const content = cardContent.current,
+              header = petPanel.current?.querySelector('.owc-head');
+            let frame = 0;
+            const measure = () => {
+              const height = Math.ceil(
+                content.getBoundingClientRect().height +
+                  (header?.getBoundingClientRect().height ?? 0) +
+                  2,
+              );
+              setCardMeasure((current) =>
+                current.key === measureKey && Math.abs(current.height - height) < 1
+                  ? current
+                  : { key: measureKey, height },
+              );
+            };
+            const observer =
+              typeof ResizeObserver === 'function'
+                ? new ResizeObserver(() => {
+                    cancelAnimationFrame(frame);
+                    frame = requestAnimationFrame(measure);
+                  })
+                : null;
+            observer?.observe(content);
+            if (header) observer?.observe(header);
+            measure();
+            return () => {
+              observer?.disconnect();
+              cancelAnimationFrame(frame);
+            };
+          }, [petMode, petFloating, measureKey, ui.pending]);
+          React.useLayoutEffect(() => {
+            if (!petMode || !ui.menu || !menuContent.current) return;
+            const content = menuContent.current;
+            let frame = 0;
+            const measure = () => {
+              const height = Math.ceil(content.getBoundingClientRect().height + 2);
+              setMenuMeasure((current) =>
+                current.width === menuWidth && Math.abs(current.height - height) < 1
+                  ? current
+                  : { width: menuWidth, height },
+              );
+            };
+            const observer =
+              typeof ResizeObserver === 'function'
+                ? new ResizeObserver(() => {
+                    cancelAnimationFrame(frame);
+                    frame = requestAnimationFrame(measure);
+                  })
+                : null;
+            observer?.observe(content);
+            measure();
+            return () => {
+              observer?.disconnect();
+              cancelAnimationFrame(frame);
+            };
+          }, [petMode, !!ui.menu, menuWidth]);
+          React.useLayoutEffect(() => {
+            if (!petMode || petShowing || waterPrompt || !waterNotice || !toastContent.current)
+              return;
+            const content = toastContent.current;
+            let frame = 0;
+            const measure = () => {
+              const height = Math.ceil(content.getBoundingClientRect().height + 20);
+              setToastHeight((current) => (current === height ? current : height));
+            };
+            const observer =
+              typeof ResizeObserver === 'function'
+                ? new ResizeObserver(() => {
+                    cancelAnimationFrame(frame);
+                    frame = requestAnimationFrame(measure);
+                  })
+                : null;
+            observer?.observe(content);
+            measure();
+            return () => {
+              observer?.disconnect();
+              cancelAnimationFrame(frame);
+            };
+          }, [petMode, petShowing, waterPrompt, waterNotice, viewport.width]);
+          React.useEffect(() => {
+            if (!ui.menu) return;
+            const blur = () => dispatchUI({ type: 'dismiss-menu' });
+            window.addEventListener('blur', blur);
+            return () => window.removeEventListener('blur', blur);
+          }, [ui.menu]);
           React.useEffect(() => {
             if (!petMode || (!petShowing && !ui.menu)) return;
             const outside = (event) => {
@@ -3740,12 +4070,34 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             else petPanel.current?.querySelector('[data-pet-page-title]')?.focus();
           }, [ui.screen]);
 
+          React.useEffect(() => {
+            if (ui.pending && (busy || waterBusy))
+              box.current?.querySelector('[data-nav-confirm]')?.focus();
+          }, [ui.pending, busy, waterBusy]);
           const draftGuard = () =>
             h(
               'div',
               {
                 className: 'owc-pet-unsaved',
                 'data-nav-confirm': true,
+                tabIndex: -1,
+                onKeyDown: (event) => {
+                  if (event.key !== 'Tab') return;
+                  const buttons = [
+                    ...event.currentTarget.querySelectorAll('button:not(:disabled)'),
+                  ];
+                  if (!buttons.length) {
+                    event.preventDefault();
+                    return;
+                  }
+                  if (event.shiftKey && document.activeElement === buttons[0]) {
+                    event.preventDefault();
+                    buttons.at(-1).focus();
+                  } else if (!event.shiftKey && document.activeElement === buttons.at(-1)) {
+                    event.preventDefault();
+                    buttons[0].focus();
+                  }
+                },
                 role: 'alertdialog',
                 'aria-label': t('petUnsaved'),
               },
@@ -3800,7 +4152,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   {
                     type: 'button',
                     className: 'owc-text',
-                    disabled: busy || waterBusy,
+                    disabled: busy || waterBusy || !!ui.pending,
                     onClick: () => navigateScreen(ui.back),
                     'aria-label': t('petBack'),
                   },
@@ -3818,7 +4170,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   type: 'button',
                   className: 'owc-icon',
                   'aria-label': t('petCloseAll'),
-                  disabled: busy || waterBusy,
+                  disabled: busy || waterBusy || !!ui.pending,
                   onClick: closePetPanel,
                 },
                 iconSvg('close', 14),
@@ -3963,12 +4315,12 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 className: 'owc-pet-context',
                 role: 'menu',
                 'aria-label': t('petMenu'),
-                style: petMenuLayout(ui.menu, viewport, {
-                  x: petGeometry.x,
-                  y: petGeometry.y,
-                  width: petGeometry.petWidth,
-                  height: petGeometry.petHeight,
-                }),
+                style: {
+                  left: menuLayout.left,
+                  top: menuLayout.top,
+                  width: menuLayout.width,
+                  maxHeight: menuLayout.height,
+                },
                 onBlur: (event) => {
                   if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget))
                     dispatchUI({ type: 'dismiss-menu' });
@@ -4001,40 +4353,44 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   }
                 },
               },
-              [
-                ['income', 'petCountdownCard'],
-                ['home', 'petWaterCard'],
-                ['earnings', 'petEarningsCard'],
-                ['appearance', 'petAppearance'],
-                ['schedule', 'petWorkSettings'],
-              ].map(([screen, label]) =>
+              h(
+                'div',
+                { ref: menuContent, className: 'owc-menu-natural' },
+                [
+                  ['income', 'petCountdownCard'],
+                  ['home', 'petWaterCard'],
+                  ['earnings', 'petEarningsCard'],
+                  ['appearance', 'petAppearance'],
+                  ['schedule', 'petWorkSettings'],
+                ].map(([screen, label]) =>
+                  h(
+                    'button',
+                    {
+                      key: screen,
+                      type: 'button',
+                      role: 'menuitem',
+                      tabIndex: -1,
+                      disabled: busy || waterBusy,
+                      onClick: (event) => navigateScreen(screen, event),
+                    },
+                    t(label),
+                  ),
+                ),
+
+                h('hr', null),
                 h(
                   'button',
                   {
-                    key: screen,
                     type: 'button',
                     role: 'menuitem',
                     tabIndex: -1,
-                    disabled: busy || waterBusy,
-                    onClick: (event) => navigateScreen(screen, event),
+                    onClick: () => {
+                      setPreference({ petPosition: null });
+                      closePetMenu();
+                    },
                   },
-                  t(label),
+                  t('reset'),
                 ),
-              ),
-
-              h('hr', null),
-              h(
-                'button',
-                {
-                  type: 'button',
-                  role: 'menuitem',
-                  tabIndex: -1,
-                  onClick: () => {
-                    setPreference({ petPosition: null });
-                    closePetMenu();
-                  },
-                },
-                t('reset'),
               ),
             );
 
@@ -4119,24 +4475,14 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                     'aria-label': t('petWaterAlert'),
                     onClick: (event) => navigateScreen('home', event),
                     style: {
-                      left: Math.max(
-                        12,
-                        Math.min(
-                          petGeometry.x + (petGeometry.petWidth - 140) / 2,
-                          viewport.width - 152,
-                        ),
-                      ),
-                      top:
-                        petGeometry.y >= 50
-                          ? petGeometry.y - 38
-                          : Math.min(
-                              viewport.height - 44,
-                              petGeometry.y + petGeometry.petHeight + 6,
-                            ),
+                      left: waterAlertLayout.left,
+                      top: waterAlertLayout.top,
+                      width: waterAlertLayout.width,
+                      height: waterAlertLayout.height,
                     },
                   },
                   iconSvg('water', 13),
-                  t('waterDue'),
+                  t('petWaterBadge'),
                 ),
               contextMenu(),
               !petShowing &&
@@ -4148,17 +4494,13 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                     className: 'owc-pet-toast',
                     'aria-hidden': true,
                     style: {
-                      left: Math.max(
-                        12,
-                        Math.min(
-                          petGeometry.x + petGeometry.petWidth / 2 - 104,
-                          viewport.width - 220,
-                        ),
-                      ),
-                      top: Math.max(12, petGeometry.y - 56),
+                      left: toastLayout.left,
+                      top: toastLayout.top,
+                      width: toastLayout.width,
+                      maxHeight: toastLayout.height,
                     },
                   },
-                  t(waterNotice.key),
+                  h('div', { ref: toastContent }, t(waterNotice.key)),
                 ),
               petFloating &&
                 h(
@@ -4175,7 +4517,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                       left: floatingPanel.left,
                       top: floatingPanel.top,
                       width: floatingPanel.width,
-                      height: Math.min(petShowing ? petCardHeight : 150, floatingPanel.maxHeight),
+                      height: floatingPanel.height,
                       maxHeight: floatingPanel.maxHeight,
                     },
                   },
@@ -4202,24 +4544,28 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   h(
                     'div',
                     { className: 'owc-pet-scroll' },
-                    petShowing
-                      ? h(
-                          React.Fragment,
-                          null,
-                          ui.pending
-                            ? draftGuard()
-                            : waterEditing
-                              ? waterSettings()
-                              : editing
-                                ? editor()
-                                : petDetails
-                                  ? panelBody('clock')
-                                  : ui.screen === 'earnings'
-                                    ? panelBody('earnings')
-                                    : petHome(),
-                          notices(),
-                        )
-                      : waterReminder(),
+                    h(
+                      'div',
+                      { ref: cardContent, className: 'owc-pet-natural' },
+                      petShowing
+                        ? h(
+                            React.Fragment,
+                            null,
+                            ui.pending
+                              ? draftGuard()
+                              : waterEditing
+                                ? waterSettings()
+                                : editing
+                                  ? editor()
+                                  : petDetails
+                                    ? panelBody('clock')
+                                    : ui.screen === 'earnings'
+                                      ? panelBody('earnings')
+                                      : petHome(),
+                            notices(),
+                          )
+                        : waterReminder(),
+                    ),
                   ),
                 ),
             );

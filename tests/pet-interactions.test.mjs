@@ -1,11 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import {
-  initialPetUI,
-  petUIReducer,
-  appearanceValues,
-  petMenuLayout,
-} from '../pet-interactions.js';
+import { initialPetUI, petUIReducer, appearanceValues } from '../pet-interactions.js';
 const go = (s, screen, extra = {}) => petUIReducer(s, { type: 'navigate', screen, ...extra });
 
 test('one screen is active and editor navigation retains a predictable parent', () => {
@@ -83,23 +78,4 @@ test('appearance snapshots omit position and salary preferences', () => {
     }),
     { companion: true, companionMotion: false, petSize: 132, opacity: 0.8 },
   );
-});
-test('context menu stays within viewport near every corner', () => {
-  const pet = { x: 1100, y: 700, width: 150, height: 176 };
-  const adjacent = petMenuLayout({ x: 1175, y: 788 }, { width: 1440, height: 1000 }, pet);
-  assert.ok(adjacent.left + adjacent.width < pet.x);
-  for (const viewport of [
-    { width: 1440, height: 900 },
-    { width: 320, height: 568 },
-    { width: 160, height: 100 },
-  ])
-    for (const point of [
-      { x: 0, y: 0 },
-      { x: 9999, y: 9999 },
-      { x: -200, y: -200 },
-    ]) {
-      const p = petMenuLayout(point, viewport);
-      assert.ok(p.left >= 0 && p.top >= 0);
-      assert.ok(p.left + p.width <= viewport.width && p.top + p.maxHeight <= viewport.height);
-    }
 });

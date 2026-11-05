@@ -10,6 +10,7 @@ window.__ModuleLoader__.load({
         ...COMPANION_MESSAGES.zh,
         ...PET_MESSAGES.zh,
         ...PET_INTERACTION_MESSAGES.zh,
+        ...PET_SURFACE_MESSAGES.zh,
         title: '下班计时器',
         working: '距离下班',
         before: '距离开工',
@@ -130,6 +131,7 @@ window.__ModuleLoader__.load({
         ...COMPANION_MESSAGES.en,
         ...PET_MESSAGES.en,
         ...PET_INTERACTION_MESSAGES.en,
+        ...PET_SURFACE_MESSAGES.en,
         title: 'Offwork Clock',
         working: 'Until clock-out',
         before: 'Until work starts',
@@ -374,7 +376,8 @@ window.__ModuleLoader__.load({
 ` +
       COMPANION_STYLE +
       PET_STYLE +
-      PET_INTERACTION_STYLE;
+      PET_INTERACTION_STYLE +
+      PET_SURFACE_STYLE;
     const ICONS = {
       water: [
         ['path', { d: 'M8 1.5C6.6 4 3.5 7.1 3.5 10a4.5 4.5 0 0 0 9 0C12.5 7.1 9.4 4 8 1.5Z' }],
@@ -465,14 +468,18 @@ window.__ModuleLoader__.load({
           const [ready, setReady] = React.useState(false);
           const box = React.useRef(null);
           const petPanel = React.useRef(null);
+          const cardContent = React.useRef(null);
+          const menuContent = React.useRef(null);
+          const toastContent = React.useRef(null);
+          const [toastHeight, setToastHeight] = React.useState(48);
+          const [cardMeasure, setCardMeasure] = React.useState({ key: '', height: 320 });
+          const [menuMeasure, setMenuMeasure] = React.useState({ width: 0, height: 260 });
           const panelPlacement = React.useRef(null);
           const petDragged = React.useRef(false);
           const petOpen = ui.screen !== null;
           const petDetails = ui.screen === 'income';
-          const [viewport, setViewport] = React.useState({
-            width: window.innerWidth,
-            height: window.innerHeight,
-          });
+          const [classicSize, setClassicSize] = React.useState({ width: 340, height: 240 });
+          const [viewport, setViewport] = React.useState(() => petViewport(window));
           const dragState = React.useRef(null);
           const lastPosition = React.useRef(null);
           const generation = React.useRef(0);
@@ -518,24 +525,62 @@ window.__ModuleLoader__.load({
             data?.configured &&
             !!safeState &&
             (appearanceOnly ? appearanceWasPet.current : view.companion);
-          const cardRoot = PET_EDITOR_SCREENS.includes(ui.screen) ? ui.back : ui.screen;
-          const petCardHeight = ['home', 'income', 'earnings'].includes(cardRoot) ? 360 : 440;
           const petGeometry = petLayout(
             dragPosition ?? view.petPosition,
             viewport,
-            view.petSize,
-            petOpen ? petCardHeight : 150,
+            appearanceOnly ? savedView.petSize : view.petSize,
           );
+          const surfaceScreen = ui.screen || 'reminder';
+          const surfaceWidth = petSurfaceWidth(surfaceScreen, viewport);
+          const measureKey = [surfaceScreen, surfaceWidth, locale.active].join(':');
+          const measured = cardMeasure.key === measureKey;
+          const naturalHeight = measured ? cardMeasure.height : 320;
+          const anchor = {
+            x: petGeometry.x,
+            y: petGeometry.y,
+            width: petGeometry.petWidth,
+            height: petGeometry.petHeight,
+          };
           const placementKey = [
+            measureKey,
             viewport.width,
             viewport.height,
+            viewport.left,
+            viewport.top,
             (dragPosition ?? savedView.petPosition)?.x,
             (dragPosition ?? savedView.petPosition)?.y,
           ].join(':');
+          const previousPlacement =
+            panelPlacement.current?.key === placementKey ? panelPlacement.current.panel : null;
+          const floatingPanel = placePetSurface(anchor, viewport, {
+            width: surfaceWidth,
+            height: naturalHeight,
+            previous: previousPlacement,
+          });
           if (!petMode || !petOpen) panelPlacement.current = null;
-          else if (panelPlacement.current?.key !== placementKey)
-            panelPlacement.current = { key: placementKey, panel: petGeometry.panel };
-          const floatingPanel = panelPlacement.current?.panel ?? petGeometry.panel;
+          else if (measured) panelPlacement.current = { key: placementKey, panel: floatingPanel };
+          const menuWidth = petSurfaceWidth('menu', viewport);
+          const menuLayout = placePetSurface(anchor, viewport, {
+            width: menuWidth,
+            height: menuMeasure.width === menuWidth ? menuMeasure.height : 260,
+            kind: 'menu',
+            point: ui.menu,
+          });
+          const alertRoom = Math.max(
+            anchor.x - viewport.left - 24,
+            viewport.left + viewport.width - anchor.x - anchor.width - 24,
+          );
+          const waterAlertLayout = placePetSurface(anchor, viewport, {
+            width: Math.min(140, Math.max(110, alertRoom)),
+            height: 34,
+            kind: 'menu',
+            obstacles: [...(petOpen ? [floatingPanel] : []), ...(ui.menu ? [menuLayout] : [])],
+          });
+          const toastLayout = placePetSurface(anchor, viewport, {
+            width: Math.min(224, viewport.width - 24),
+            height: toastHeight,
+            kind: 'menu',
+          });
           const collapsed =
             !petMode &&
             !!safeState &&
@@ -562,10 +607,23 @@ window.__ModuleLoader__.load({
           );
           const money = (value) => (view.masked ? '••••' : formatMoney.format(value));
           const moneyText = safeState ? money(safeState.earned) : '—';
-          const cardStyle = Object.assign(
-            { '--owc-alpha': String(view.opacity) },
-            view.position ? { left: view.position.x, top: view.position.y, right: 'auto' } : {},
+          const classicPosition = clampPosition(
+            view.position ?? {
+              x: viewport.left + viewport.width - classicSize.width - 24,
+              y: viewport.top + 96,
+            },
+            viewport,
+            classicSize,
           );
+          const cardStyle = {
+            '--owc-alpha': String(view.opacity),
+            '--owc-viewport-height': Math.max(1, viewport.height - 24) + 'px',
+            left: classicPosition.x,
+            top: classicPosition.y,
+            right: 'auto',
+            maxWidth: Math.max(1, viewport.width - 24),
+            maxHeight: Math.max(1, viewport.height - 24),
+          };
 
           function safeCalculate(value) {
             try {
@@ -583,14 +641,10 @@ window.__ModuleLoader__.load({
 
           const clamp = React.useCallback(
             (position) =>
-              clampPosition(
-                position,
-                { width: window.innerWidth, height: window.innerHeight },
-                {
-                  width: box.current?.offsetWidth || 300,
-                  height: box.current?.offsetHeight || 200,
-                },
-              ),
+              clampPosition(position, petViewport(window), {
+                width: box.current?.offsetWidth || 300,
+                height: box.current?.offsetHeight || 200,
+              }),
             [],
           );
 
@@ -954,29 +1008,33 @@ window.__ModuleLoader__.load({
             };
           }, []);
 
-          React.useEffect(() => {
+          React.useLayoutEffect(() => {
             const resize = () => {
               const rect = box.current?.getBoundingClientRect();
+              const nextViewport = petViewport(window);
               setViewport((current) =>
-                current.width === window.innerWidth && current.height === window.innerHeight
+                Object.keys(nextViewport).every((key) => current[key] === nextViewport[key])
                   ? current
-                  : { width: window.innerWidth, height: window.innerHeight },
+                  : nextViewport,
               );
               if (!rect || petMode) return;
-              setView((current) => {
-                const previous = current.position ?? { x: rect.left, y: rect.top };
-                const position = clamp(previous);
-                return position.x === previous.x && position.y === previous.y
-                  ? current
-                  : { ...current, position };
-              });
+              const width = box.current.offsetWidth,
+                height = box.current.offsetHeight;
+              setClassicSize((current) =>
+                current.width === width && current.height === height ? current : { width, height },
+              );
             };
             const ro = typeof ResizeObserver === 'function' ? new ResizeObserver(resize) : null;
             if (box.current) ro?.observe(box.current);
+            resize();
             window.addEventListener('resize', resize);
+            window.visualViewport?.addEventListener('resize', resize);
+            window.visualViewport?.addEventListener('scroll', resize);
             return () => {
               ro?.disconnect();
               window.removeEventListener('resize', resize);
+              window.visualViewport?.removeEventListener('resize', resize);
+              window.visualViewport?.removeEventListener('scroll', resize);
             };
           }, [clamp, petMode]);
 
@@ -1175,15 +1233,21 @@ window.__ModuleLoader__.load({
             event.preventDefault();
             event.stopPropagation();
             petDragged.current = false;
+            if (ui.pending) return true;
             if (!petMode) {
               if (!busy && !waterBusy) navigateScreen('appearance', event);
               return true;
             }
             const trigger =
-              event.target.closest('button,.owc-title') ||
+              event.target.closest('button,.owc-title,[data-pet-page-title]') ||
+              event.target
+                .closest('.owc-pet-panel')
+                ?.querySelector('[data-pet-page-title],.owc-head button') ||
               box.current.querySelector('.owc-pet-handle');
             menuTrigger.current = menuBox.current?.contains(trigger)
-              ? box.current?.querySelector('.owc-pet-handle')
+              ? menuTrigger.current?.isConnected
+                ? menuTrigger.current
+                : box.current?.querySelector('.owc-pet-handle')
               : trigger;
             const rect = trigger?.getBoundingClientRect();
             const point =
@@ -1229,7 +1293,8 @@ window.__ModuleLoader__.load({
           }
           function navigateScreen(screen, event) {
             if (!data?.configured && screen !== 'schedule') return;
-            if (busy || waterBusy || requestBusy.current || waterPending.current) return;
+            if (ui.pending || busy || waterBusy || requestBusy.current || waterPending.current)
+              return;
             const root = event?.currentTarget?.getAttribute?.('role') === 'menuitem';
             if (event?.currentTarget) focusReturn.current = event.currentTarget;
             if (screen !== ui.screen && draftChanged()) {
@@ -2253,22 +2318,15 @@ window.__ModuleLoader__.load({
               return h(
                 'div',
                 { className: 'owc-form owc-appearance', 'data-appearance-settings': true },
+                h('p', { className: 'owc-hint' }, t('petAppearancePreview')),
+                h(
+                  'div',
+                  { 'data-appearance-preview': true, className: 'owc-appearance-preview' },
+                  view.companion
+                    ? petArtwork(h, companion, view.petSize)
+                    : h('p', null, t('petClassicPreview')),
+                ),
                 appearanceFields(),
-                !appearanceWasPet.current &&
-                  view.companion &&
-                  h(
-                    'div',
-                    {
-                      'data-appearance-preview': true,
-                      style: {
-                        height: 210,
-                        display: 'flex',
-                        alignItems: 'center',
-                        justifyContent: 'center',
-                      },
-                    },
-                    petArtwork(h, companion, view.petSize),
-                  ),
                 h(
                   'div',
                   { className: 'owc-save' },
@@ -2541,6 +2599,93 @@ window.__ModuleLoader__.load({
             );
           const petShowing = petOpen;
           const petFloating = petShowing || waterPrompt;
+          React.useLayoutEffect(() => {
+            if (!petMode || !petFloating || !cardContent.current) return;
+            const content = cardContent.current,
+              header = petPanel.current?.querySelector('.owc-head');
+            let frame = 0;
+            const measure = () => {
+              const height = Math.ceil(
+                content.getBoundingClientRect().height +
+                  (header?.getBoundingClientRect().height ?? 0) +
+                  2,
+              );
+              setCardMeasure((current) =>
+                current.key === measureKey && Math.abs(current.height - height) < 1
+                  ? current
+                  : { key: measureKey, height },
+              );
+            };
+            const observer =
+              typeof ResizeObserver === 'function'
+                ? new ResizeObserver(() => {
+                    cancelAnimationFrame(frame);
+                    frame = requestAnimationFrame(measure);
+                  })
+                : null;
+            observer?.observe(content);
+            if (header) observer?.observe(header);
+            measure();
+            return () => {
+              observer?.disconnect();
+              cancelAnimationFrame(frame);
+            };
+          }, [petMode, petFloating, measureKey, ui.pending]);
+          React.useLayoutEffect(() => {
+            if (!petMode || !ui.menu || !menuContent.current) return;
+            const content = menuContent.current;
+            let frame = 0;
+            const measure = () => {
+              const height = Math.ceil(content.getBoundingClientRect().height + 2);
+              setMenuMeasure((current) =>
+                current.width === menuWidth && Math.abs(current.height - height) < 1
+                  ? current
+                  : { width: menuWidth, height },
+              );
+            };
+            const observer =
+              typeof ResizeObserver === 'function'
+                ? new ResizeObserver(() => {
+                    cancelAnimationFrame(frame);
+                    frame = requestAnimationFrame(measure);
+                  })
+                : null;
+            observer?.observe(content);
+            measure();
+            return () => {
+              observer?.disconnect();
+              cancelAnimationFrame(frame);
+            };
+          }, [petMode, !!ui.menu, menuWidth]);
+          React.useLayoutEffect(() => {
+            if (!petMode || petShowing || waterPrompt || !waterNotice || !toastContent.current)
+              return;
+            const content = toastContent.current;
+            let frame = 0;
+            const measure = () => {
+              const height = Math.ceil(content.getBoundingClientRect().height + 20);
+              setToastHeight((current) => (current === height ? current : height));
+            };
+            const observer =
+              typeof ResizeObserver === 'function'
+                ? new ResizeObserver(() => {
+                    cancelAnimationFrame(frame);
+                    frame = requestAnimationFrame(measure);
+                  })
+                : null;
+            observer?.observe(content);
+            measure();
+            return () => {
+              observer?.disconnect();
+              cancelAnimationFrame(frame);
+            };
+          }, [petMode, petShowing, waterPrompt, waterNotice, viewport.width]);
+          React.useEffect(() => {
+            if (!ui.menu) return;
+            const blur = () => dispatchUI({ type: 'dismiss-menu' });
+            window.addEventListener('blur', blur);
+            return () => window.removeEventListener('blur', blur);
+          }, [ui.menu]);
           React.useEffect(() => {
             if (!petMode || (!petShowing && !ui.menu)) return;
             const outside = (event) => {
@@ -2569,12 +2714,34 @@ window.__ModuleLoader__.load({
             else petPanel.current?.querySelector('[data-pet-page-title]')?.focus();
           }, [ui.screen]);
 
+          React.useEffect(() => {
+            if (ui.pending && (busy || waterBusy))
+              box.current?.querySelector('[data-nav-confirm]')?.focus();
+          }, [ui.pending, busy, waterBusy]);
           const draftGuard = () =>
             h(
               'div',
               {
                 className: 'owc-pet-unsaved',
                 'data-nav-confirm': true,
+                tabIndex: -1,
+                onKeyDown: (event) => {
+                  if (event.key !== 'Tab') return;
+                  const buttons = [
+                    ...event.currentTarget.querySelectorAll('button:not(:disabled)'),
+                  ];
+                  if (!buttons.length) {
+                    event.preventDefault();
+                    return;
+                  }
+                  if (event.shiftKey && document.activeElement === buttons[0]) {
+                    event.preventDefault();
+                    buttons.at(-1).focus();
+                  } else if (!event.shiftKey && document.activeElement === buttons.at(-1)) {
+                    event.preventDefault();
+                    buttons[0].focus();
+                  }
+                },
                 role: 'alertdialog',
                 'aria-label': t('petUnsaved'),
               },
@@ -2629,7 +2796,7 @@ window.__ModuleLoader__.load({
                   {
                     type: 'button',
                     className: 'owc-text',
-                    disabled: busy || waterBusy,
+                    disabled: busy || waterBusy || !!ui.pending,
                     onClick: () => navigateScreen(ui.back),
                     'aria-label': t('petBack'),
                   },
@@ -2647,7 +2814,7 @@ window.__ModuleLoader__.load({
                   type: 'button',
                   className: 'owc-icon',
                   'aria-label': t('petCloseAll'),
-                  disabled: busy || waterBusy,
+                  disabled: busy || waterBusy || !!ui.pending,
                   onClick: closePetPanel,
                 },
                 iconSvg('close', 14),
@@ -2792,12 +2959,12 @@ window.__ModuleLoader__.load({
                 className: 'owc-pet-context',
                 role: 'menu',
                 'aria-label': t('petMenu'),
-                style: petMenuLayout(ui.menu, viewport, {
-                  x: petGeometry.x,
-                  y: petGeometry.y,
-                  width: petGeometry.petWidth,
-                  height: petGeometry.petHeight,
-                }),
+                style: {
+                  left: menuLayout.left,
+                  top: menuLayout.top,
+                  width: menuLayout.width,
+                  maxHeight: menuLayout.height,
+                },
                 onBlur: (event) => {
                   if (event.relatedTarget && !event.currentTarget.contains(event.relatedTarget))
                     dispatchUI({ type: 'dismiss-menu' });
@@ -2830,40 +2997,44 @@ window.__ModuleLoader__.load({
                   }
                 },
               },
-              [
-                ['income', 'petCountdownCard'],
-                ['home', 'petWaterCard'],
-                ['earnings', 'petEarningsCard'],
-                ['appearance', 'petAppearance'],
-                ['schedule', 'petWorkSettings'],
-              ].map(([screen, label]) =>
+              h(
+                'div',
+                { ref: menuContent, className: 'owc-menu-natural' },
+                [
+                  ['income', 'petCountdownCard'],
+                  ['home', 'petWaterCard'],
+                  ['earnings', 'petEarningsCard'],
+                  ['appearance', 'petAppearance'],
+                  ['schedule', 'petWorkSettings'],
+                ].map(([screen, label]) =>
+                  h(
+                    'button',
+                    {
+                      key: screen,
+                      type: 'button',
+                      role: 'menuitem',
+                      tabIndex: -1,
+                      disabled: busy || waterBusy,
+                      onClick: (event) => navigateScreen(screen, event),
+                    },
+                    t(label),
+                  ),
+                ),
+
+                h('hr', null),
                 h(
                   'button',
                   {
-                    key: screen,
                     type: 'button',
                     role: 'menuitem',
                     tabIndex: -1,
-                    disabled: busy || waterBusy,
-                    onClick: (event) => navigateScreen(screen, event),
+                    onClick: () => {
+                      setPreference({ petPosition: null });
+                      closePetMenu();
+                    },
                   },
-                  t(label),
+                  t('reset'),
                 ),
-              ),
-
-              h('hr', null),
-              h(
-                'button',
-                {
-                  type: 'button',
-                  role: 'menuitem',
-                  tabIndex: -1,
-                  onClick: () => {
-                    setPreference({ petPosition: null });
-                    closePetMenu();
-                  },
-                },
-                t('reset'),
               ),
             );
 
@@ -2948,24 +3119,14 @@ window.__ModuleLoader__.load({
                     'aria-label': t('petWaterAlert'),
                     onClick: (event) => navigateScreen('home', event),
                     style: {
-                      left: Math.max(
-                        12,
-                        Math.min(
-                          petGeometry.x + (petGeometry.petWidth - 140) / 2,
-                          viewport.width - 152,
-                        ),
-                      ),
-                      top:
-                        petGeometry.y >= 50
-                          ? petGeometry.y - 38
-                          : Math.min(
-                              viewport.height - 44,
-                              petGeometry.y + petGeometry.petHeight + 6,
-                            ),
+                      left: waterAlertLayout.left,
+                      top: waterAlertLayout.top,
+                      width: waterAlertLayout.width,
+                      height: waterAlertLayout.height,
                     },
                   },
                   iconSvg('water', 13),
-                  t('waterDue'),
+                  t('petWaterBadge'),
                 ),
               contextMenu(),
               !petShowing &&
@@ -2977,17 +3138,13 @@ window.__ModuleLoader__.load({
                     className: 'owc-pet-toast',
                     'aria-hidden': true,
                     style: {
-                      left: Math.max(
-                        12,
-                        Math.min(
-                          petGeometry.x + petGeometry.petWidth / 2 - 104,
-                          viewport.width - 220,
-                        ),
-                      ),
-                      top: Math.max(12, petGeometry.y - 56),
+                      left: toastLayout.left,
+                      top: toastLayout.top,
+                      width: toastLayout.width,
+                      maxHeight: toastLayout.height,
                     },
                   },
-                  t(waterNotice.key),
+                  h('div', { ref: toastContent }, t(waterNotice.key)),
                 ),
               petFloating &&
                 h(
@@ -3004,7 +3161,7 @@ window.__ModuleLoader__.load({
                       left: floatingPanel.left,
                       top: floatingPanel.top,
                       width: floatingPanel.width,
-                      height: Math.min(petShowing ? petCardHeight : 150, floatingPanel.maxHeight),
+                      height: floatingPanel.height,
                       maxHeight: floatingPanel.maxHeight,
                     },
                   },
@@ -3031,24 +3188,28 @@ window.__ModuleLoader__.load({
                   h(
                     'div',
                     { className: 'owc-pet-scroll' },
-                    petShowing
-                      ? h(
-                          React.Fragment,
-                          null,
-                          ui.pending
-                            ? draftGuard()
-                            : waterEditing
-                              ? waterSettings()
-                              : editing
-                                ? editor()
-                                : petDetails
-                                  ? panelBody('clock')
-                                  : ui.screen === 'earnings'
-                                    ? panelBody('earnings')
-                                    : petHome(),
-                          notices(),
-                        )
-                      : waterReminder(),
+                    h(
+                      'div',
+                      { ref: cardContent, className: 'owc-pet-natural' },
+                      petShowing
+                        ? h(
+                            React.Fragment,
+                            null,
+                            ui.pending
+                              ? draftGuard()
+                              : waterEditing
+                                ? waterSettings()
+                                : editing
+                                  ? editor()
+                                  : petDetails
+                                    ? panelBody('clock')
+                                    : ui.screen === 'earnings'
+                                      ? panelBody('earnings')
+                                      : petHome(),
+                            notices(),
+                          )
+                        : waterReminder(),
+                    ),
                   ),
                 ),
             );

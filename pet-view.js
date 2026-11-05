@@ -2,6 +2,8 @@
 export const PET_MODEL = Object.freeze({ id: 'xiaoxie-original', renderer: 'svg', license: 'MIT' });
 
 export function petLayout(position, viewport, size = 132, contentHeight = 420) {
+  const originX = viewport.left ?? 0,
+    originY = viewport.top ?? 0;
   const edge = 12,
     gap = 12;
   const width = Math.max(1, viewport.width),
@@ -18,11 +20,11 @@ export function petLayout(position, viewport, size = 132, contentHeight = 420) {
   const petHeight = Math.ceil(artworkSize * 1.1) + 30;
   const bound = (n, max) => Math.max(Math.min(edge, max), Math.min(n, max));
   const x = bound(
-    Number.isFinite(position?.x) ? position.x : width - petWidth - 32,
+    Number.isFinite(position?.x) ? position.x - originX : width - petWidth - 32,
     Math.max(0, width - petWidth - edge),
   );
   const y = bound(
-    Number.isFinite(position?.y) ? position.y : height - petHeight - 36,
+    Number.isFinite(position?.y) ? position.y - originY : height - petHeight - 36,
     Math.max(0, height - petHeight - edge),
   );
   const panelWidth = Math.min(296, Math.max(1, width - edge * 2));
@@ -55,12 +57,18 @@ export function petLayout(position, viewport, size = 132, contentHeight = 420) {
     );
   }
   return {
-    x,
-    y,
+    x: x + originX,
+    y: y + originY,
     petWidth,
     artworkSize,
     petHeight,
-    panel: { left, top: Math.max(0, top), width: panelWidth, maxHeight, side },
+    panel: {
+      left: left + originX,
+      top: Math.max(0, top) + originY,
+      width: panelWidth,
+      maxHeight,
+      side,
+    },
   };
 }
 

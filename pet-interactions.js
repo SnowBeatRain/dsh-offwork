@@ -41,25 +41,6 @@ export function appearanceValues(view) {
     opacity: view.opacity,
   };
 }
-export function petMenuLayout(point, viewport, avoid = null) {
-  const width = Math.min(196, Math.max(1, viewport.width - 24));
-  const maxHeight = Math.min(240, Math.max(1, viewport.height - 24));
-  let x = point.x,
-    y = point.y;
-  if (avoid) {
-    if (avoid.x >= width + 24) x = avoid.x - width - 12;
-    else if (viewport.width - avoid.x - avoid.width >= width + 24) x = avoid.x + avoid.width + 12;
-    else if (avoid.y >= maxHeight + 24) y = avoid.y - maxHeight - 12;
-    else if (viewport.height - avoid.y - avoid.height >= maxHeight + 24)
-      y = avoid.y + avoid.height + 12;
-  }
-  return {
-    left: Math.max(12, Math.min(x, viewport.width - width - 12)),
-    top: Math.max(12, Math.min(y, viewport.height - maxHeight - 12)),
-    width,
-    maxHeight,
-  };
-}
 export const PET_INTERACTION_MESSAGES = {
   zh: {
     petHome: '喝水',

@@ -8,6 +8,7 @@ const moduleNames = [
   'companion.js',
   'pet-view.js',
   'pet-interactions.js',
+  'pet-surfaces.js',
   'hydration.js',
   'hydration-store.js',
 ];
