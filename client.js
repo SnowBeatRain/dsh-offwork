@@ -573,7 +573,7 @@ const PET_MESSAGES = {
     petQuick: '日常陪伴',
     petDetails: '下班与收入',
     petSize: '宠物大小',
-    petHint: '点击互动 · 拖动安置',
+    petHint: '左键互动 · 右键外观 · 拖动安置',
     petMode: '宠物模式',
     petClock: '下班倒计时',
   },
@@ -583,7 +583,7 @@ const PET_MESSAGES = {
     petQuick: 'Daily companion',
     petDetails: 'Clock and earnings',
     petSize: 'Pet size',
-    petHint: 'Click to interact · drag to move',
+    petHint: 'Click to interact · right-click for appearance · drag to move',
     petMode: 'Pet mode',
     petClock: 'Shift countdown',
   },
@@ -2137,6 +2137,32 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             });
           }
 
+          function openAppearanceContext(event) {
+            if (
+              editing ||
+              waterEditing ||
+              waterBusy ||
+              busy ||
+              !data?.configured ||
+              !event.target.closest?.(
+                '.owc-pet-handle,.owc-pet-clock,.owc-pill,.owc-head,.owc-time',
+              )
+            )
+              return false;
+            event.preventDefault();
+            event.stopPropagation();
+            petDragged.current = false;
+            const trigger =
+              event.target.closest('button,.owc-grip,.owc-title') ||
+              box.current?.querySelector(petMode ? '.owc-pet-handle' : '.owc-grip,.owc-title');
+            openAppearance({ currentTarget: trigger });
+            return true;
+          }
+          function appearanceShortcut(event) {
+            if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))
+              return openAppearanceContext(event);
+            return false;
+          }
           function openAppearance(event) {
             openEditor(event);
             setAppearanceOnly(true);
@@ -3427,7 +3453,9 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 onPointerUp: dragEnd,
                 onPointerCancel: dragEnd,
                 onLostPointerCapture: dragEnd,
+                onContextMenu: openAppearanceContext,
                 onKeyDown: (event) => {
+                  if (appearanceShortcut(event)) return;
                   if (event.key !== 'Escape' || event.defaultPrevented || waterBusy || busy) return;
                   event.preventDefault();
                   event.stopPropagation();
@@ -3558,6 +3586,8 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               onPointerUp: dragEnd,
               onPointerCancel: dragEnd,
               onLostPointerCapture: dragEnd,
+              onContextMenu: openAppearanceContext,
+              onKeyDown: appearanceShortcut,
             },
             h('style', null, STYLE),
             h('div', { className: 'owc-glass', 'aria-hidden': 'true' }),

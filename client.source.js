@@ -1123,6 +1123,32 @@ window.__ModuleLoader__.load({
             });
           }
 
+          function openAppearanceContext(event) {
+            if (
+              editing ||
+              waterEditing ||
+              waterBusy ||
+              busy ||
+              !data?.configured ||
+              !event.target.closest?.(
+                '.owc-pet-handle,.owc-pet-clock,.owc-pill,.owc-head,.owc-time',
+              )
+            )
+              return false;
+            event.preventDefault();
+            event.stopPropagation();
+            petDragged.current = false;
+            const trigger =
+              event.target.closest('button,.owc-grip,.owc-title') ||
+              box.current?.querySelector(petMode ? '.owc-pet-handle' : '.owc-grip,.owc-title');
+            openAppearance({ currentTarget: trigger });
+            return true;
+          }
+          function appearanceShortcut(event) {
+            if (event.key === 'ContextMenu' || (event.shiftKey && event.key === 'F10'))
+              return openAppearanceContext(event);
+            return false;
+          }
           function openAppearance(event) {
             openEditor(event);
             setAppearanceOnly(true);
@@ -2413,7 +2439,9 @@ window.__ModuleLoader__.load({
                 onPointerUp: dragEnd,
                 onPointerCancel: dragEnd,
                 onLostPointerCapture: dragEnd,
+                onContextMenu: openAppearanceContext,
                 onKeyDown: (event) => {
+                  if (appearanceShortcut(event)) return;
                   if (event.key !== 'Escape' || event.defaultPrevented || waterBusy || busy) return;
                   event.preventDefault();
                   event.stopPropagation();
@@ -2544,6 +2572,8 @@ window.__ModuleLoader__.load({
               onPointerUp: dragEnd,
               onPointerCancel: dragEnd,
               onLostPointerCapture: dragEnd,
+              onContextMenu: openAppearanceContext,
+              onKeyDown: appearanceShortcut,
             },
             h('style', null, STYLE),
             h('div', { className: 'owc-glass', 'aria-hidden': 'true' }),
