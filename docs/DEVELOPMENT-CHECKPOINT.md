@@ -85,6 +85,7 @@
 - View 偏好新增 petPosition 和 petSize，旧 position 保留给原卡片；角色尺寸同时受视口宽高限制，极短视口的面板可覆盖显示并滚动。
 - 113 项检查通过；隔离浏览器脚本 `/tmp/offwork-hydration-ux/pet-test.cjs` 验证拖动不误触、操作与真实到期、多标签页、模式切换、刷新、320px 窄屏。复审记录 `/tmp/offwork-independent-pet-review/review.md`。
 - 本版仅有原创 SVG 模型，未开放外部模型包导入或 Live2D/视频/序列帧渲染。不要将当前原型描述为已支持所有 dshpet 模型。
+- 最新反馈：用户找不到外观。已增加明确“外观”文字按钮（宠物/计时面板顶部及喝水快捷区），进入独立页面，首项为宠物模式，提供“完成”返回。原薪资表单复用同一组外观控件，外观页不读写薪资或提醒配置。当前修复分支 fix/appearance-entry，从 9e78101 开始；浏览器脚本 appearance-test.cjs 已通过模式、焦点、刷新和数据保留验证。
 - 详细截图与验收记录：docs/PET-PREVIEW.md。保持 1.0.1、不推送或发布，不动第三方宠物安装。
 
 ## 最新澄清：接入 dshpet 模型与桌宠形态

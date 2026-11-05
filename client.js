@@ -1069,6 +1069,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
         salaryGroup: '薪资',
         scheduleGroup: '作息',
         appearanceGroup: '外观',
+        appearanceDone: '完成',
         advanced: '高级设置',
         sessionHint: '仅用于记录配置读写操作，不是账本，不影响工资计算。',
         session: '操作记录会话',
@@ -1187,6 +1188,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
         salaryGroup: 'Salary',
         scheduleGroup: 'Schedule',
         appearanceGroup: 'Appearance',
+        appearanceDone: 'Done',
         advanced: 'Advanced',
         sessionHint:
           'Logs configuration operations only; not a ledger and does not affect pay calculations.',
@@ -1452,6 +1454,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           const [data, setData] = React.useState(null);
           const [draft, setDraft] = React.useState(null);
           const [editing, setEditing] = React.useState(false);
+          const [appearanceOnly, setAppearanceOnly] = React.useState(false);
           const [busy, setBusy] = React.useState(false);
           const [error, setError] = React.useState('');
           const [notice, setNotice] = React.useState('');
@@ -1973,14 +1976,14 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             if (!editing && !waterEditing) {
               if (!wasOpen) return;
               if (focusReturn.current?.isConnected) focusReturn.current.focus?.();
+              else if (petMode) box.current?.querySelector('.owc-pet-handle')?.focus?.();
               else if (waterQuickOpen)
                 box.current?.querySelector('[data-water-quick] .owc-text')?.focus?.();
-              else if (petMode) box.current?.querySelector('.owc-pet-handle')?.focus?.();
               else box.current?.querySelector('.owc-grip,.owc-title')?.focus?.();
               focusReturn.current = null;
               return;
             }
-            box.current?.querySelector('form input,form select')?.focus?.();
+            box.current?.querySelector('form input,form select,.owc-appearance input')?.focus?.();
           }, [editing, waterEditing, petMode]);
 
           React.useEffect(
@@ -2134,7 +2137,12 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             });
           }
 
+          function openAppearance(event) {
+            openEditor(event);
+            setAppearanceOnly(true);
+          }
           function openEditor(e) {
+            setAppearanceOnly(false);
             focusReturn.current = e.currentTarget;
             setDraft({ ...settings });
             setEditing(true);
@@ -2441,6 +2449,12 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 'div',
                 { className: 'owc-water-head' },
                 h('strong', null, iconSvg('water', 14), t('waterTitle')),
+                quick &&
+                  h(
+                    'button',
+                    { type: 'button', className: 'owc-text', onClick: openAppearance },
+                    t('appearanceGroup'),
+                  ),
                 h(
                   'button',
                   {
@@ -2819,11 +2833,29 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                 waterEditing
                   ? t('waterTitle')
                   : editing
-                    ? t(data?.configured ? 'settings' : 'setup')
+                    ? t(
+                        appearanceOnly
+                          ? 'appearanceGroup'
+                          : data?.configured
+                            ? 'settings'
+                            : 'setup',
+                      )
                     : petMode
                       ? t('companionName')
                       : t('title'),
               ),
+              !editing &&
+                !waterEditing &&
+                data?.configured &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-text',
+                    onClick: openAppearance,
+                  },
+                  t('appearanceGroup'),
+                ),
               waterEditing
                 ? h(
                     'button',
@@ -2844,8 +2876,8 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                       {
                         type: 'button',
                         className: 'owc-icon',
-                        title: t('cancel'),
-                        'aria-label': t('cancel'),
+                        title: t(appearanceOnly ? 'waterBack' : 'cancel'),
+                        'aria-label': t(appearanceOnly ? 'waterBack' : 'cancel'),
                         onClick: closeEditor,
                         disabled: busy,
                       },
@@ -3004,7 +3036,88 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             );
           };
 
+          const appearanceFields = () =>
+            h(
+              'fieldset',
+              { className: 'owc-setting-group' },
+              h('legend', null, t('appearanceGroup')),
+              h(
+                'label',
+                { className: 'owc-check' },
+                h('input', {
+                  type: 'checkbox',
+                  name: 'companion',
+                  checked: view.companion,
+                  onChange: (event) => setPreference({ companion: event.target.checked }),
+                }),
+                t('petMode'),
+              ),
+              h(
+                'label',
+                { className: 'owc-check' },
+                h('input', {
+                  type: 'checkbox',
+                  checked: view.companionMotion,
+                  disabled: !view.companion,
+                  onChange: (event) => setPreference({ companionMotion: event.target.checked }),
+                }),
+                t('companionMotion'),
+              ),
+              label(
+                t('petSize'),
+                h('input', {
+                  type: 'range',
+                  min: '80',
+                  max: '180',
+                  step: '4',
+                  value: view.petSize,
+                  'aria-label': t('petSize'),
+                  disabled: !view.companion,
+                  onChange: (event) => setPreference({ petSize: event.target.valueAsNumber }),
+                }),
+              ),
+              h('p', { className: 'owc-hint' }, t('companionPreferences')),
+              label(
+                t('opacity'),
+                h(
+                  React.Fragment,
+                  null,
+                  h('input', {
+                    className: 'owc-range',
+                    type: 'range',
+                    min: '30',
+                    max: '100',
+                    step: '1',
+                    value: String(Math.round(view.opacity * 100)),
+                    disabled: busy,
+                    'aria-label': t('opacity'),
+                    onChange: (event) =>
+                      setPreference({ opacity: event.target.valueAsNumber / 100 }),
+                  }),
+                  h(
+                    'span',
+                    { className: 'owc-hint', style: { margin: 0 } },
+                    Math.round(view.opacity * 100) + '% · ' + t('opacityHint'),
+                  ),
+                ),
+              ),
+            );
           const editor = () => {
+            if (appearanceOnly)
+              return h(
+                'div',
+                { className: 'owc-form owc-appearance', 'data-appearance-settings': true },
+                appearanceFields(),
+                h(
+                  'div',
+                  { className: 'owc-save' },
+                  h(
+                    'button',
+                    { type: 'button', className: 'owc-primary', onClick: closeEditor },
+                    t('appearanceDone'),
+                  ),
+                ),
+              );
             if (!workingDraft) return null;
             const payDaily = workingDraft.payMode === 'daily';
             const salaryKey = payDaily ? 'dailySalary' : 'monthlySalary';
@@ -3172,70 +3285,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                   ),
                 ),
               ),
-              h(
-                'fieldset',
-                { className: 'owc-setting-group' },
-                h('legend', null, t('appearanceGroup')),
-                h(
-                  'label',
-                  { className: 'owc-check' },
-                  h('input', {
-                    type: 'checkbox',
-                    name: 'companion',
-                    checked: view.companion,
-                    onChange: (event) => setPreference({ companion: event.target.checked }),
-                  }),
-                  t('petMode'),
-                ),
-                h(
-                  'label',
-                  { className: 'owc-check' },
-                  h('input', {
-                    type: 'checkbox',
-                    checked: view.companionMotion,
-                    disabled: !view.companion,
-                    onChange: (event) => setPreference({ companionMotion: event.target.checked }),
-                  }),
-                  t('companionMotion'),
-                ),
-                label(
-                  t('petSize'),
-                  h('input', {
-                    type: 'range',
-                    min: '80',
-                    max: '180',
-                    step: '4',
-                    value: view.petSize,
-                    'aria-label': t('petSize'),
-                    disabled: !view.companion,
-                    onChange: (event) => setPreference({ petSize: event.target.valueAsNumber }),
-                  }),
-                ),
-                h('p', { className: 'owc-hint' }, t('companionPreferences')),
-                label(
-                  t('opacity'),
-                  h(
-                    React.Fragment,
-                    null,
-                    h('input', {
-                      className: 'owc-range',
-                      type: 'range',
-                      min: '30',
-                      max: '100',
-                      step: '1',
-                      value: String(Math.round(view.opacity * 100)),
-                      disabled: busy,
-                      'aria-label': t('opacity'),
-                      onChange: (e) => setPreference({ opacity: e.target.valueAsNumber / 100 }),
-                    }),
-                    h(
-                      'span',
-                      { className: 'owc-hint', style: { margin: 0 } },
-                      Math.round(view.opacity * 100) + '% · ' + t('opacityHint'),
-                    ),
-                  ),
-                ),
-              ),
+              appearanceFields(),
               preview &&
                 !preview.error &&
                 h(
