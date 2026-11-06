@@ -9,6 +9,7 @@ const moduleNames = [
   'pet-view.js',
   'pet-motion.js',
   'pet-video.js',
+  'pet-reminder.js',
   'pet-interactions.js',
   'pet-surfaces.js',
   'hydration.js',
