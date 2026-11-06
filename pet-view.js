@@ -354,6 +354,8 @@ export const PET_STYLE = `
 .owc-pet-clock strong{flex:none}
 .owc-v2 .owc-pet-timer-row{display:flex;align-items:center;justify-content:space-between;gap:6px;box-sizing:border-box;width:100%;max-width:188px;height:26px;margin-top:4px;padding:3px 10px;border:1px solid var(--owc-border);border-radius:999px;background:var(--owc-surface);box-shadow:var(--owc-shadow);font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .owc-pet-timer-row span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.owc-pet-timer-label{display:flex;align-items:center;gap:6px}
+.owc-pet-timer-label svg{flex-shrink:0}
 .owc-pet-timer-row strong{flex-shrink:0}
 .owc-v2 [data-countdown-due=true]{color:var(--owc-accent);border-color:var(--owc-accent)}
 .owc-countdown-card{padding:16px;display:flex;flex-direction:column;gap:14px}

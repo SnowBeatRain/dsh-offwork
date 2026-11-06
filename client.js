@@ -779,6 +779,8 @@ const PET_STYLE = `
 .owc-pet-clock strong{flex:none}
 .owc-v2 .owc-pet-timer-row{display:flex;align-items:center;justify-content:space-between;gap:6px;box-sizing:border-box;width:100%;max-width:188px;height:26px;margin-top:4px;padding:3px 10px;border:1px solid var(--owc-border);border-radius:999px;background:var(--owc-surface);box-shadow:var(--owc-shadow);font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
 .owc-pet-timer-row span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.owc-pet-timer-label{display:flex;align-items:center;gap:6px}
+.owc-pet-timer-label svg{flex-shrink:0}
 .owc-pet-timer-row strong{flex-shrink:0}
 .owc-v2 [data-countdown-due=true]{color:var(--owc-accent);border-color:var(--owc-accent)}
 .owc-countdown-card{padding:16px;display:flex;flex-direction:column;gap:14px}
@@ -2595,6 +2597,15 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
       water: [
         ['path', { d: 'M8 1.5C6.6 4 3.5 7.1 3.5 10a4.5 4.5 0 0 0 9 0C12.5 7.1 9.4 4 8 1.5Z' }],
       ],
+      smoking: [
+        ['rect', { x: 1.5, y: 10, width: 11, height: 3, rx: 0.5 }],
+        [
+          'path',
+          {
+            d: 'M9.5 10v3M14.5 10v3M10 7.5c1-1 .8-1.8 0-2.5s-1-1.5 0-2.5M13 6c1-1 .8-1.8 0-2.5s-1-1.5 0-2.5',
+          },
+        ],
+      ],
       eye: [
         ['path', { d: 'M1.7 8S4.3 3.9 8 3.9 14.3 8 14.3 8 11.7 12.1 8 12.1 1.7 8 1.7 8Z' }],
         ['circle', { cx: 8, cy: 8, r: 2.05 }],
@@ -4060,7 +4071,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               : smokingState.phase === 'idle'
                 ? t('timerIdle')
                 : formatDuration(Math.ceil(smokingState.remaining / 1000));
-          const timerRow = (kind, label, value, due, title) => {
+          const timerRow = (kind, value, due, title) => {
             const phase = kind === 'water' ? waterState.phase : smokingState.phase;
             const extra = {
               paused: 'timerPaused',
@@ -4078,7 +4089,12 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 'aria-label': t(kind === 'water' ? 'waterCountdown' : 'smokingCountdown'),
                 title,
               },
-              h('span', null, t(label) + (extra ? ' · ' + t(extra) : '')),
+              h(
+                'span',
+                { className: 'owc-pet-timer-label' },
+                iconSvg(kind, 14),
+                extra && h('span', null, t(extra)),
+              ),
               h('strong', null, value),
             );
           };
@@ -5989,14 +6005,12 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 ),
                 timerRow(
                   'water',
-                  'waterTimerShort',
                   waterCountdownText(),
                   waterState.phase === 'due',
-                  waterSummary(),
+                  t('waterCountdown') + ' · ' + waterSummary(),
                 ),
                 timerRow(
                   'smoking',
-                  'smokingTimerShort',
                   smokingCountdownText(),
                   smokingState.phase === 'due',
                   t('smokingCountdown') +

@@ -384,6 +384,15 @@ window.__ModuleLoader__.load({
       water: [
         ['path', { d: 'M8 1.5C6.6 4 3.5 7.1 3.5 10a4.5 4.5 0 0 0 9 0C12.5 7.1 9.4 4 8 1.5Z' }],
       ],
+      smoking: [
+        ['rect', { x: 1.5, y: 10, width: 11, height: 3, rx: 0.5 }],
+        [
+          'path',
+          {
+            d: 'M9.5 10v3M14.5 10v3M10 7.5c1-1 .8-1.8 0-2.5s-1-1.5 0-2.5M13 6c1-1 .8-1.8 0-2.5s-1-1.5 0-2.5',
+          },
+        ],
+      ],
       eye: [
         ['path', { d: 'M1.7 8S4.3 3.9 8 3.9 14.3 8 14.3 8 11.7 12.1 8 12.1 1.7 8 1.7 8Z' }],
         ['circle', { cx: 8, cy: 8, r: 2.05 }],
@@ -1849,7 +1858,7 @@ window.__ModuleLoader__.load({
               : smokingState.phase === 'idle'
                 ? t('timerIdle')
                 : formatDuration(Math.ceil(smokingState.remaining / 1000));
-          const timerRow = (kind, label, value, due, title) => {
+          const timerRow = (kind, value, due, title) => {
             const phase = kind === 'water' ? waterState.phase : smokingState.phase;
             const extra = {
               paused: 'timerPaused',
@@ -1867,7 +1876,12 @@ window.__ModuleLoader__.load({
                 'aria-label': t(kind === 'water' ? 'waterCountdown' : 'smokingCountdown'),
                 title,
               },
-              h('span', null, t(label) + (extra ? ' · ' + t(extra) : '')),
+              h(
+                'span',
+                { className: 'owc-pet-timer-label' },
+                iconSvg(kind, 14),
+                extra && h('span', null, t(extra)),
+              ),
               h('strong', null, value),
             );
           };
@@ -3778,14 +3792,12 @@ window.__ModuleLoader__.load({
                 ),
                 timerRow(
                   'water',
-                  'waterTimerShort',
                   waterCountdownText(),
                   waterState.phase === 'due',
-                  waterSummary(),
+                  t('waterCountdown') + ' · ' + waterSummary(),
                 ),
                 timerRow(
                   'smoking',
-                  'smokingTimerShort',
                   smokingCountdownText(),
                   smokingState.phase === 'due',
                   t('smokingCountdown') +
