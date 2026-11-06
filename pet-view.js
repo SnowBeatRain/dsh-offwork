@@ -253,6 +253,10 @@ export function petArtwork(
 export const PET_MESSAGES = {
   zh: {
     petGreet: '与角色互动',
+    petNeedsSession: '等待会话',
+    petNeedsSetup: '请配置作息',
+    petLoadFailed: '读取失败',
+    petRetryHint: '右键菜单可重新读取设置',
     petCharacter: '角色形象',
     petWhaleActions: '鲸蓝少女 · 长裙动态',
     petWhaleOrnateActions: '鲸蓝少女 · 短裙动态',
@@ -269,6 +273,10 @@ export const PET_MESSAGES = {
   },
   en: {
     petGreet: 'Interact with character',
+    petNeedsSession: 'Open a session',
+    petNeedsSetup: 'Set your schedule',
+    petLoadFailed: 'Settings unavailable',
+    petRetryHint: 'Retry loading settings from the context menu',
     petCharacter: 'Character',
     petWhaleActions: 'Blue whale · Animated long dress',
     petWhaleOrnateActions: 'Blue whale · Animated short dress',
