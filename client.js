@@ -468,6 +468,7 @@ function petLayout(
   contentHeight = 420,
   modelId = 'xiaoxie-original',
   footerHeight = 30,
+  footerWidth = 148,
 ) {
   const model = petModel(modelId);
   const originX = viewport.left ?? 0,
@@ -486,7 +487,7 @@ function petLayout(
   );
   const petWidth = Math.min(
     Math.max(1, width - edge * 2),
-    Math.max(148, artworkSize * model.widthScale),
+    Math.max(footerWidth, artworkSize * model.widthScale),
   );
   const petHeight = Math.ceil(artworkSize * model.heightScale) + footerHeight;
   const bound = (n, max) => Math.max(Math.min(edge, max), Math.min(n, max));
@@ -777,11 +778,19 @@ const PET_STYLE = `
 .owc-v2 .owc-pet-clock{display:flex;align-items:center;color:var(--owc-text);line-height:1.5;cursor:default;padding:4px 10px;min-height:26px;gap:5px;white-space:nowrap;border-radius:999px;font-size:11px;background:var(--dsw-alias-bg-overlay);border:1px solid color-mix(in srgb,var(--owc-accent) 25%,transparent);box-shadow:0 3px 12px #142e4812;font-variant-numeric:tabular-nums;max-width:100%;box-sizing:border-box;overflow:hidden}
 .owc-pet-clock-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .owc-pet-clock strong{flex:none}
-.owc-v2 .owc-pet-timer-row{display:flex;align-items:center;justify-content:space-between;gap:6px;box-sizing:border-box;width:100%;max-width:188px;height:26px;margin-top:4px;padding:3px 10px;border:1px solid var(--owc-border);border-radius:999px;background:var(--owc-surface);box-shadow:var(--owc-shadow);font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
-.owc-pet-timer-row span{min-width:0;overflow:hidden;text-overflow:ellipsis}
-.owc-pet-timer-label{display:flex;align-items:center;gap:6px}
+.owc-v2 .owc-pet-timers{width:196px;max-width:100%;margin-top:4px;box-sizing:border-box;border:1px solid var(--owc-border);border-radius:13px;background:var(--owc-surface);box-shadow:var(--owc-shadow);overflow:hidden;font-variant-numeric:tabular-nums}
+.owc-v2 .owc-pet-timers .owc-pet-clock{width:100%;height:34px;min-height:0;padding:5px 10px;gap:6px;border:0;border-radius:0;background:transparent;box-shadow:none;font-size:10px;color:var(--owc-muted)}
+.owc-pet-timers .owc-pet-clock svg{flex-shrink:0}
+.owc-pet-timers .owc-pet-clock strong{margin-left:auto;font-size:16px;line-height:1;color:var(--owc-text);letter-spacing:.2px}
+.owc-pet-timer-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-top:1px solid var(--owc-border)}
+.owc-v2 .owc-pet-timer-row{display:flex;align-items:center;justify-content:center;gap:5px;box-sizing:border-box;min-width:0;height:28px;padding:3px 6px;font-size:11px;white-space:nowrap;color:var(--owc-muted)}
+.owc-pet-timer-row+.owc-pet-timer-row{border-left:1px solid var(--owc-border)}
+.owc-pet-timer-label{display:flex;align-items:center;flex-shrink:0}
 .owc-pet-timer-label svg{flex-shrink:0}
-.owc-pet-timer-row strong{flex-shrink:0}
+.owc-pet-timer-row strong{min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:550;color:var(--owc-text)}
+.owc-timer-pause{font-size:9px;margin-right:3px;color:var(--owc-muted)}
+.owc-v2 .owc-pet-timer-row[data-countdown-due=true]{background:color-mix(in srgb,var(--owc-accent) 8%,transparent);color:color-mix(in srgb,var(--owc-accent) 55%,var(--owc-text))}
+.owc-pet-timer-row[data-countdown-due=true] strong{color:inherit}
 .owc-v2 [data-countdown-due=true]{color:var(--owc-accent);border-color:var(--owc-accent)}
 .owc-countdown-card{padding:16px;display:flex;flex-direction:column;gap:14px}
 .owc-countdown-value{font-size:32px;line-height:1.3;font-weight:650;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
@@ -1404,6 +1413,7 @@ const PET_INTERACTION_MESSAGES = {
     timerFinished: '本班已结束提醒',
     timerUnavailable: '暂不可用',
     petCountdownCard: '下班倒计时',
+    petCountdownGroup: '计时概览',
     petEarningsCard: '收入',
     petWaterAlert: '查看喝水提醒',
     petPausedHint: '本班已暂停，可手动恢复。',
@@ -1462,6 +1472,7 @@ const PET_INTERACTION_MESSAGES = {
     timerFinished: 'No more reminders this shift',
     timerUnavailable: 'Unavailable',
     petCountdownCard: 'Shift countdown',
+    petCountdownGroup: 'Timer overview',
     petEarningsCard: 'Earnings',
     petWaterAlert: 'View water reminder',
     petPausedHint: 'Paused for this shift. Resume when ready.',
@@ -1715,7 +1726,7 @@ const PET_SURFACE_STYLE = `
 .owc-v2 .owc-menu-natural{padding:6px;display:flow-root;box-sizing:border-box;min-width:0}
 .owc-v2 .owc-pet-context button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;justify-content:flex-start;font-size:13px}
 .owc-v2 .owc-pet-context hr{border-color:var(--owc-border);margin:6px 4px}
-.owc-v2 .owc-pet-toast,.owc-v2 .owc-pet-clock,.owc-v2 .owc-pet-water-alert{background:var(--owc-surface)!important;color:var(--owc-text);border:1px solid var(--owc-border)!important;box-shadow:var(--owc-shadow)}
+.owc-v2 .owc-pet-toast,.owc-v2 .owc-pet-water-alert{background:var(--owc-surface)!important;color:var(--owc-text);border:1px solid var(--owc-border)!important;box-shadow:var(--owc-shadow)}
 .owc-v2 .owc-pet-toast{border-radius:12px;font-size:12px}
 .owc-v2 .owc-pet-unsaved{padding:20px 16px}
 .owc-v2 .owc-pet-unsaved p{font-size:13px;overflow-wrap:anywhere}
@@ -2883,7 +2894,8 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             appearanceOnly ? savedView.petSize : view.petSize,
             420,
             stageModel,
-            90,
+            72,
+            196,
           );
           const surfaceScreen = ui.screen || 'reminder';
           const surfaceWidth = petSurfaceWidth(surfaceScreen, viewport);
@@ -4085,6 +4097,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 className: 'owc-pet-timer-row',
                 'data-countdown': kind,
                 'data-countdown-due': due,
+                'data-countdown-phase': phase,
                 role: 'timer',
                 'aria-label': t(kind === 'water' ? 'waterCountdown' : 'smokingCountdown'),
                 title,
@@ -4093,9 +4106,18 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 'span',
                 { className: 'owc-pet-timer-label' },
                 iconSvg(kind, 14),
-                extra && h('span', null, t(extra)),
+                extra && h('span', { className: 'owc-sr-only' }, t(extra)),
               ),
-              h('strong', null, value),
+              h(
+                'strong',
+                null,
+                ['paused', 'break'].includes(phase) &&
+                  /^\d/.test(value) &&
+                  h('span', { className: 'owc-timer-pause', 'aria-hidden': true }, 'Ⅱ'),
+                phase === 'quiet' &&
+                  h('span', { className: 'owc-timer-pause', 'aria-hidden': true }, '☾'),
+                value.startsWith('00:') ? value.slice(3) : value.replace(/^0(?=\d:)/, ''),
+              ),
             );
           };
           const waterCountdownCard = () =>
@@ -5983,48 +6005,64 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 h(
                   'div',
                   {
-                    className: 'owc-pet-clock',
-                    role: data?.configured && safeState ? 'timer' : 'status',
-                    'aria-label': t('petClock'),
-                    title:
-                      error || state?.error
-                        ? t('petRetryHint')
-                        : !sessionId
-                          ? t('noSession')
-                          : undefined,
+                    className: 'owc-pet-timers',
+                    role: 'group',
+                    'aria-label': t('petCountdownGroup'),
                   },
-                  iconSvg('alarm', 12),
-                  h('span', { className: 'owc-pet-clock-label' }, t(petClockStatus)),
-                  data?.configured &&
-                    safeState &&
-                    !error &&
-                    sessionId &&
-                    !['done', 'rest'].includes(safeState.status)
-                    ? h('strong', null, duration)
-                    : null,
-                ),
-                timerRow(
-                  'water',
-                  waterCountdownText(),
-                  waterState.phase === 'due',
-                  t('waterCountdown') + ' · ' + waterSummary(),
-                ),
-                timerRow(
-                  'smoking',
-                  smokingCountdownText(),
-                  smokingState.phase === 'due',
-                  t('smokingCountdown') +
-                    ' · ' +
-                    (smokingUnavailable
-                      ? t('timerUnavailable')
-                      : t(
-                          {
-                            idle: 'timerIdle',
-                            running: 'timerRunning',
-                            paused: 'timerPaused',
-                            due: 'timerDue',
-                          }[smokingState.phase],
-                        )),
+                  h(
+                    'div',
+                    {
+                      className: 'owc-pet-clock',
+                      role: data?.configured && safeState ? 'timer' : 'status',
+                      'aria-label': t('petClock'),
+                      title:
+                        error || state?.error
+                          ? t('petRetryHint')
+                          : !sessionId
+                            ? t('noSession')
+                            : undefined,
+                    },
+                    iconSvg('alarm', 12),
+                    h(
+                      'span',
+                      { className: 'owc-pet-clock-label', title: t(petClockStatus) },
+                      t(petClockStatus),
+                    ),
+                    data?.configured &&
+                      safeState &&
+                      !error &&
+                      sessionId &&
+                      !['done', 'rest'].includes(safeState.status)
+                      ? h('strong', null, duration)
+                      : null,
+                  ),
+                  h(
+                    'div',
+                    { className: 'owc-pet-timer-pair' },
+                    timerRow(
+                      'water',
+                      waterCountdownText(),
+                      waterState.phase === 'due',
+                      t('waterCountdown') + ' · ' + waterSummary(),
+                    ),
+                    timerRow(
+                      'smoking',
+                      smokingCountdownText(),
+                      smokingState.phase === 'due',
+                      t('smokingCountdown') +
+                        ' · ' +
+                        (smokingUnavailable
+                          ? t('timerUnavailable')
+                          : t(
+                              {
+                                idle: 'timerIdle',
+                                running: 'timerRunning',
+                                paused: 'timerPaused',
+                                due: 'timerDue',
+                              }[smokingState.phase],
+                            )),
+                    ),
+                  ),
                 ),
               ),
               waterPrompt &&

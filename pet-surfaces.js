@@ -188,7 +188,7 @@ export const PET_SURFACE_STYLE = `
 .owc-v2 .owc-menu-natural{padding:6px;display:flow-root;box-sizing:border-box;min-width:0}
 .owc-v2 .owc-pet-context button{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;justify-content:flex-start;font-size:13px}
 .owc-v2 .owc-pet-context hr{border-color:var(--owc-border);margin:6px 4px}
-.owc-v2 .owc-pet-toast,.owc-v2 .owc-pet-clock,.owc-v2 .owc-pet-water-alert{background:var(--owc-surface)!important;color:var(--owc-text);border:1px solid var(--owc-border)!important;box-shadow:var(--owc-shadow)}
+.owc-v2 .owc-pet-toast,.owc-v2 .owc-pet-water-alert{background:var(--owc-surface)!important;color:var(--owc-text);border:1px solid var(--owc-border)!important;box-shadow:var(--owc-shadow)}
 .owc-v2 .owc-pet-toast{border-radius:12px;font-size:12px}
 .owc-v2 .owc-pet-unsaved{padding:20px 16px}
 .owc-v2 .owc-pet-unsaved p{font-size:13px;overflow-wrap:anywhere}

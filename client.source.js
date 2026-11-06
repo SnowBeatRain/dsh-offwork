@@ -670,7 +670,8 @@ window.__ModuleLoader__.load({
             appearanceOnly ? savedView.petSize : view.petSize,
             420,
             stageModel,
-            90,
+            72,
+            196,
           );
           const surfaceScreen = ui.screen || 'reminder';
           const surfaceWidth = petSurfaceWidth(surfaceScreen, viewport);
@@ -1872,6 +1873,7 @@ window.__ModuleLoader__.load({
                 className: 'owc-pet-timer-row',
                 'data-countdown': kind,
                 'data-countdown-due': due,
+                'data-countdown-phase': phase,
                 role: 'timer',
                 'aria-label': t(kind === 'water' ? 'waterCountdown' : 'smokingCountdown'),
                 title,
@@ -1880,9 +1882,18 @@ window.__ModuleLoader__.load({
                 'span',
                 { className: 'owc-pet-timer-label' },
                 iconSvg(kind, 14),
-                extra && h('span', null, t(extra)),
+                extra && h('span', { className: 'owc-sr-only' }, t(extra)),
               ),
-              h('strong', null, value),
+              h(
+                'strong',
+                null,
+                ['paused', 'break'].includes(phase) &&
+                  /^\d/.test(value) &&
+                  h('span', { className: 'owc-timer-pause', 'aria-hidden': true }, 'Ⅱ'),
+                phase === 'quiet' &&
+                  h('span', { className: 'owc-timer-pause', 'aria-hidden': true }, '☾'),
+                value.startsWith('00:') ? value.slice(3) : value.replace(/^0(?=\d:)/, ''),
+              ),
             );
           };
           const waterCountdownCard = () =>
@@ -3770,48 +3781,64 @@ window.__ModuleLoader__.load({
                 h(
                   'div',
                   {
-                    className: 'owc-pet-clock',
-                    role: data?.configured && safeState ? 'timer' : 'status',
-                    'aria-label': t('petClock'),
-                    title:
-                      error || state?.error
-                        ? t('petRetryHint')
-                        : !sessionId
-                          ? t('noSession')
-                          : undefined,
+                    className: 'owc-pet-timers',
+                    role: 'group',
+                    'aria-label': t('petCountdownGroup'),
                   },
-                  iconSvg('alarm', 12),
-                  h('span', { className: 'owc-pet-clock-label' }, t(petClockStatus)),
-                  data?.configured &&
-                    safeState &&
-                    !error &&
-                    sessionId &&
-                    !['done', 'rest'].includes(safeState.status)
-                    ? h('strong', null, duration)
-                    : null,
-                ),
-                timerRow(
-                  'water',
-                  waterCountdownText(),
-                  waterState.phase === 'due',
-                  t('waterCountdown') + ' · ' + waterSummary(),
-                ),
-                timerRow(
-                  'smoking',
-                  smokingCountdownText(),
-                  smokingState.phase === 'due',
-                  t('smokingCountdown') +
-                    ' · ' +
-                    (smokingUnavailable
-                      ? t('timerUnavailable')
-                      : t(
-                          {
-                            idle: 'timerIdle',
-                            running: 'timerRunning',
-                            paused: 'timerPaused',
-                            due: 'timerDue',
-                          }[smokingState.phase],
-                        )),
+                  h(
+                    'div',
+                    {
+                      className: 'owc-pet-clock',
+                      role: data?.configured && safeState ? 'timer' : 'status',
+                      'aria-label': t('petClock'),
+                      title:
+                        error || state?.error
+                          ? t('petRetryHint')
+                          : !sessionId
+                            ? t('noSession')
+                            : undefined,
+                    },
+                    iconSvg('alarm', 12),
+                    h(
+                      'span',
+                      { className: 'owc-pet-clock-label', title: t(petClockStatus) },
+                      t(petClockStatus),
+                    ),
+                    data?.configured &&
+                      safeState &&
+                      !error &&
+                      sessionId &&
+                      !['done', 'rest'].includes(safeState.status)
+                      ? h('strong', null, duration)
+                      : null,
+                  ),
+                  h(
+                    'div',
+                    { className: 'owc-pet-timer-pair' },
+                    timerRow(
+                      'water',
+                      waterCountdownText(),
+                      waterState.phase === 'due',
+                      t('waterCountdown') + ' · ' + waterSummary(),
+                    ),
+                    timerRow(
+                      'smoking',
+                      smokingCountdownText(),
+                      smokingState.phase === 'due',
+                      t('smokingCountdown') +
+                        ' · ' +
+                        (smokingUnavailable
+                          ? t('timerUnavailable')
+                          : t(
+                              {
+                                idle: 'timerIdle',
+                                running: 'timerRunning',
+                                paused: 'timerPaused',
+                                due: 'timerDue',
+                              }[smokingState.phase],
+                            )),
+                    ),
+                  ),
                 ),
               ),
               waterPrompt &&

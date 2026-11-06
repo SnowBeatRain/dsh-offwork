@@ -43,6 +43,7 @@ export function petLayout(
   contentHeight = 420,
   modelId = 'xiaoxie-original',
   footerHeight = 30,
+  footerWidth = 148,
 ) {
   const model = petModel(modelId);
   const originX = viewport.left ?? 0,
@@ -61,7 +62,7 @@ export function petLayout(
   );
   const petWidth = Math.min(
     Math.max(1, width - edge * 2),
-    Math.max(148, artworkSize * model.widthScale),
+    Math.max(footerWidth, artworkSize * model.widthScale),
   );
   const petHeight = Math.ceil(artworkSize * model.heightScale) + footerHeight;
   const bound = (n, max) => Math.max(Math.min(edge, max), Math.min(n, max));
@@ -352,11 +353,19 @@ export const PET_STYLE = `
 .owc-v2 .owc-pet-clock{display:flex;align-items:center;color:var(--owc-text);line-height:1.5;cursor:default;padding:4px 10px;min-height:26px;gap:5px;white-space:nowrap;border-radius:999px;font-size:11px;background:var(--dsw-alias-bg-overlay);border:1px solid color-mix(in srgb,var(--owc-accent) 25%,transparent);box-shadow:0 3px 12px #142e4812;font-variant-numeric:tabular-nums;max-width:100%;box-sizing:border-box;overflow:hidden}
 .owc-pet-clock-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .owc-pet-clock strong{flex:none}
-.owc-v2 .owc-pet-timer-row{display:flex;align-items:center;justify-content:space-between;gap:6px;box-sizing:border-box;width:100%;max-width:188px;height:26px;margin-top:4px;padding:3px 10px;border:1px solid var(--owc-border);border-radius:999px;background:var(--owc-surface);box-shadow:var(--owc-shadow);font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
-.owc-pet-timer-row span{min-width:0;overflow:hidden;text-overflow:ellipsis}
-.owc-pet-timer-label{display:flex;align-items:center;gap:6px}
+.owc-v2 .owc-pet-timers{width:196px;max-width:100%;margin-top:4px;box-sizing:border-box;border:1px solid var(--owc-border);border-radius:13px;background:var(--owc-surface);box-shadow:var(--owc-shadow);overflow:hidden;font-variant-numeric:tabular-nums}
+.owc-v2 .owc-pet-timers .owc-pet-clock{width:100%;height:34px;min-height:0;padding:5px 10px;gap:6px;border:0;border-radius:0;background:transparent;box-shadow:none;font-size:10px;color:var(--owc-muted)}
+.owc-pet-timers .owc-pet-clock svg{flex-shrink:0}
+.owc-pet-timers .owc-pet-clock strong{margin-left:auto;font-size:16px;line-height:1;color:var(--owc-text);letter-spacing:.2px}
+.owc-pet-timer-pair{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);border-top:1px solid var(--owc-border)}
+.owc-v2 .owc-pet-timer-row{display:flex;align-items:center;justify-content:center;gap:5px;box-sizing:border-box;min-width:0;height:28px;padding:3px 6px;font-size:11px;white-space:nowrap;color:var(--owc-muted)}
+.owc-pet-timer-row+.owc-pet-timer-row{border-left:1px solid var(--owc-border)}
+.owc-pet-timer-label{display:flex;align-items:center;flex-shrink:0}
 .owc-pet-timer-label svg{flex-shrink:0}
-.owc-pet-timer-row strong{flex-shrink:0}
+.owc-pet-timer-row strong{min-width:0;overflow:hidden;text-overflow:ellipsis;font-weight:550;color:var(--owc-text)}
+.owc-timer-pause{font-size:9px;margin-right:3px;color:var(--owc-muted)}
+.owc-v2 .owc-pet-timer-row[data-countdown-due=true]{background:color-mix(in srgb,var(--owc-accent) 8%,transparent);color:color-mix(in srgb,var(--owc-accent) 55%,var(--owc-text))}
+.owc-pet-timer-row[data-countdown-due=true] strong{color:inherit}
 .owc-v2 [data-countdown-due=true]{color:var(--owc-accent);border-color:var(--owc-accent)}
 .owc-countdown-card{padding:16px;display:flex;flex-direction:column;gap:14px}
 .owc-countdown-value{font-size:32px;line-height:1.3;font-weight:650;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
