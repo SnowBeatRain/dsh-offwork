@@ -16,6 +16,10 @@ assert.ok(pkg.engines?.dsh, 'Declare the supported Harness versions');
 assert.equal(pkg.dsh?.bundle?.patch, './cordis.patch.yml');
 assert.equal(pkg.dsh?.client?.platform, 'web');
 assert.match(await read('LICENSE'), /^MIT License/);
+assert.ok(
+  Buffer.byteLength(await read('client.js')) < 2000000,
+  'Keep the initial client below 2MB; character movies must remain on-demand resources',
+);
 
 // This check covers this project's patch; Harness composition remains the
 // authoritative check that the bundle can be installed in a real profile.

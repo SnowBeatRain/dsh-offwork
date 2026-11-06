@@ -12,8 +12,8 @@ npm run format
 npm run check
 ```
 
-- `npm run format` 格式化源码、测试和文档，然后重新生成 `client.js`。
-- `npm run build` 仅生成客户端；`client.js` 应随对应源码改动一起提交。
+- `npm run format` 格式化源码、测试和文档，然后重新生成客户端和资源清单。
+- `npm run build` 生成 `client.js` 与 `media-manifest.js`；两者应随对应源码改动一起提交。
 - `npm test` 检查生成物一致性，并运行 Node.js 内置测试。
 - `npm run check:package` 检查安装声明、导出文件、语法和实际 npm 打包清单。
 - `npm run check` 执行格式检查、测试和包检查，与 CI 使用相同入口。
@@ -28,9 +28,10 @@ npm run check
 - `ui-utils.js`：纯显示和状态辅助函数。
 - `client.source.js`：React 界面、Harness 客户端接口和浏览器偏好。
 - `index.js`：Host 配置验证、原子持久化，以及命令和工具适配器。
-- `tools/build.mjs`：将已测试的纯模块内联到客户端，不维护第二套计薪实现。
+- `tools/build.mjs`：内联已测试的界面/业务模块和静态图，生成人物视频的内容指纹地址及Host资源清单，不维护第二套计薪实现。
+- `media-server.js`：只读提供清单内的视频，支持完整性检查、Range与缓存；不读取用户配置。
 
-不要直接修改生成的 `client.js`。计薪、时区、配置验证或持久化行为发生变化时，应补充能复现问题的测试。纯格式或文字调整不需要新增测试。
+不要直接修改生成的 `client.js` 或 `media-manifest.js`。计薪、时区、配置验证或持久化行为发生变化时，应补充能复现问题的测试。纯格式或文字调整不需要新增测试。
 
 ## 配置与隐私
 

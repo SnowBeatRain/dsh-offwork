@@ -282,6 +282,7 @@ export const PET_MESSAGES = {
     petPreviewHint: '仅预览，不记喝水次数，也不更换页面角色。',
     petPreviewLoading: '正在准备动作…',
     petPreviewPlaying: '正在试播',
+    petPreviewUnsupported: '当前浏览器不支持透明动作视频，已显示静态预览。',
     petPreviewUnavailable: '动作暂时无法播放，已恢复静态预览。可以重试。',
     petPreviewEnable: '勾选“角色动作反馈”后可试播；应用后才保存。',
     petPreviewReduced: '系统已开启减少动态效果，当前显示静态预览。',
@@ -317,6 +318,8 @@ export const PET_MESSAGES = {
     petPreviewHint: 'Preview only: no drinking record or change to the page character.',
     petPreviewLoading: 'Preparing action…',
     petPreviewPlaying: 'Previewing',
+    petPreviewUnsupported:
+      'This browser cannot show transparent action videos. Showing a static preview.',
     petPreviewUnavailable: 'Action unavailable. Static preview restored; you can retry.',
     petPreviewEnable: 'Enable character reactions to preview. Apply to save the choice.',
     petPreviewReduced: 'Reduced motion is enabled. Showing a static preview.',

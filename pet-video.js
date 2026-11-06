@@ -153,7 +153,16 @@ export function createPetVideoMotion(element, host, base, clips, probeSource, op
     retired.set(run, timer);
   }
   function settleVisibleFrame() {
-    if (!displayed?.video) return;
+    if (!displayed?.video) {
+      if (poster?.style) {
+        poster.style.transition = 'none';
+        poster.style.opacity = '1';
+        poster.getBoundingClientRect?.();
+        poster.style.opacity = '';
+        poster.style.transition = '';
+      }
+      return;
+    }
     displayed.video.style.transition = 'none';
     displayed.video.style.opacity = '1';
     if (poster?.style) {
@@ -188,7 +197,7 @@ export function createPetVideoMotion(element, host, base, clips, probeSource, op
     if (current !== run) return;
     if (broken) failed.add(run.action);
     stopMedia();
-    notify('unavailable', run.action);
+    notify(unsupported ? 'unsupported' : 'unavailable', run.action);
     if (allowed() && run.action !== 'idle' && useFallback) {
       base.play(run.action);
       scheduleIdle(1400);
@@ -210,7 +219,7 @@ export function createPetVideoMotion(element, host, base, clips, probeSource, op
       if (current?.action === 'idle') stopMedia();
       const played = useFallback && base.play(action);
       if (played) scheduleIdle(1400);
-      if (!played) notify('unavailable', action);
+      if (!played) notify(unsupported ? 'unsupported' : 'unavailable', action);
       return !!played;
     }
     clearIdleTimer();

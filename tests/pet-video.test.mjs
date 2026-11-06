@@ -433,3 +433,21 @@ test('preview reports media failure without pretending to play and supports expl
   f.motion.destroy();
   assert.equal(f.timers.size, 0);
 });
+
+test('preview distinguishes unsupported transparency from retryable resource failures', async () => {
+  const f = fixture({
+    alpha: false,
+    options: { autoIdle: false, fallback: false, interruptible: true },
+  });
+  f.motion.play('greet');
+  await flush();
+  assert.equal(f.states.at(-1).phase, 'unsupported');
+  assert.deepEqual(f.calls, []);
+  const count = f.videos.length;
+  f.motion.retry('greet');
+  await flush();
+  assert.equal(f.videos.length, count);
+  assert.equal(f.states.at(-1).phase, 'unsupported');
+  f.motion.destroy();
+  assert.equal(f.timers.size, 0);
+});

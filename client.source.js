@@ -1616,7 +1616,7 @@ window.__ModuleLoader__.load({
             return () => media?.removeEventListener?.('change', update);
           }, []);
           React.useLayoutEffect(() => {
-            if (!appearanceOnly) return;
+            if (!appearanceOnly || ui.pending) return;
             setPreviewState({ phase: 'idle', action: null });
             if (!view.companion || petModel(view.petModel).renderer !== 'video') return;
             const artwork = previewBox.current?.querySelector('.owc-pet-art');
@@ -1640,7 +1640,7 @@ window.__ModuleLoader__.load({
               controller.destroy();
               previewMotion.current = null;
             };
-          }, [appearanceOnly, view.companion, view.petModel]);
+          }, [appearanceOnly, view.companion, view.petModel, !!ui.pending]);
           React.useLayoutEffect(() => {
             previewMotion.current?.configure({
               enabled:
@@ -2533,7 +2533,8 @@ window.__ModuleLoader__.load({
             };
             const names = { idle: 'petTryIdle', greet: 'petTryGreet', celebrate: 'petTryDrink' };
             const clips = PET_CLIPS.models[view.petModel] || {};
-            const blocked = !view.companionMotion || previewReduced;
+            const blocked =
+              !view.companionMotion || previewReduced || previewState.phase === 'unsupported';
             const message = previewReduced
               ? t('petPreviewReduced')
               : !view.companionMotion
@@ -2542,9 +2543,11 @@ window.__ModuleLoader__.load({
                   ? t('petPreviewLoading')
                   : previewState.phase === 'playing'
                     ? t('petPreviewPlaying') + ' · ' + t(labels[previewState.action])
-                    : previewState.phase === 'unavailable'
-                      ? t('petPreviewUnavailable')
-                      : t('petPreviewHint');
+                    : previewState.phase === 'unsupported'
+                      ? t('petPreviewUnsupported')
+                      : previewState.phase === 'unavailable'
+                        ? t('petPreviewUnavailable')
+                        : t('petPreviewHint');
             return h(
               'div',
               { className: 'owc-preview-tools' },
@@ -2847,8 +2850,10 @@ window.__ModuleLoader__.load({
             h(
               React.Fragment,
               null,
-              error && h('p', { className: 'owc-error', role: 'alert' }, error),
-              state?.error && h('p', { className: 'owc-error', role: 'alert' }, state.error),
+              !appearanceOnly && error && h('p', { className: 'owc-error', role: 'alert' }, error),
+              !appearanceOnly &&
+                state?.error &&
+                h('p', { className: 'owc-error', role: 'alert' }, state.error),
               notice && h('p', { className: 'owc-note', role: 'status' }, notice),
               storageError && h('p', { className: 'owc-note' }, t('storage')),
             );

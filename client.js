@@ -707,6 +707,7 @@ const PET_MESSAGES = {
     petPreviewHint: '仅预览，不记喝水次数，也不更换页面角色。',
     petPreviewLoading: '正在准备动作…',
     petPreviewPlaying: '正在试播',
+    petPreviewUnsupported: '当前浏览器不支持透明动作视频，已显示静态预览。',
     petPreviewUnavailable: '动作暂时无法播放，已恢复静态预览。可以重试。',
     petPreviewEnable: '勾选“角色动作反馈”后可试播；应用后才保存。',
     petPreviewReduced: '系统已开启减少动态效果，当前显示静态预览。',
@@ -742,6 +743,8 @@ const PET_MESSAGES = {
     petPreviewHint: 'Preview only: no drinking record or change to the page character.',
     petPreviewLoading: 'Preparing action…',
     petPreviewPlaying: 'Previewing',
+    petPreviewUnsupported:
+      'This browser cannot show transparent action videos. Showing a static preview.',
     petPreviewUnavailable: 'Action unavailable. Static preview restored; you can retry.',
     petPreviewEnable: 'Enable character reactions to preview. Apply to save the choice.',
     petPreviewReduced: 'Reduced motion is enabled. Showing a static preview.',
@@ -1053,7 +1056,16 @@ function createPetVideoMotion(element, host, base, clips, probeSource, options =
     retired.set(run, timer);
   }
   function settleVisibleFrame() {
-    if (!displayed?.video) return;
+    if (!displayed?.video) {
+      if (poster?.style) {
+        poster.style.transition = 'none';
+        poster.style.opacity = '1';
+        poster.getBoundingClientRect?.();
+        poster.style.opacity = '';
+        poster.style.transition = '';
+      }
+      return;
+    }
     displayed.video.style.transition = 'none';
     displayed.video.style.opacity = '1';
     if (poster?.style) {
@@ -1088,7 +1100,7 @@ function createPetVideoMotion(element, host, base, clips, probeSource, options =
     if (current !== run) return;
     if (broken) failed.add(run.action);
     stopMedia();
-    notify('unavailable', run.action);
+    notify(unsupported ? 'unsupported' : 'unavailable', run.action);
     if (allowed() && run.action !== 'idle' && useFallback) {
       base.play(run.action);
       scheduleIdle(1400);
@@ -1110,7 +1122,7 @@ function createPetVideoMotion(element, host, base, clips, probeSource, options =
       if (current?.action === 'idle') stopMedia();
       const played = useFallback && base.play(action);
       if (played) scheduleIdle(1400);
-      if (!played) notify('unavailable', action);
+      if (!played) notify(unsupported ? 'unsupported' : 'unavailable', action);
       return !!played;
     }
     clearIdleTimer();
@@ -3611,7 +3623,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             return () => media?.removeEventListener?.('change', update);
           }, []);
           React.useLayoutEffect(() => {
-            if (!appearanceOnly) return;
+            if (!appearanceOnly || ui.pending) return;
             setPreviewState({ phase: 'idle', action: null });
             if (!view.companion || petModel(view.petModel).renderer !== 'video') return;
             const artwork = previewBox.current?.querySelector('.owc-pet-art');
@@ -3635,7 +3647,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               controller.destroy();
               previewMotion.current = null;
             };
-          }, [appearanceOnly, view.companion, view.petModel]);
+          }, [appearanceOnly, view.companion, view.petModel, !!ui.pending]);
           React.useLayoutEffect(() => {
             previewMotion.current?.configure({
               enabled:
@@ -4528,7 +4540,8 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             };
             const names = { idle: 'petTryIdle', greet: 'petTryGreet', celebrate: 'petTryDrink' };
             const clips = PET_CLIPS.models[view.petModel] || {};
-            const blocked = !view.companionMotion || previewReduced;
+            const blocked =
+              !view.companionMotion || previewReduced || previewState.phase === 'unsupported';
             const message = previewReduced
               ? t('petPreviewReduced')
               : !view.companionMotion
@@ -4537,9 +4550,11 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   ? t('petPreviewLoading')
                   : previewState.phase === 'playing'
                     ? t('petPreviewPlaying') + ' · ' + t(labels[previewState.action])
-                    : previewState.phase === 'unavailable'
-                      ? t('petPreviewUnavailable')
-                      : t('petPreviewHint');
+                    : previewState.phase === 'unsupported'
+                      ? t('petPreviewUnsupported')
+                      : previewState.phase === 'unavailable'
+                        ? t('petPreviewUnavailable')
+                        : t('petPreviewHint');
             return h(
               'div',
               { className: 'owc-preview-tools' },
@@ -4842,8 +4857,10 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             h(
               React.Fragment,
               null,
-              error && h('p', { className: 'owc-error', role: 'alert' }, error),
-              state?.error && h('p', { className: 'owc-error', role: 'alert' }, state.error),
+              !appearanceOnly && error && h('p', { className: 'owc-error', role: 'alert' }, error),
+              !appearanceOnly &&
+                state?.error &&
+                h('p', { className: 'owc-error', role: 'alert' }, state.error),
               notice && h('p', { className: 'owc-note', role: 'status' }, notice),
               storageError && h('p', { className: 'owc-note' }, t('storage')),
             );

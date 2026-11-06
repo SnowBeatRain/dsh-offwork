@@ -2,7 +2,19 @@
 
 更新于 2026-11-05。此文件用于缩短后续上下文检索，不表示系统对话已经执行压缩。
 
-## 当前开发调整：到点自动弹卡、提示直接展开
+## 当前开发：体验优化（feature/companion-experience）
+
+用户认可先完善动作试播、资源加载与动作衔接。为避开另一份未提交的提醒修复，本轮建立独立工作目录offwork-experience，从7b045a0开始，随后合并已完成的94eaa58提醒修复；原offwork-hydration-ux目录未被改写。新工作目录由xxy持有，root执行Git时使用仅针对该目录的`-c safe.directory=...`，未修改全局Git配置。
+
+外观卡片新增已有动作的试播/停止与失败重试，独立播放器不调用喝水事务、不保存偏好；Apply才更换页面角色。预览不自动播放；草稿确认替换DOM时销毁并重建播放器，避免离屏残留。取消/换模型/后台/减少动态都会清理。
+
+视频不再内嵌客户端：tools/build.mjs同时生成client.js与media-manifest.js，静态图/小探测片保留内嵌。media-server.js通过可选webServer作用域注册同源静态资源路由，内容SHA256白名单、大小/完整性校验、GET/HEAD/Range/ETag与不可变缓存。客户端约10.7MB→0.84MB，候选包约15MiB→8MiB。不新增运行时依赖，不暴露配置/会话目录。
+
+播放器保留当前画面直到下一片段可播，透明淡入淡出使用隔离混合，快速请求取消过时片段。现有已发布素材不重编码。版本保持1.1.1，本轮不推送main、不发布npm。
+
+161项检查通过。独立测试目录/tmp/offwork-experience-preview（自己的DSH_HOME、端口、示例工资配置和浏览器状态），没有复用或停止提醒修复的测试服务。experience-test.cjs验证按需请求/缓存/记录隔离/衔接/重试；experience-edges.cjs验证加载中换模型、草稿确认后恢复、后台与窄屏；experience-record.cjs验证试播不计数而真实打卡只计一次；timed-popup-test.cjs回归94eaa58提醒流程。最终归档offwork-hydration-artifacts/experience-preview，详情docs/EXPERIENCE-PREVIEW.md。
+
+## 已合入：到点自动弹卡、提示直接展开
 
 用户进一步要求该喝水时直接弹卡。fix/timed-water-popup基于7b045a0，新增pet-reminder.js页面内呈现状态：观察到正常倒计时、休息或免打扰阶段后，进入到期且本页持有显示权、没有其他卡片/菜单时弹一次提醒。刷新初次读到已逾期或后台错过到期时保留提示，避免重新出现刷新即弹的问题。
 
