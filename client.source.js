@@ -457,6 +457,12 @@ window.__ModuleLoader__.load({
           const waterEditing = ui.screen === 'water';
           const [appearanceDraft, setAppearanceDraft] = React.useState(null);
           const appearanceBase = React.useRef(null);
+          const previewBox = React.useRef(null);
+          const previewMotion = React.useRef(null);
+          const [previewState, setPreviewState] = React.useState({ phase: 'idle', action: null });
+          const [previewReduced, setPreviewReduced] = React.useState(
+            () => window.matchMedia?.('(prefers-reduced-motion: reduce)').matches ?? false,
+          );
           const appearanceWasPet = React.useRef(false);
           const salaryBase = React.useRef(null);
           const menuBox = React.useRef(null);
@@ -1549,6 +1555,60 @@ window.__ModuleLoader__.load({
             petReactionToken.current = token;
             if (petMode && companion.animate) petMotion.current?.play('celebrate');
           }, [petMode, waterNotice?.token, companion.animate]);
+          React.useEffect(() => {
+            const media = window.matchMedia?.('(prefers-reduced-motion: reduce)');
+            const update = () => setPreviewReduced(!!media?.matches);
+            media?.addEventListener?.('change', update);
+            return () => media?.removeEventListener?.('change', update);
+          }, []);
+          React.useLayoutEffect(() => {
+            if (!appearanceOnly) return;
+            setPreviewState({ phase: 'idle', action: null });
+            if (!view.companion || petModel(view.petModel).renderer !== 'video') return;
+            const artwork = previewBox.current?.querySelector('.owc-pet-art');
+            if (!artwork) return;
+            const base = createPetMotion(artwork, window, { enabled: false, ambient: false });
+            const controller = createPetVideoMotion(
+              artwork,
+              window,
+              base,
+              PET_CLIPS.models[view.petModel],
+              PET_CLIPS.probe,
+              {
+                autoIdle: false,
+                fallback: false,
+                interruptible: true,
+                onStateChange: setPreviewState,
+              },
+            );
+            previewMotion.current = controller;
+            return () => {
+              controller.destroy();
+              previewMotion.current = null;
+            };
+          }, [appearanceOnly, view.companion, view.petModel]);
+          React.useLayoutEffect(() => {
+            previewMotion.current?.configure({
+              enabled:
+                appearanceOnly &&
+                view.companion &&
+                view.companionMotion &&
+                waterVisible &&
+                !previewReduced &&
+                !ui.menu &&
+                !ui.pending,
+              resting: false,
+            });
+          }, [
+            appearanceOnly,
+            view.companion,
+            view.petModel,
+            view.companionMotion,
+            waterVisible,
+            previewReduced,
+            !!ui.menu,
+            !!ui.pending,
+          ]);
           const companionCard = (compact = false) =>
             companion.visible &&
             h(
@@ -2410,6 +2470,73 @@ window.__ModuleLoader__.load({
                 ),
               ),
             );
+          const previewActions = () => {
+            if (!view.companion || petModel(view.petModel).renderer !== 'video') return null;
+            const labels = {
+              idle: 'petPreviewIdle',
+              greet: 'petPreviewGreet',
+              celebrate: 'petPreviewDrink',
+            };
+            const names = { idle: 'petTryIdle', greet: 'petTryGreet', celebrate: 'petTryDrink' };
+            const clips = PET_CLIPS.models[view.petModel] || {};
+            const blocked = !view.companionMotion || previewReduced;
+            const message = previewReduced
+              ? t('petPreviewReduced')
+              : !view.companionMotion
+                ? t('petPreviewEnable')
+                : previewState.phase === 'loading'
+                  ? t('petPreviewLoading')
+                  : previewState.phase === 'playing'
+                    ? t('petPreviewPlaying') + ' · ' + t(labels[previewState.action])
+                    : previewState.phase === 'unavailable'
+                      ? t('petPreviewUnavailable')
+                      : t('petPreviewHint');
+            return h(
+              'div',
+              { className: 'owc-preview-tools' },
+              h(
+                'div',
+                {
+                  className: 'owc-preview-actions',
+                  role: 'group',
+                  'aria-label': t('petPreviewActions'),
+                },
+                ...Object.keys(labels)
+                  .filter((action) => Object.hasOwn(clips, action))
+                  .map((action) =>
+                    h(
+                      'button',
+                      {
+                        type: 'button',
+                        key: action,
+                        'aria-label': t(names[action]),
+                        'aria-pressed':
+                          previewState.action === action &&
+                          ['loading', 'playing'].includes(previewState.phase),
+                        disabled: blocked,
+                        onClick: () => previewMotion.current?.retry?.(action),
+                      },
+                      t(labels[action]),
+                    ),
+                  ),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    'aria-label': t('petStopPreview'),
+                    disabled: !['loading', 'playing'].includes(previewState.phase),
+                    onClick: () => previewMotion.current?.stop?.(),
+                  },
+                  t('petPreviewStop'),
+                ),
+              ),
+              h(
+                'p',
+                { className: 'owc-hint owc-preview-status', role: 'status', 'aria-atomic': true },
+                message,
+              ),
+            );
+          };
           const editor = () => {
             if (appearanceOnly)
               return h(
@@ -2418,18 +2545,24 @@ window.__ModuleLoader__.load({
                 h('p', { className: 'owc-hint' }, t('petAppearancePreview')),
                 h(
                   'div',
-                  { 'data-appearance-preview': true, className: 'owc-appearance-preview' },
+                  {
+                    ref: previewBox,
+                    'data-appearance-preview': true,
+                    className: 'owc-appearance-preview',
+                  },
                   view.companion
                     ? petArtwork(
                         h,
-                        companion,
+                        { pose: 'calm', animate: false },
                         view.petSize * (petModel(view.petModel).renderer === 'svg' ? 1 : 0.65),
                         '',
                         view.petModel,
                         PET_SPRITES,
+                        petModel(view.petModel).renderer === 'video',
                       )
                     : h('p', null, t('petClassicPreview')),
                 ),
+                previewActions(),
                 appearanceFields(),
                 h(
                   'div',

@@ -2,6 +2,7 @@ import { readFile, writeFile, rename, unlink, chmod } from 'node:fs/promises';
 import { randomUUID } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { registerMediaRoute } from './media-server.js';
 
 export const inject = ['commands', 'tools'];
 
@@ -200,6 +201,7 @@ const settingsSchema = {
 };
 
 export function apply(ctx) {
+  registerMediaRoute(ctx);
   const operate = createOperations();
   ctx.effect(() =>
     ctx.commands.register({

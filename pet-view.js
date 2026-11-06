@@ -270,6 +270,21 @@ export const PET_MESSAGES = {
     petHint: '左键互动 · 右键菜单 · 拖动移动',
     petMode: '宠物模式',
     petClock: '下班倒计时',
+    petPreviewActions: '动作试播',
+    petPreviewIdle: '待机',
+    petPreviewGreet: '挥手',
+    petPreviewDrink: '喝茶',
+    petPreviewStop: '停止',
+    petTryIdle: '试播待机',
+    petTryGreet: '试播挥手',
+    petTryDrink: '试播喝茶',
+    petStopPreview: '停止试播',
+    petPreviewHint: '仅预览，不记喝水次数，也不更换页面角色。',
+    petPreviewLoading: '正在准备动作…',
+    petPreviewPlaying: '正在试播',
+    petPreviewUnavailable: '动作暂时无法播放，已恢复静态预览。可以重试。',
+    petPreviewEnable: '勾选“角色动作反馈”后可试播；应用后才保存。',
+    petPreviewReduced: '系统已开启减少动态效果，当前显示静态预览。',
   },
   en: {
     petGreet: 'Interact with character',
@@ -290,6 +305,21 @@ export const PET_MESSAGES = {
     petHint: 'Click to interact · right-click for menu · drag to move',
     petMode: 'Pet mode',
     petClock: 'Shift countdown',
+    petPreviewActions: 'Preview actions',
+    petPreviewIdle: 'Idle',
+    petPreviewGreet: 'Wave',
+    petPreviewDrink: 'Drink',
+    petPreviewStop: 'Stop',
+    petTryIdle: 'Preview idle',
+    petTryGreet: 'Preview wave',
+    petTryDrink: 'Preview drinking',
+    petStopPreview: 'Stop preview',
+    petPreviewHint: 'Preview only: no drinking record or change to the page character.',
+    petPreviewLoading: 'Preparing action…',
+    petPreviewPlaying: 'Previewing',
+    petPreviewUnavailable: 'Action unavailable. Static preview restored; you can retry.',
+    petPreviewEnable: 'Enable character reactions to preview. Apply to save the choice.',
+    petPreviewReduced: 'Reduced motion is enabled. Showing a static preview.',
   },
 };
 
@@ -299,8 +329,9 @@ export const PET_STYLE = `
 .owc-v2 button.owc-pet-handle{padding:0;background:none!important;border-radius:50%;min-height:0;display:block;cursor:grab;touch-action:none;line-height:0}
 .owc-v2 button.owc-pet-handle:active{cursor:grabbing}
 .owc-pet-art{overflow:visible;pointer-events:none;filter:drop-shadow(0 3px 5px #32557418)}
-.owc-pet-video-art{display:block;position:relative}
+.owc-pet-video-art{display:block;position:relative;isolation:isolate}
 .owc-pet-video-poster,.owc-pet-video-layer,.owc-pet-video-layer video{position:absolute;inset:0;width:100%;height:100%;object-fit:contain;pointer-events:none}
+.owc-pet-video-poster,.owc-pet-video-layer video{mix-blend-mode:plus-lighter}
 .owc-pet-video-poster{opacity:1;transition:opacity .12s linear}
 .owc-pet-video-layer video{opacity:0;transition:opacity .12s linear}
 .owc-pet-video-art[data-video-playing=true] .owc-pet-video-poster{opacity:0}

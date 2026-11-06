@@ -5,12 +5,13 @@ import { createPetVideoMotion, petVideoAlphaSupported } from '../pet-video.js';
 const flush = async () => {
   for (let i = 0; i < 5; i++) await Promise.resolve();
 };
-function fixture({ alpha = true, rejectPlay = false, idle = false } = {}) {
+function fixture({ alpha = true, rejectPlay = false, idle = false, options = {} } = {}) {
   const media = Object.assign(new EventTarget(), { matches: false });
   const document = Object.assign(new EventTarget(), { hidden: false });
   const videos = [],
     timers = new Map(),
-    calls = [];
+    calls = [],
+    states = [];
   let nextTimer = 0;
   document.createElement = (tag) => {
     if (tag === 'canvas')
@@ -81,9 +82,10 @@ function fixture({ alpha = true, rejectPlay = false, idle = false } = {}) {
     base,
     { greet: 'greet-data', celebrate: 'drink-data', ...(idle ? { idle: 'idle-data' } : {}) },
     'probe',
+    { ...options, onStateChange: (state) => states.push(state) },
   );
   motion.configure({ enabled: true, resting: false });
-  return { host, document, media, element, base, motion, videos, timers, calls };
+  return { host, document, media, element, base, motion, videos, timers, calls, states };
 }
 
 test('alpha support checks decoded pixels rather than trusting WebM codec support', async () => {
@@ -112,7 +114,15 @@ test('clips reveal only after playing; accepted drinking interrupts greeting and
   f.motion.play('celebrate');
   await flush();
   const drink = f.videos.at(-1);
+  assert.equal(greet.removed, false);
+  assert.equal(greet.paused, false);
+  assert.equal(f.element.dataset.action, 'greet');
+  assert.equal(f.element.dataset.videoLoading, 'celebrate');
+  assert.equal(drink.style.opacity, '0');
   drink.onplaying();
+  assert.equal(greet.paused, true);
+  assert.equal(greet.style.opacity, '0');
+  await fireTimer(f, 150);
   assert.equal(greet.removed, true);
   staleEnd();
   assert.equal(f.element.dataset.action, 'celebrate');
@@ -121,7 +131,7 @@ test('clips reveal only after playing; accepted drinking interrupts greeting and
   drink.onended();
   assert.equal(f.element.dataset.videoPlaying, undefined);
   assert.equal(f.element.dataset.action, undefined);
-  for (const timer of [...f.timers.values()]) if (timer.ms === 150) timer.fn();
+  await fireTimer(f, 150);
   assert.equal(drink.removed, true);
   f.motion.destroy();
 });
@@ -219,6 +229,8 @@ test('idle loops are interrupted by actions and resume once after action complet
   await flush();
   const greet = f.videos.at(-1);
   greet.onplaying();
+  assert.equal(idle.paused, true);
+  await fireTimer(f, 150);
   assert.equal(idle.removed, true);
   assert.equal(greet.loop, false);
   const oldEnd = greet.onended;
@@ -274,7 +286,7 @@ test('quiet state and a held drag suppress idle until they finish', async () => 
   f.motion.play('greet');
   await flush();
   f.videos.at(-1).onended();
-  await fireTimer(f, 0);
+  await flush();
   assert.equal(f.element.dataset.action, undefined);
   f.motion.configure({ enabled: true, resting: false });
   await flush();
@@ -332,6 +344,92 @@ test('failed action fallback suspends idle during CSS feedback and then returns 
   assert.deepEqual(f.calls, ['greet', 'greet']);
   await fireTimer(f, 1400);
   assert.equal(f.videos.at(-1).src, 'idle-data');
+  f.motion.destroy();
+  assert.equal(f.timers.size, 0);
+});
+
+test('preview waits for explicit play, switches actions freely and never resumes idle automatically', async () => {
+  const f = fixture({
+    idle: true,
+    options: { autoIdle: false, fallback: false, interruptible: true },
+  });
+  await flush();
+  assert.equal(f.videos.length, 0);
+  f.motion.play('greet');
+  await flush();
+  const greet = f.videos.at(-1);
+  greet.onplaying();
+  const announcements = f.states.length;
+  greet.onplaying();
+  assert.equal(f.states.length, announcements);
+  greet.onended();
+  await flush();
+  assert.equal(f.states.at(-1).phase, 'idle');
+  assert.equal(f.videos.length, 2);
+  await fireTimer(f, 150);
+  f.motion.play('idle');
+  await flush();
+  f.videos.at(-1).onplaying();
+  f.motion.play('celebrate');
+  await flush();
+  f.videos.at(-1).onplaying();
+  assert.equal(f.motion.play('greet'), true);
+  await flush();
+  f.videos.at(-1).onplaying();
+  assert.equal(f.motion.play('idle'), true);
+  await flush();
+  f.videos.at(-1).onplaying();
+  assert.ok(f.videos.filter((v) => v.src && !v.removed).length <= 2);
+  f.motion.stop();
+  assert.equal(f.element.dataset.videoPlaying, undefined);
+  assert.equal(f.states.at(-1).phase, 'idle');
+  assert.deepEqual(f.calls, []);
+  f.motion.destroy();
+  assert.equal(f.timers.size, 0);
+});
+
+test('preview cancellation ignores late probe and video callbacks', async () => {
+  const f = fixture({ options: { autoIdle: false, fallback: false, interruptible: true } });
+  f.motion.play('greet');
+  f.motion.stop();
+  await flush();
+  assert.equal(f.videos.length, 1);
+  assert.deepEqual(
+    f.states.map((s) => s.phase),
+    ['loading', 'idle'],
+  );
+  f.motion.play('greet');
+  await flush();
+  const late = f.videos.at(-1).onplaying;
+  f.motion.stop();
+  late();
+  assert.equal(f.states.at(-1).phase, 'idle');
+  const count = f.states.length;
+  f.motion.destroy();
+  late();
+  assert.equal(f.states.length, count);
+  assert.equal(f.timers.size, 0);
+});
+
+test('preview reports media failure without pretending to play and supports explicit retry', async () => {
+  const f = fixture({
+    rejectPlay: true,
+    options: { autoIdle: false, fallback: false, interruptible: true },
+  });
+  f.motion.play('greet');
+  await flush();
+  assert.equal(f.states.at(-1).phase, 'unavailable');
+  assert.deepEqual(f.calls, []);
+  const create = f.document.createElement;
+  f.document.createElement = (tag) => {
+    const node = create(tag);
+    if (tag === 'video') node.play = () => Promise.resolve();
+    return node;
+  };
+  assert.equal(f.motion.retry('greet'), true);
+  await flush();
+  f.videos.at(-1).onplaying();
+  assert.equal(f.states.at(-1).phase, 'playing');
   f.motion.destroy();
   assert.equal(f.timers.size, 0);
 });

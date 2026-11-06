@@ -148,6 +148,12 @@ async function adapters(t) {
   // and neither adapter can accidentally reach the user's actual data.json.
   const moduleFile = join(fixtureData.dir, 'host.mjs');
   await writeFile(moduleFile, await readFile(source, 'utf8'));
+  await writeFile(join(fixtureData.dir, 'package.json'), '{"type":"module"}');
+  for (const name of ['media-server.js', 'media-manifest.js'])
+    await writeFile(
+      join(fixtureData.dir, name),
+      await readFile(new URL('../' + name, import.meta.url)),
+    );
   const module = await import(pathToFileURL(moduleFile).href);
   let command;
   let tool;

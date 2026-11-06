@@ -1,4 +1,5 @@
 import { readFile, writeFile } from 'node:fs/promises';
+import { createHash } from 'node:crypto';
 
 const root = new URL('../', import.meta.url);
 const moduleNames = [
@@ -44,14 +45,20 @@ const sprites = Object.fromEntries(
 );
 const clipMarker = '/* PET_CLIPS */';
 if (entry.split(clipMarker).length !== 2) throw new Error('Expected one clip marker');
-async function clip(name, maximum) {
+const mediaRoute = '/offwork-clock/media';
+const mediaAssets = {};
+async function clip(name, maximum, inline = false) {
   const bytes = await readFile(new URL(`assets/animations/${name}.webm`, root));
-  if (bytes.readUInt32BE(0) !== 0x1a45dfa3 || bytes.length > maximum)
+  if (bytes.length < 4 || bytes.readUInt32BE(0) !== 0x1a45dfa3 || bytes.length > maximum)
     throw new Error(`Invalid or oversized WebM: ${name}`);
-  return 'data:video/webm;base64,' + bytes.toString('base64');
+  if (inline) return 'data:video/webm;base64,' + bytes.toString('base64');
+  const sha256 = createHash('sha256').update(bytes).digest('hex');
+  const key = `${sha256}/${name}.webm`;
+  mediaAssets[key] = { file: `assets/animations/${name}.webm`, size: bytes.length, sha256 };
+  return `${mediaRoute.slice(1)}/${key}`;
 }
 const [probe, greet, celebrate, ornateIdle, ornateGreet, ornateDrink] = await Promise.all([
-  clip('alpha-probe', 10000),
+  clip('alpha-probe', 10000, true),
   clip('whale-greet', 2000000),
   clip('whale-drink', 2000000),
   clip('ornate-idle', 2000000),
@@ -70,15 +77,27 @@ const result =
   entry
     .replace(marker, pure)
     .replace(spriteMarker, () => `const PET_SPRITES = ${JSON.stringify(sprites)};`)
-    .replace(clipMarker, () => `const PET_CLIPS = ${JSON.stringify(clips)};`);
-const output = new URL('client.js', root);
-
-if (process.argv.includes('--check')) {
-  if ((await readFile(output, 'utf8')) !== result) {
-    throw new Error('Client artifact is stale. Run npm run build and commit client.js.');
-  }
-  console.log('Client artifact matches tested source');
-} else {
-  await writeFile(output, result);
-  console.log('Built client.js from one calculation source');
+    .replace(
+      clipMarker,
+      () =>
+        `const PET_CLIPS = ${JSON.stringify(clips)};\nPET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);`,
+    );
+const manifest =
+  banner +
+  `export const MEDIA_ROUTE = ${JSON.stringify(mediaRoute)};\nexport const MEDIA_ASSETS = Object.freeze(${JSON.stringify(Object.fromEntries(Object.entries(mediaAssets).sort()), null, 2)});\n`;
+const outputs = [
+  ['client.js', result],
+  ['media-manifest.js', manifest],
+];
+for (const [name, contents] of outputs) {
+  const output = new URL(name, root);
+  if (process.argv.includes('--check')) {
+    if ((await readFile(output, 'utf8')) !== contents)
+      throw new Error(`Generated artifact is stale: ${name}. Run npm run build.`);
+  } else await writeFile(output, contents);
 }
+console.log(
+  process.argv.includes('--check')
+    ? 'Client and media manifest match tested source'
+    : 'Built client and content-addressed media manifest',
+);

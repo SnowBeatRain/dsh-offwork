@@ -67,6 +67,8 @@ assert.equal(packed.version, pkg.version);
 for (const path of [
   'package.json',
   'index.js',
+  'media-server.js',
+  'media-manifest.js',
   'client.js',
   'companion.js',
   'pet-view.js',

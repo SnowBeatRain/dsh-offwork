@@ -24,6 +24,7 @@ const PET_ACTIONS = {
 export function createPetMotion(element, host, options = {}) {
   const document = host.document;
   const reduced = host.matchMedia?.('(prefers-reduced-motion: reduce)');
+  const ambient = options.ambient !== false;
   let enabled = options.enabled ?? true;
   let resting = options.resting ?? false;
   let animation = null;
@@ -38,7 +39,7 @@ export function createPetMotion(element, host, options = {}) {
   }
   function sync() {
     if (!allowed()) stop();
-    element.dataset.motion = allowed() && !resting ? 'idle' : 'off';
+    element.dataset.motion = allowed() && !resting && ambient ? 'idle' : 'off';
   }
   function play(action) {
     if (!allowed() || !Object.hasOwn(PET_ACTIONS, action) || !element.animate) return false;
