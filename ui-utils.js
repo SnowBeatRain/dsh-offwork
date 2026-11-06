@@ -7,6 +7,50 @@ export function formatDuration(seconds) {
     .join(':');
 }
 
+export function classicClockPresentation({ hasSession, loaded, configured, failed, state, now }) {
+  if (!hasSession)
+    return { phase: 'waiting', title: 'classicNoSession', hint: 'noSession', seconds: null };
+  if (failed)
+    return { phase: 'error', title: 'classicUnavailable', hint: 'classicRetryHint', seconds: null };
+  if (!loaded)
+    return { phase: 'loading', title: 'classicLoading', hint: 'classicLoadingHint', seconds: null };
+  if (!configured) return { phase: 'setup', title: 'setup', hint: 'setupHint', seconds: null };
+  switch (state?.status) {
+    case 'before':
+      return {
+        phase: 'before',
+        title: 'before',
+        hint: 'classicBeforeHint',
+        seconds: state.startRemaining,
+      };
+    case 'working':
+      return {
+        phase: 'working',
+        title: 'working',
+        hint: 'classicWorkingHint',
+        seconds: state.remaining,
+      };
+    case 'lunch':
+      return {
+        phase: 'lunch',
+        title: 'classicLunchRemaining',
+        hint: 'classicLunchHint',
+        seconds: Math.max(0, Math.ceil((state.breakEnd - now) / 1000)),
+      };
+    case 'done':
+      return { phase: 'done', title: 'done', hint: 'classicDoneHint', seconds: null };
+    case 'rest':
+      return { phase: 'rest', title: 'rest', hint: 'classicRestHint', seconds: null };
+    default:
+      return {
+        phase: 'error',
+        title: 'classicUnavailable',
+        hint: 'classicRetryHint',
+        seconds: null,
+      };
+  }
+}
+
 export function clampPosition(position, viewport, size) {
   const width = Math.max(0, viewport.width),
     height = Math.max(0, viewport.height);
