@@ -1148,7 +1148,7 @@ const PET_INTERACTION_MESSAGES = {
     petWaterCard: '喝水',
     petCountdownCard: '下班倒计时',
     petEarningsCard: '收入',
-    petWaterAlert: '喝水提醒已到，可从右键菜单打开喝水卡片',
+    petWaterAlert: '打开菜单处理喝水提醒',
     petPausedHint: '本班已暂停，可手动恢复。',
     petMenu: '宠物菜单',
     petBack: '返回',
@@ -1177,7 +1177,7 @@ const PET_INTERACTION_MESSAGES = {
     petWaterCard: 'Water',
     petCountdownCard: 'Shift countdown',
     petEarningsCard: 'Earnings',
-    petWaterAlert: 'Water is due; open Water from the context menu',
+    petWaterAlert: 'Open menu to handle the water reminder',
     petPausedHint: 'Paused for this shift. Resume when ready.',
     petMenu: 'Pet menu',
     petBack: 'Back',
@@ -1206,7 +1206,9 @@ const PET_INTERACTION_MESSAGES = {
 const PET_INTERACTION_STYLE = `
 .owc-pet-workspace .owc-glass{opacity:var(--owc-alpha)}
 .owc-pet-water-card.owc-water-due{border-radius:14px}
-.owc-pet-water-alert{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border-radius:12px;cursor:default;position:fixed!important;width:140px;box-sizing:border-box;min-height:30px!important;border:1px solid var(--owc-accent)!important;background:var(--dsw-alias-bg-overlay)!important;box-shadow:0 4px 12px #18354b18;font-size:11px!important;z-index:2}
+.owc-pet-water-label{min-width:0;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.owc-pet-water-alert svg{flex:none}
+.owc-pet-water-alert{display:flex;align-items:center;justify-content:center;gap:6px;padding:8px 12px;border-radius:12px;cursor:pointer;position:fixed!important;width:140px;box-sizing:border-box;min-height:44px!important;border:1px solid var(--owc-accent)!important;background:var(--dsw-alias-bg-overlay)!important;box-shadow:0 4px 12px #18354b18;font-size:11px!important;z-index:2}
 .owc-pet-panel.owc-pet-workspace{display:flex;flex-direction:column;overflow:hidden}
 .owc-pet-workspace>.owc-head{position:relative;flex:none;min-height:46px;padding:8px 12px;box-sizing:border-box}
 .owc-pet-workspace>.owc-pet-scroll{position:relative;min-height:0;flex:1;overflow:auto;overscroll-behavior:contain;scrollbar-width:none}
@@ -2419,7 +2421,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
           );
           const waterAlertLayout = placePetSurface(anchor, viewport, {
             width: Math.min(140, Math.max(110, alertRoom)),
-            height: 34,
+            height: 44,
             kind: 'menu',
             obstacles: [...(petOpen ? [floatingPanel] : []), ...(ui.menu ? [menuLayout] : [])],
           });
@@ -3110,7 +3112,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               : trigger;
             const rect = trigger?.getBoundingClientRect();
             const point =
-              event.type === 'keydown'
+              event.type === 'keydown' || (event.type === 'click' && event.detail === 0)
                 ? { x: rect?.right ?? petGeometry.x, y: rect?.top ?? petGeometry.y }
                 : { x: event.clientX, y: event.clientY };
             dispatchUI({ type: 'menu', position: point });
@@ -4636,7 +4638,13 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
             return () => document.removeEventListener('pointerdown', outside);
           }, [petMode, petShowing, ui.menu, editing, waterEditing, waterBusy]);
           React.useEffect(() => {
-            if (ui.menu) menuBox.current?.querySelector('[role=menuitem]:not(:disabled)')?.focus();
+            if (!ui.menu) return;
+            const waterEntry = menuTrigger.current?.classList.contains('owc-pet-water-alert')
+              ? menuBox.current?.querySelector('[data-pet-menu-screen="home"]:not(:disabled)')
+              : null;
+            (
+              waterEntry || menuBox.current?.querySelector('[role=menuitem]:not(:disabled)')
+            )?.focus();
           }, [ui.menu]);
           React.useEffect(() => {
             if (!petMode || editing || waterEditing || ui.menu) return;
@@ -4947,6 +4955,7 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                       key: screen,
                       type: 'button',
                       role: 'menuitem',
+                      'data-pet-menu-screen': screen,
                       tabIndex: -1,
                       disabled:
                         busy ||
@@ -5091,13 +5100,16 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
               waterPrompt &&
                 ui.screen !== 'home' &&
                 h(
-                  'div',
+                  'button',
                   {
+                    type: 'button',
                     className: 'owc-pet-water-alert owc-water-due',
                     'data-water-event': waterState.eventId,
-                    role: 'note',
                     'aria-label': t('petWaterAlert'),
+                    'aria-haspopup': 'menu',
+                    'aria-expanded': !!ui.menu,
                     title: t('petWaterAlert'),
+                    onClick: openAppearanceContext,
                     style: {
                       left: waterAlertLayout.left,
                       top: waterAlertLayout.top,
@@ -5106,7 +5118,8 @@ function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1'
                     },
                   },
                   iconSvg('water', 13),
-                  t('petWaterBadge'),
+                  h('span', { className: 'owc-pet-water-label' }, t('petWaterBadge')),
+                  iconSvg('chevronDown', 10),
                 ),
               contextMenu(),
               !petShowing &&

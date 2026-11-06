@@ -2,7 +2,13 @@
 
 更新于 2026-11-05。此文件用于缩短后续上下文检索，不表示系统对话已经执行压缩。
 
-## 当前开发修复：刷新默认显示宠物
+## 当前开发修复：到期提示可操作
+
+用户反馈“该喝水啦”出现后点击没有反应。前轮提示为纯信息div，没有左键处理。fix/actionable-water-badge基于4d20b45，改为44px高的菜单按钮，保留小提示和菜单箭头；点击、Enter/Space展开现有菜单并聚焦喝水入口，选择后才打开卡片。角色左键仍只互动，不会自动弹卡片或直接打卡。键盘打开按按钮位置锚定，Escape恢复触发按钮焦点。
+
+146项检查通过。actionable-badge-test.cjs验证三组视口中的按钮/菜单边界、角色命中和回应、鼠标与键盘菜单、稍后不计数、明确打卡一次，以及模拟触屏；refresh-due-test.cjs回归刷新不弹卡片、不重置/延后、双标签单提示。并确认到期提示未遮挡角色的正常点击。归档offwork-hydration-artifacts/actionable-water-badge；仅更新xxy开发环境，仍为1.1.1开发候选，不发布npm或合并main。
+
+## 近期开发修复：刷新默认显示宠物
 
 用户反馈网页刷新出现喝水卡片而非宠物。fix/pet-refresh-default基于2a5a4e8；已用延迟Host读取复现旧版petMode依赖configured/safeState导致退回经典卡片，并确认到期状态会自动展开reminder面板。
 

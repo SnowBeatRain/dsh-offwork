@@ -587,7 +587,7 @@ window.__ModuleLoader__.load({
           );
           const waterAlertLayout = placePetSurface(anchor, viewport, {
             width: Math.min(140, Math.max(110, alertRoom)),
-            height: 34,
+            height: 44,
             kind: 'menu',
             obstacles: [...(petOpen ? [floatingPanel] : []), ...(ui.menu ? [menuLayout] : [])],
           });
@@ -1278,7 +1278,7 @@ window.__ModuleLoader__.load({
               : trigger;
             const rect = trigger?.getBoundingClientRect();
             const point =
-              event.type === 'keydown'
+              event.type === 'keydown' || (event.type === 'click' && event.detail === 0)
                 ? { x: rect?.right ?? petGeometry.x, y: rect?.top ?? petGeometry.y }
                 : { x: event.clientX, y: event.clientY };
             dispatchUI({ type: 'menu', position: point });
@@ -2804,7 +2804,13 @@ window.__ModuleLoader__.load({
             return () => document.removeEventListener('pointerdown', outside);
           }, [petMode, petShowing, ui.menu, editing, waterEditing, waterBusy]);
           React.useEffect(() => {
-            if (ui.menu) menuBox.current?.querySelector('[role=menuitem]:not(:disabled)')?.focus();
+            if (!ui.menu) return;
+            const waterEntry = menuTrigger.current?.classList.contains('owc-pet-water-alert')
+              ? menuBox.current?.querySelector('[data-pet-menu-screen="home"]:not(:disabled)')
+              : null;
+            (
+              waterEntry || menuBox.current?.querySelector('[role=menuitem]:not(:disabled)')
+            )?.focus();
           }, [ui.menu]);
           React.useEffect(() => {
             if (!petMode || editing || waterEditing || ui.menu) return;
@@ -3115,6 +3121,7 @@ window.__ModuleLoader__.load({
                       key: screen,
                       type: 'button',
                       role: 'menuitem',
+                      'data-pet-menu-screen': screen,
                       tabIndex: -1,
                       disabled:
                         busy ||
@@ -3259,13 +3266,16 @@ window.__ModuleLoader__.load({
               waterPrompt &&
                 ui.screen !== 'home' &&
                 h(
-                  'div',
+                  'button',
                   {
+                    type: 'button',
                     className: 'owc-pet-water-alert owc-water-due',
                     'data-water-event': waterState.eventId,
-                    role: 'note',
                     'aria-label': t('petWaterAlert'),
+                    'aria-haspopup': 'menu',
+                    'aria-expanded': !!ui.menu,
                     title: t('petWaterAlert'),
+                    onClick: openAppearanceContext,
                     style: {
                       left: waterAlertLayout.left,
                       top: waterAlertLayout.top,
@@ -3274,7 +3284,8 @@ window.__ModuleLoader__.load({
                     },
                   },
                   iconSvg('water', 13),
-                  t('petWaterBadge'),
+                  h('span', { className: 'owc-pet-water-label' }, t('petWaterBadge')),
+                  iconSvg('chevronDown', 10),
                 ),
               contextMenu(),
               !petShowing &&
