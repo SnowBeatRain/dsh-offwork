@@ -32,9 +32,16 @@ export function petVideoAlphaSupported(host, source) {
   if (PET_VIDEO_SUPPORT.has(host)) return PET_VIDEO_SUPPORT.get(host);
   const result = new Promise((resolve) => {
     const video = host.document.createElement('video');
-    let timer;
+    let timer,
+      frame,
+      delayed,
+      done = false;
     const finish = (supported) => {
+      if (done) return;
+      done = true;
       host.clearTimeout(timer);
+      host.clearTimeout(delayed);
+      if (frame !== undefined) video.cancelVideoFrameCallback?.(frame);
       video.onloadeddata = video.onerror = null;
       video.pause();
       video.removeAttribute('src');
@@ -45,26 +52,56 @@ export function petVideoAlphaSupported(host, source) {
     video.muted = true;
     video.playsInline = true;
     video.preload = 'auto';
-    video.onloadeddata = () => {
+    const inspect = (presented = false) => {
+      if (done) return true;
       try {
         const canvas = host.document.createElement('canvas');
         canvas.width = canvas.height = 16;
         const context = canvas.getContext('2d', { willReadFrequently: true });
         context.drawImage(video, 0, 0, 16, 16);
-        finish(
-          context.getImageData(1, 1, 1, 1).data[3] > 240 &&
-            context.getImageData(14, 14, 1, 1).data[3] < 8,
-        );
+        const solid = context.getImageData(1, 1, 1, 1).data[3];
+        const clear = context.getImageData(14, 14, 1, 1).data[3];
+        if (solid > 240 && clear < 8) {
+          finish(true);
+          return true;
+        }
+        if (presented && solid > 240 && clear > 240) {
+          finish(false);
+          return true;
+        }
       } catch {
-        finish(false);
+        /* A frame can be undecoded when loadeddata fires. */
+      }
+      return false;
+    };
+    video.onloadeddata = () => {
+      if (inspect()) return;
+      if (video.requestVideoFrameCallback)
+        frame = video.requestVideoFrameCallback(() => inspect(true));
+      const poll = () => {
+        if (!inspect(true)) delayed = host.setTimeout(poll, 80);
+      };
+      delayed = host.setTimeout(poll, 80);
+      try {
+        Promise.resolve(video.play()).catch(() => {
+          if (!inspect()) finish(null);
+        });
+      } catch {
+        if (!inspect()) finish(null);
       }
     };
-    video.onerror = () => finish(false);
-    timer = host.setTimeout(() => finish(false), 3000);
+    video.onerror = () => finish(null);
+    timer = host.setTimeout(() => {
+      if (!inspect()) finish(null);
+    }, 5000);
     video.src = source;
     video.load();
   });
   PET_VIDEO_SUPPORT.set(host, result);
+  result.then((supported) => {
+    if (supported === null && PET_VIDEO_SUPPORT.get(host) === result)
+      PET_VIDEO_SUPPORT.delete(host);
+  });
   return result;
 }
 
@@ -235,8 +272,8 @@ export function createPetVideoMotion(element, host, base, clips, probeSource, op
     run.timer = host.setTimeout(() => fallback(run, true), 9000);
     petVideoAlphaSupported(host, probeSource).then((supported) => {
       if (current !== run || !allowed()) return;
-      if (!supported) {
-        unsupported = true;
+      if (supported !== true) {
+        unsupported = supported === false;
         return fallback(run);
       }
       const video = document.createElement('video');

@@ -12,7 +12,7 @@
 
 播放器保留当前画面直到下一片段可播，透明淡入淡出使用隔离混合，快速请求取消过时片段。现有已发布素材不重编码。版本保持1.1.1，本轮不推送main、不发布npm。
 
-161项检查通过。独立测试目录/tmp/offwork-experience-preview（自己的DSH_HOME、端口、示例工资配置和浏览器状态），没有复用或停止提醒修复的测试服务。experience-test.cjs验证按需请求/缓存/记录隔离/衔接/重试；experience-edges.cjs验证加载中换模型、草稿确认后恢复、后台与窄屏；experience-record.cjs验证试播不计数而真实打卡只计一次；timed-popup-test.cjs回归94eaa58提醒流程。最终归档offwork-hydration-artifacts/experience-preview，详情docs/EXPERIENCE-PREVIEW.md。
+163项检查通过。透明视频探测会等待可读取首帧；空帧或超时不永久缓存为不支持，允许重试。独立测试目录/tmp/offwork-experience-preview（自己的DSH_HOME、端口、示例工资配置和浏览器状态），没有复用或停止提醒修复的测试服务。experience-test.cjs验证按需请求/缓存/记录隔离/衔接/重试；experience-edges.cjs验证加载中换模型、草稿确认后恢复、后台与窄屏；experience-record.cjs验证试播不计数而真实打卡只计一次；timed-popup-test.cjs回归94eaa58提醒流程。最终归档offwork-hydration-artifacts/experience-preview，详情docs/EXPERIENCE-PREVIEW.md。
 
 ## 已合入：到点自动弹卡、提示直接展开
 

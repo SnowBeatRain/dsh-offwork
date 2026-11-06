@@ -27,6 +27,11 @@ function fixture({ alpha = true, rejectPlay = false, idle = false, options = {} 
       duration: 5,
       removed: false,
       canPlayType: () => 'probably',
+      requestVideoFrameCallback(callback) {
+        queueMicrotask(callback);
+        return 1;
+      },
+      cancelVideoFrameCallback() {},
       setAttribute() {},
       removeAttribute(name) {
         delete this[name];
@@ -448,6 +453,51 @@ test('preview distinguishes unsupported transparency from retryable resource fai
   await flush();
   assert.equal(f.videos.length, count);
   assert.equal(f.states.at(-1).phase, 'unsupported');
+  f.motion.destroy();
+  assert.equal(f.timers.size, 0);
+});
+
+test('alpha detection waits for a readable frame rather than treating an empty canvas as unsupported', async () => {
+  const f = fixture();
+  const create = f.document.createElement;
+  let reads = 0;
+  f.document.createElement = (tag) => {
+    const node = create(tag);
+    if (tag === 'canvas')
+      node.getContext = () => ({
+        drawImage() {},
+        getImageData(x) {
+          reads++;
+          return { data: [0, 0, 0, reads <= 2 ? 0 : x === 1 ? 255 : 0] };
+        },
+      });
+    return node;
+  };
+  assert.equal(await petVideoAlphaSupported(f.host, 'probe'), true);
+  assert.ok(reads >= 4);
+  f.motion.destroy();
+  assert.equal(f.timers.size, 0);
+});
+
+test('a probe timeout remains retryable instead of poisoning the browser capability cache', async () => {
+  const f = fixture();
+  const create = f.document.createElement;
+  f.document.createElement = (tag) => {
+    const node = create(tag);
+    if (tag === 'video') node.load = () => {};
+    if (tag === 'canvas')
+      node.getContext = () => ({
+        drawImage() {
+          throw new Error('no decoded frame');
+        },
+      });
+    return node;
+  };
+  const first = petVideoAlphaSupported(f.host, 'probe');
+  await fireTimer(f, 5000);
+  assert.equal(await first, null);
+  f.document.createElement = create;
+  assert.equal(await petVideoAlphaSupported(f.host, 'probe'), true);
   f.motion.destroy();
   assert.equal(f.timers.size, 0);
 });
