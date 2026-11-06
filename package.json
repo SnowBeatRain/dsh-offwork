@@ -49,6 +49,7 @@
     "pet-surfaces.js",
     "hydration.js",
     "hydration-store.js",
+    "countdown.js",
     "cordis.patch.yml",
     "locale/*.json",
     "icon.svg",

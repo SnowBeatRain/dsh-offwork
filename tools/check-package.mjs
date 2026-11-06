@@ -83,6 +83,7 @@ for (const path of [
   'pet-surfaces.js',
   'hydration.js',
   'hydration-store.js',
+  'countdown.js',
   'cordis.patch.yml',
   'icon.svg',
   'assets/characters/whale-dress.webp',

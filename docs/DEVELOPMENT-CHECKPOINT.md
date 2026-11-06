@@ -2,7 +2,17 @@
 
 更新于 2026-11-05。此文件用于缩短后续上下文检索，不表示系统对话已经执行压缩。
 
-## 当前开发：体验优化（feature/companion-experience）
+## 当前开发：独立喝水与抽烟倒计时
+
+用户要求单独显示喝水倒计时并增加抽烟倒计时。工作目录仍为offwork-experience，新分支feature/separate-countdowns，从ae2149e开始。保留体验优化及94eaa58定时提醒修复；版本仍1.1.1，本轮仅更新开发预览，不发布npm或推送main。
+
+新增右键路由water-countdown、smoking与各自卡片，角色脚下新增两行常驻计时。喝水直接使用hydrationView；抽烟为手动开始的自然时间倒计时，支持间隔预设、暂停/恢复、重新计时和停止，到期不自动重启或弹卡。
+
+countdown.js保存纯状态逻辑。hydration-store.js提取createStateStore，原喝水接口和数据库不变；抽烟使用独立IndexedDB dsh.offwork-clock.smoking.v1，事务版本校验防止旧标签覆盖新一轮，BroadcastChannel/轮询同步显示。失败不静默重置；重试恢复现有截止时间；读取结果按请求序号接收，既防止迟到回调覆盖，又能识别用户主动清空数据库。
+
+168项检查通过；独立浏览器countdown-test.cjs、countdown-storage.cjs、countdown-independent.cjs验证计时、刷新、同步、记录隔离、存储恢复与独立于作息错误。timed-popup-test.cjs和experience-test.cjs回归原提醒与视频体验。测试仍在自己的/tmp/offwork-experience-preview中，证据归档offwork-hydration-artifacts/countdown-preview。说明见docs/COUNTDOWN-PREVIEW.md。
+
+## 已完成体验优化（feature/companion-experience）
 
 用户认可先完善动作试播、资源加载与动作衔接。为避开另一份未提交的提醒修复，本轮建立独立工作目录offwork-experience，从7b045a0开始，随后合并已完成的94eaa58提醒修复；原offwork-hydration-ux目录未被改写。新工作目录由xxy持有，root执行Git时使用仅针对该目录的`-c safe.directory=...`，未修改全局Git配置。
 

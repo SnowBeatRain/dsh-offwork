@@ -10,7 +10,17 @@ export function petUIReducer(state, action) {
     case 'stay':
       return { ...state, pending: null };
     case 'navigate': {
-      if (![null, 'home', 'income', 'earnings', ...PET_EDITOR_SCREENS].includes(action.screen))
+      if (
+        ![
+          null,
+          'home',
+          'income',
+          'earnings',
+          'water-countdown',
+          'smoking',
+          ...PET_EDITOR_SCREENS,
+        ].includes(action.screen)
+      )
         return state;
       if (state.screen === action.screen)
         return { ...state, back: action.root ? null : state.back, menu: null, pending: null };
@@ -46,6 +56,34 @@ export const PET_INTERACTION_MESSAGES = {
   zh: {
     petHome: '喝水',
     petWaterCard: '喝水',
+    waterCountdown: '喝水倒计时',
+    timerWaterDetails: '查看喝水卡片',
+    smokingCountdown: '抽烟倒计时',
+    waterTimerShort: '喝水',
+    smokingTimerShort: '抽烟',
+    timerIdle: '未开始',
+    timerRunning: '计时中',
+    timerPaused: '已暂停',
+    timerDue: '已到时',
+    timerStart: '开始计时',
+    timerPause: '暂停计时',
+    timerResume: '继续计时',
+    timerRestart: '重新计时',
+    timerStop: '停止计时',
+    timerInterval: '间隔（分钟）',
+    timerHint:
+      '按自然时间计时，后台和刷新后继续。间隔自动保存，下次开始或重新计时时生效。到点后不自动开始下一轮。',
+    timerStorageError: '计时数据暂时无法读取或保存，请重试。',
+    timerChanged: '计时已在其他标签页更新，请按最新状态操作。',
+    timerRetry: '重试读取计时',
+    timerLoading: '读取中',
+    waterTimerHint: '按有效工作时间计算；午休暂停。喝水打卡和提醒设置沿用原有记录。',
+    timerQuiet: '免打扰',
+    timerOff: '未开启',
+    timerWaiting: '等待班次',
+    timerBreak: '午休暂停',
+    timerFinished: '本班已结束提醒',
+    timerUnavailable: '暂不可用',
     petCountdownCard: '下班倒计时',
     petEarningsCard: '收入',
     petWaterAlert: '查看喝水提醒',
@@ -75,6 +113,35 @@ export const PET_INTERACTION_MESSAGES = {
   en: {
     petHome: 'Water',
     petWaterCard: 'Water',
+    waterCountdown: 'Water countdown',
+    timerWaterDetails: 'Water controls',
+    smokingCountdown: 'Smoking countdown',
+    waterTimerShort: 'Water',
+    smokingTimerShort: 'Smoking',
+    timerIdle: 'Not started',
+    timerRunning: 'Running',
+    timerPaused: 'Paused',
+    timerDue: 'Time is up',
+    timerStart: 'Start timer',
+    timerPause: 'Pause timer',
+    timerResume: 'Resume timer',
+    timerRestart: 'Restart timer',
+    timerStop: 'Stop timer',
+    timerInterval: 'Interval (minutes)',
+    timerHint:
+      'Uses clock time and continues in the background and after reload. Interval changes save automatically and apply on the next start or restart. Expiry does not start another cycle.',
+    timerStorageError: 'Timer data could not be loaded or saved. Please retry.',
+    timerChanged: 'The timer changed in another tab. Use the updated state.',
+    timerRetry: 'Retry loading timer',
+    timerLoading: 'Loading',
+    waterTimerHint:
+      'Uses paid work time and pauses during lunch. Drinking and reminder settings use your existing records.',
+    timerQuiet: 'Quiet time',
+    timerOff: 'Disabled',
+    timerWaiting: 'Waiting for shift',
+    timerBreak: 'Lunch pause',
+    timerFinished: 'No more reminders this shift',
+    timerUnavailable: 'Unavailable',
     petCountdownCard: 'Shift countdown',
     petEarningsCard: 'Earnings',
     petWaterAlert: 'View water reminder',

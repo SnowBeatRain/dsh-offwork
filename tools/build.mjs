@@ -15,6 +15,7 @@ const moduleNames = [
   'pet-surfaces.js',
   'hydration.js',
   'hydration-store.js',
+  'countdown.js',
 ];
 const [entry, ...modules] = await Promise.all(
   moduleNames.map((name) => readFile(new URL(name, root), 'utf8')),

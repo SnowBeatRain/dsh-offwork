@@ -42,6 +42,7 @@ export function petLayout(
   size = 132,
   contentHeight = 420,
   modelId = 'xiaoxie-original',
+  footerHeight = 30,
 ) {
   const model = petModel(modelId);
   const originX = viewport.left ?? 0,
@@ -55,14 +56,14 @@ export function petLayout(
     Math.min(
       size,
       Math.max(1, (width - edge * 2) / model.widthScale),
-      Math.max(1, Math.floor((height - edge * 2 - 30) / model.heightScale)),
+      Math.max(1, Math.floor((height - edge * 2 - footerHeight) / model.heightScale)),
     ),
   );
   const petWidth = Math.min(
     Math.max(1, width - edge * 2),
     Math.max(148, artworkSize * model.widthScale),
   );
-  const petHeight = Math.ceil(artworkSize * model.heightScale) + 30;
+  const petHeight = Math.ceil(artworkSize * model.heightScale) + footerHeight;
   const bound = (n, max) => Math.max(Math.min(edge, max), Math.min(n, max));
   const x = bound(
     Number.isFinite(position?.x) ? position.x - originX : width - petWidth - 32,
@@ -351,6 +352,17 @@ export const PET_STYLE = `
 .owc-v2 .owc-pet-clock{display:flex;align-items:center;color:var(--owc-text);line-height:1.5;cursor:default;padding:4px 10px;min-height:26px;gap:5px;white-space:nowrap;border-radius:999px;font-size:11px;background:var(--dsw-alias-bg-overlay);border:1px solid color-mix(in srgb,var(--owc-accent) 25%,transparent);box-shadow:0 3px 12px #142e4812;font-variant-numeric:tabular-nums;max-width:100%;box-sizing:border-box;overflow:hidden}
 .owc-pet-clock-label{min-width:0;overflow:hidden;text-overflow:ellipsis}
 .owc-pet-clock strong{flex:none}
+.owc-v2 .owc-pet-timer-row{display:flex;align-items:center;justify-content:space-between;gap:6px;box-sizing:border-box;width:100%;max-width:188px;height:26px;margin-top:4px;padding:3px 10px;border:1px solid var(--owc-border);border-radius:999px;background:var(--owc-surface);box-shadow:var(--owc-shadow);font-size:11px;white-space:nowrap;font-variant-numeric:tabular-nums}
+.owc-pet-timer-row span{min-width:0;overflow:hidden;text-overflow:ellipsis}
+.owc-pet-timer-row strong{flex-shrink:0}
+.owc-v2 [data-countdown-due=true]{color:var(--owc-accent);border-color:var(--owc-accent)}
+.owc-countdown-card{padding:16px;display:flex;flex-direction:column;gap:14px}
+.owc-countdown-value{font-size:32px;line-height:1.3;font-weight:650;font-variant-numeric:tabular-nums;overflow-wrap:anywhere}
+.owc-countdown-actions{display:flex;flex-wrap:wrap;gap:8px}
+.owc-countdown-actions button{flex:1;min-width:110px;min-height:40px}
+.owc-countdown-card label{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px}
+.owc-v2 .owc-countdown-card select{flex:0 0 120px;width:120px;max-width:120px}
+.owc-countdown-card p{margin:0;font-size:12px;line-height:1.6;overflow-wrap:anywhere}
 .owc-pet-panel{position:fixed;border-radius:20px;cursor:default;touch-action:manipulation;max-width:calc(100vw - 24px)}
 .owc-pet-panel>.owc-content{max-height:inherit}
 .owc-pet-panel .owc-glass{opacity:max(var(--owc-alpha),.94)}

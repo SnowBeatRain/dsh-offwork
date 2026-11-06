@@ -496,6 +496,116 @@ window.__ModuleLoader__.load({
           const generation = React.useRef(0);
           const requestBusy = React.useRef(false);
           const focusReturn = React.useRef(null);
+          const [smoking, setSmoking] = React.useState(defaultCountdown);
+          const [smokingReady, setSmokingReady] = React.useState(false);
+          const [smokingBusy, setSmokingBusy] = React.useState(false);
+          const [smokingError, setSmokingError] = React.useState('');
+          const smokingRuntime = React.useRef(null);
+          React.useEffect(() => {
+            let alive = true,
+              reading = false,
+              writing = false,
+              issued = 0,
+              accepted = 0,
+              channel;
+            const makeStore = () => {
+              try {
+                return createStateStore(
+                  window.indexedDB,
+                  SMOKING_TIMER_DB,
+                  defaultCountdown,
+                  validateCountdown,
+                );
+              } catch {
+                return createStateStore(
+                  null,
+                  SMOKING_TIMER_DB,
+                  defaultCountdown,
+                  validateCountdown,
+                );
+              }
+            };
+            let store = makeStore();
+            const accept = (next, order) => {
+              if (!alive || order < accepted) return;
+              accepted = order;
+              setSmoking(next);
+              setNow(Date.now());
+              setSmokingReady(true);
+            };
+            const refresh = async () => {
+              if (!alive || reading || writing) return;
+              reading = true;
+              const source = store,
+                order = ++issued;
+              try {
+                const next = await source.update((current) => current);
+                if (source === store) accept(next, order);
+              } catch {
+                if (alive && source === store && order >= accepted)
+                  setSmokingError('timerStorageError');
+              } finally {
+                reading = false;
+              }
+            };
+            const run = async (action) => {
+              if (!alive || writing) return;
+              writing = true;
+              const order = ++issued;
+              setSmokingBusy(true);
+              try {
+                if (action.type === 'retry') {
+                  store.close();
+                  store = makeStore();
+                }
+                let changedElsewhere = false;
+                const next = await store.update((current) => {
+                  if (action.type === 'retry') return current;
+                  if (current.revision !== action.revision) {
+                    changedElsewhere = true;
+                    return current;
+                  }
+                  return transitionCountdown(current, action, Date.now());
+                });
+                accept(next, order);
+                if (alive) setSmokingError(changedElsewhere ? 'timerChanged' : '');
+                try {
+                  channel?.postMessage(next.revision);
+                } catch {
+                  /* Polling also synchronizes. */
+                }
+              } catch {
+                if (alive) setSmokingError('timerStorageError');
+              } finally {
+                writing = false;
+                if (alive) setSmokingBusy(false);
+              }
+            };
+            smokingRuntime.current = { run };
+            try {
+              channel = new BroadcastChannel(SMOKING_TIMER_DB);
+              channel.onmessage = refresh;
+            } catch {
+              /* Polling is sufficient. */
+            }
+            void refresh();
+            const timer = window.setInterval(refresh, 2000);
+            window.addEventListener('focus', refresh);
+            document.addEventListener('visibilitychange', refresh);
+            return () => {
+              alive = false;
+              smokingRuntime.current = null;
+              window.clearInterval(timer);
+              window.removeEventListener('focus', refresh);
+              document.removeEventListener('visibilitychange', refresh);
+              channel?.close();
+              store.close();
+            };
+          }, []);
+          const smokingState = countdownView(smoking, now);
+          const smokingUnavailable = !smokingReady || smokingError === 'timerStorageError';
+          const smokingAction = (action) =>
+            smokingRuntime.current?.run({ ...action, revision: smoking.revision });
           const [water, setWater] = React.useState(defaultHydration);
           const [waterReady, setWaterReady] = React.useState(false);
           const [waterError, setWaterError] = React.useState(false);
@@ -551,6 +661,7 @@ window.__ModuleLoader__.load({
             appearanceOnly ? savedView.petSize : view.petSize,
             420,
             stageModel,
+            90,
           );
           const surfaceScreen = ui.screen || 'reminder';
           const surfaceWidth = petSurfaceWidth(surfaceScreen, viewport);
@@ -1331,7 +1442,7 @@ window.__ModuleLoader__.load({
           function navigateScreen(screen, event) {
             if (
               screen !== null &&
-              screen !== 'appearance' &&
+              !['appearance', 'smoking', 'water-countdown'].includes(screen) &&
               (!data || (!data.configured && screen !== 'schedule'))
             )
               return;
@@ -1714,6 +1825,208 @@ window.__ModuleLoader__.load({
               ? t('waterNext') + ' · ' + formatDuration(waterState.remaining / 1000)
               : t(labels[waterState.phase]);
           };
+          const waterCountdownText = () => {
+            if (waterError || error) return t('timerUnavailable');
+            if (!waterReady) return t('timerLoading');
+            if (waterContext && water.shift && water.shift.config !== waterContext.config)
+              return t('timerUnavailable');
+            if (['countdown', 'due', 'break'].includes(waterState.phase))
+              return formatDuration(Math.ceil(waterState.remaining / 1000));
+            if (waterState.phase === 'quiet')
+              return formatDuration(Math.ceil(waterState.quietRemaining / 1000));
+            return t(
+              {
+                off: 'timerOff',
+                waiting: 'timerWaiting',
+                paused: 'timerPaused',
+                finished: 'timerFinished',
+              }[waterState.phase] || 'timerUnavailable',
+            );
+          };
+          const smokingCountdownText = () =>
+            smokingUnavailable
+              ? t(smokingError ? 'timerUnavailable' : 'timerLoading')
+              : smokingState.phase === 'idle'
+                ? t('timerIdle')
+                : formatDuration(Math.ceil(smokingState.remaining / 1000));
+          const timerRow = (kind, label, value, due, title) => {
+            const phase = kind === 'water' ? waterState.phase : smokingState.phase;
+            const extra = {
+              paused: 'timerPaused',
+              break: 'timerBreak',
+              quiet: 'timerQuiet',
+              due: 'timerDue',
+            }[phase];
+            return h(
+              'div',
+              {
+                className: 'owc-pet-timer-row',
+                'data-countdown': kind,
+                'data-countdown-due': due,
+                role: 'timer',
+                'aria-label': t(kind === 'water' ? 'waterCountdown' : 'smokingCountdown'),
+                title,
+              },
+              h('span', null, t(label) + (extra ? ' · ' + t(extra) : '')),
+              h('strong', null, value),
+            );
+          };
+          const waterCountdownCard = () =>
+            h(
+              'div',
+              { className: 'owc-countdown-card', 'data-water-countdown-card': true },
+              h(
+                'div',
+                {
+                  className: 'owc-countdown-value',
+                  role: 'timer',
+                  'aria-label': t('waterCountdown'),
+                },
+                waterCountdownText(),
+              ),
+              h('p', null, waterState.phase === 'countdown' ? t('waterNext') : waterSummary()),
+              waterNotice && h('p', { role: 'status' }, t(waterNotice.key)),
+              h('p', { className: 'owc-hint' }, t('waterTimerHint')),
+              h(
+                'div',
+                { className: 'owc-countdown-actions' },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-primary',
+                    disabled: !waterCanRecord || waterBusy,
+                    onClick: recordWater,
+                  },
+                  t('petRecord'),
+                ),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    disabled: busy || waterBusy || !data?.configured,
+                    onClick: openWaterEditor,
+                  },
+                  t('petWaterSettings'),
+                ),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    disabled: !data?.configured,
+                    onClick: (event) => navigateScreen('home', event),
+                  },
+                  t('timerWaterDetails'),
+                ),
+              ),
+            );
+          const smokingCountdownCard = () =>
+            h(
+              'div',
+              { className: 'owc-countdown-card', 'data-smoking-countdown-card': true },
+              h(
+                'div',
+                {
+                  className: 'owc-countdown-value',
+                  role: 'timer',
+                  'aria-label': t('smokingCountdown'),
+                },
+                !smokingUnavailable && smokingState.phase === 'idle'
+                  ? formatDuration(smoking.minutes * 60)
+                  : smokingCountdownText(),
+              ),
+              h(
+                'p',
+                { role: 'status' },
+                smokingUnavailable
+                  ? t(smokingError ? 'timerUnavailable' : 'timerLoading')
+                  : t(
+                      {
+                        idle: 'timerIdle',
+                        running: 'timerRunning',
+                        paused: 'timerPaused',
+                        due: 'timerDue',
+                      }[smokingState.phase],
+                    ),
+              ),
+              h(
+                'label',
+                null,
+                t('timerInterval'),
+                h(
+                  'select',
+                  {
+                    value: smoking.minutes,
+                    disabled: smokingUnavailable || smokingBusy,
+                    onChange: (event) =>
+                      smokingAction({ type: 'interval', minutes: Number(event.target.value) }),
+                  },
+                  COUNTDOWN_INTERVALS.map((minutes) =>
+                    h('option', { key: minutes, value: minutes }, String(minutes)),
+                  ),
+                ),
+              ),
+              h(
+                'div',
+                { className: 'owc-countdown-actions' },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-primary',
+                    disabled: smokingUnavailable || smokingBusy,
+                    onClick: () =>
+                      smokingAction({
+                        type:
+                          smokingState.phase === 'running'
+                            ? 'pause'
+                            : smokingState.phase === 'paused'
+                              ? 'resume'
+                              : 'start',
+                      }),
+                  },
+                  t(
+                    smokingState.phase === 'running'
+                      ? 'timerPause'
+                      : smokingState.phase === 'paused'
+                        ? 'timerResume'
+                        : 'timerStart',
+                  ),
+                ),
+                smokingState.phase !== 'idle' &&
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      disabled: smokingUnavailable || smokingBusy,
+                      onClick: () => smokingAction({ type: 'restart' }),
+                    },
+                    t('timerRestart'),
+                  ),
+                smokingState.phase !== 'idle' &&
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      disabled: smokingUnavailable || smokingBusy,
+                      onClick: () => smokingAction({ type: 'stop' }),
+                    },
+                    t('timerStop'),
+                  ),
+              ),
+              h('p', { className: 'owc-hint' }, t('timerHint')),
+              smokingError && h('p', { className: 'owc-error', role: 'alert' }, t(smokingError)),
+              smokingError === 'timerStorageError' &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    disabled: smokingBusy,
+                    onClick: () => smokingAction({ type: 'retry' }),
+                  },
+                  t('timerRetry'),
+                ),
+            );
           const waterCanRecord =
             waterReady &&
             !waterError &&
@@ -2850,8 +3163,12 @@ window.__ModuleLoader__.load({
             h(
               React.Fragment,
               null,
-              !appearanceOnly && error && h('p', { className: 'owc-error', role: 'alert' }, error),
               !appearanceOnly &&
+                ui.screen !== 'smoking' &&
+                error &&
+                h('p', { className: 'owc-error', role: 'alert' }, error),
+              !appearanceOnly &&
+                ui.screen !== 'smoking' &&
                 state?.error &&
                 h('p', { className: 'owc-error', role: 'alert' }, state.error),
               notice && h('p', { className: 'owc-note', role: 'status' }, notice),
@@ -3079,6 +3396,8 @@ window.__ModuleLoader__.load({
             );
           const petPageTitle = {
             home: 'petWaterCard',
+            'water-countdown': 'waterCountdown',
+            smoking: 'smokingCountdown',
             income: 'petCountdownCard',
             earnings: 'petEarningsCard',
             water: 'petWaterSettings',
@@ -3303,6 +3622,8 @@ window.__ModuleLoader__.load({
                 [
                   ['income', 'petCountdownCard'],
                   ['home', 'petWaterCard'],
+                  ['water-countdown', 'waterCountdown'],
+                  ['smoking', 'smokingCountdown'],
                   ['earnings', 'petEarningsCard'],
                   ['appearance', 'petAppearance'],
                   ['schedule', 'petWorkSettings'],
@@ -3318,7 +3639,7 @@ window.__ModuleLoader__.load({
                       disabled:
                         busy ||
                         waterBusy ||
-                        (screen !== 'appearance' &&
+                        (!['appearance', 'smoking', 'water-countdown'].includes(screen) &&
                           (!data || (!data.configured && screen !== 'schedule'))),
                       onClick: (event) => navigateScreen(screen, event),
                     },
@@ -3455,6 +3776,31 @@ window.__ModuleLoader__.load({
                     ? h('strong', null, duration)
                     : null,
                 ),
+                timerRow(
+                  'water',
+                  'waterTimerShort',
+                  waterCountdownText(),
+                  waterState.phase === 'due',
+                  waterSummary(),
+                ),
+                timerRow(
+                  'smoking',
+                  'smokingTimerShort',
+                  smokingCountdownText(),
+                  smokingState.phase === 'due',
+                  t('smokingCountdown') +
+                    ' · ' +
+                    (smokingUnavailable
+                      ? t('timerUnavailable')
+                      : t(
+                          {
+                            idle: 'timerIdle',
+                            running: 'timerRunning',
+                            paused: 'timerPaused',
+                            due: 'timerDue',
+                          }[smokingState.phase],
+                        )),
+                ),
               ),
               waterPrompt &&
                 !autoWaterPrompt &&
@@ -3555,9 +3901,13 @@ window.__ModuleLoader__.load({
                                   ? editor()
                                   : petDetails
                                     ? panelBody('clock')
-                                    : ui.screen === 'earnings'
-                                      ? panelBody('earnings')
-                                      : petHome(),
+                                    : ui.screen === 'water-countdown'
+                                      ? waterCountdownCard()
+                                      : ui.screen === 'smoking'
+                                        ? smokingCountdownCard()
+                                        : ui.screen === 'earnings'
+                                          ? panelBody('earnings')
+                                          : petHome(),
                             notices(),
                           )
                         : waterReminder(),
@@ -3641,7 +3991,11 @@ window.__ModuleLoader__.load({
                         ? waterSettings()
                         : editing
                           ? editor()
-                          : panelBody(),
+                          : ui.screen === 'water-countdown'
+                            ? waterCountdownCard()
+                            : ui.screen === 'smoking'
+                              ? smokingCountdownCard()
+                              : panelBody(),
                     notices(),
                     !editing && !waterEditing && waterOverview(),
                   ),

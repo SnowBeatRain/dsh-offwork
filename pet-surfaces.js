@@ -14,6 +14,8 @@ export function petSurfaceWidth(screen, viewport) {
       income: 320,
       earnings: 320,
       home: 336,
+      'water-countdown': 320,
+      smoking: 336,
       water: 360,
       appearance: 360,
       schedule: 400,

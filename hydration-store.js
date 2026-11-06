@@ -3,6 +3,10 @@ import { defaultHydration, validateHydration } from './hydration.js';
 // A single IndexedDB read/write transaction is the cross-tab mutex. Neither
 // notification delivery nor localStorage read-back is used as an atomic lock.
 export function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1') {
+  return createStateStore(indexedDB, name, defaultHydration, validateHydration);
+}
+
+export function createStateStore(indexedDB, name, initial, validate) {
   let database = null;
   let opening = null;
   let closed = false;
@@ -61,10 +65,8 @@ export function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydrat
         request.onsuccess = () => {
           try {
             const current =
-              reset || request.result === undefined
-                ? defaultHydration()
-                : validateHydration(request.result);
-            const next = validateHydration(reducer(structuredClone(current)));
+              reset || request.result === undefined ? initial() : validate(request.result);
+            const next = validate(reducer(structuredClone(current)));
             const changed = JSON.stringify(next) !== JSON.stringify(current);
             const migrated =
               request.result !== undefined && request.result.schema !== current.schema;
