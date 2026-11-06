@@ -1233,6 +1233,27 @@ function createPetVideoMotion(element, host, base, clips, probeSource, options =
   };
 }
 
+// Page-local presentation state. Never changes reminder deadlines or records.
+const initialPetReminder = Object.freeze({ eventId: null, armed: false, open: false });
+
+function nextPetReminder(state, { ready, eventId, phase, visible, available, ownsPrompt }) {
+  let next;
+  if (!ready || !visible || !eventId) next = initialPetReminder;
+  else if (['countdown', 'break', 'quiet'].includes(phase))
+    next = { eventId, armed: true, open: false };
+  else if (phase !== 'due' || !available || state.eventId !== eventId)
+    next = { eventId, armed: false, open: false };
+  else if (state.open) next = { eventId, armed: false, open: !!ownsPrompt };
+  else next = { eventId, armed: state.armed && !ownsPrompt, open: state.armed && !!ownsPrompt };
+  return state.eventId === next.eventId && state.armed === next.armed && state.open === next.open
+    ? state
+    : next;
+}
+
+function dismissPetReminder(state) {
+  return state.open || state.armed ? { ...state, armed: false, open: false } : state;
+}
+
 // Ephemeral UI navigation only. Business data stays in its existing stores.
 const PET_EDITOR_SCREENS = ['water', 'schedule', 'appearance'];
 const initialPetUI = { screen: null, back: null, menu: null, pending: null };
@@ -1283,7 +1304,7 @@ const PET_INTERACTION_MESSAGES = {
     petWaterCard: '喝水',
     petCountdownCard: '下班倒计时',
     petEarningsCard: '收入',
-    petWaterAlert: '打开菜单处理喝水提醒',
+    petWaterAlert: '查看喝水提醒',
     petPausedHint: '本班已暂停，可手动恢复。',
     petMenu: '宠物菜单',
     petBack: '返回',
@@ -1305,14 +1326,14 @@ const PET_INTERACTION_MESSAGES = {
     petHomeHint: '喝水、歇一会儿，都在这里。',
     petQuietHint: '按自然时间，到期自动恢复。',
     petResume: '恢复本班提醒',
-    petDismissReminder: '稍后处理',
+    petDismissReminder: '收起提醒',
   },
   en: {
     petHome: 'Water',
     petWaterCard: 'Water',
     petCountdownCard: 'Shift countdown',
     petEarningsCard: 'Earnings',
-    petWaterAlert: 'Open menu to handle the water reminder',
+    petWaterAlert: 'View water reminder',
     petPausedHint: 'Paused for this shift. Resume when ready.',
     petMenu: 'Pet menu',
     petBack: 'Back',
@@ -1335,7 +1356,7 @@ const PET_INTERACTION_MESSAGES = {
     petHomeHint: 'A drink or a little break, right here.',
     petQuietHint: 'Uses clock time and resumes automatically.',
     petResume: 'Resume reminders',
-    petDismissReminder: 'Handle later',
+    petDismissReminder: 'Dismiss reminder',
   },
 };
 const PET_INTERACTION_STYLE = `
@@ -2487,6 +2508,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
           const [waterInvalid, setWaterInvalid] = React.useState(false);
           const [waterConfirm, setWaterConfirm] = React.useState(null);
           const [waterNotice, setWaterNotice] = React.useState(false);
+          const [reminderGate, setReminderGate] = React.useState(initialPetReminder);
           const reactionState = React.useRef(null);
           const petMotion = React.useRef(null);
           const petReactionToken = React.useRef(null);
@@ -2808,11 +2830,14 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             const visibility = () => {
               setWaterVisible(!document.hidden);
               setNow(Date.now());
-              if (document.hidden) void update({ type: 'release' });
-              else tick();
+              if (document.hidden) {
+                setReminderGate(initialPetReminder);
+                void update({ type: 'release' });
+              } else tick();
             };
             const pageHide = () => {
               setWaterVisible(false);
+              setReminderGate(initialPetReminder);
               void update({ type: 'release' });
             };
             waterRuntime.current = { update, tick };
@@ -3451,6 +3476,56 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             waterClaim.sequence === water.shift.sequence &&
             waterClaim.until > Date.now() &&
             waterClaim.until <= Date.now() + HYDRATION_LEASE_MS;
+          const reminderReady = !!(petMode && waterReady && !waterError && waterContext);
+          const reminderVisible = waterVisible && !document.hidden;
+          const reminderAvailable = !petOpen && !ui.menu && !ui.pending && !busy;
+          React.useEffect(() => {
+            setReminderGate((current) =>
+              nextPetReminder(current, {
+                ready: reminderReady,
+                eventId: waterState.eventId,
+                phase: waterState.phase,
+                visible: reminderVisible,
+                available: reminderAvailable,
+                ownsPrompt: waterPrompt,
+              }),
+            );
+          }, [
+            reminderReady,
+            waterState.eventId,
+            waterState.phase,
+            reminderVisible,
+            reminderAvailable,
+            waterPrompt,
+          ]);
+          const autoWaterPrompt =
+            reminderReady &&
+            reminderVisible &&
+            reminderAvailable &&
+            waterPrompt &&
+            reminderGate.open &&
+            reminderGate.eventId === waterState.eventId;
+          function openWaterPopup(event) {
+            if (!waterPrompt || waterBusy) return;
+            if (!reminderAvailable) {
+              navigateScreen('home', event);
+              return;
+            }
+            const trigger = event.currentTarget;
+            setReminderGate({ eventId: waterState.eventId, armed: false, open: true });
+            requestAnimationFrame(() => {
+              const active = document.activeElement;
+              if (active !== trigger && active?.tagName !== 'BODY') return;
+              if (petPanel.current?.dataset.petScreen === 'reminder')
+                petPanel.current.querySelector('.owc-water-actions button')?.focus();
+            });
+          }
+          function dismissWaterPopup() {
+            const hadFocus = petPanel.current?.contains(document.activeElement);
+            setReminderGate(dismissPetReminder);
+            if (hadFocus)
+              requestAnimationFrame(() => box.current?.querySelector('.owc-pet-handle')?.focus());
+          }
           const reactionSurface = [
             collapsed,
             editing,
@@ -4807,7 +4882,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               ),
             );
           const petShowing = petOpen;
-          const petFloating = petShowing;
+          const petFloating = petShowing || autoWaterPrompt;
           React.useLayoutEffect(() => {
             if (!petMode || !petFloating || !cardContent.current) return;
             const content = cardContent.current,
@@ -5315,6 +5390,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   else if (ui.pending) dispatchUI({ type: 'stay' });
                   else if (editing || waterEditing) navigateScreen(ui.back);
                   else if (petShowing) closePetPanel();
+                  else if (autoWaterPrompt) dismissWaterPopup();
                 },
               },
               h('style', null, STYLE),
@@ -5371,6 +5447,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 ),
               ),
               waterPrompt &&
+                !autoWaterPrompt &&
                 ui.screen !== 'home' &&
                 h(
                   'button',
@@ -5379,10 +5456,9 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                     className: 'owc-pet-water-alert owc-water-due',
                     'data-water-event': waterState.eventId,
                     'aria-label': t('petWaterAlert'),
-                    'aria-haspopup': 'menu',
-                    'aria-expanded': !!ui.menu,
                     title: t('petWaterAlert'),
-                    onClick: openAppearanceContext,
+                    disabled: busy || waterBusy || !!ui.pending,
+                    onClick: openWaterPopup,
                     style: {
                       left: waterAlertLayout.left,
                       top: waterAlertLayout.top,
@@ -5392,7 +5468,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   },
                   iconSvg('water', 13),
                   h('span', { className: 'owc-pet-water-label' }, t('petWaterBadge')),
-                  iconSvg('chevronDown', 10),
+                  iconSvg('chevronUp', 10),
                 ),
               contextMenu(),
               !petShowing &&
@@ -5418,8 +5494,8 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   {
                     ref: petPanel,
                     className: 'owc-pet-panel owc-pet-workspace',
-                    'data-pet-panel': 'open',
-                    'data-pet-screen': ui.screen,
+                    'data-pet-panel': petShowing ? 'open' : 'reminder',
+                    'data-pet-screen': ui.screen || 'reminder',
                     'data-side': floatingPanel.side,
                     role: 'region',
                     'aria-label': t(petPageTitle[ui.screen] || 'waterTitle'),
@@ -5432,29 +5508,49 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                     },
                   },
                   h('div', { className: 'owc-glass', 'aria-hidden': true }),
-                  petHeader(),
+                  petShowing
+                    ? petHeader()
+                    : h(
+                        'div',
+                        { className: 'owc-head' },
+                        h('strong', { style: { flex: 1, fontSize: 12 } }, t('waterTitle')),
+                        h(
+                          'button',
+                          {
+                            type: 'button',
+                            className: 'owc-icon',
+                            'aria-label': t('petDismissReminder'),
+                            title: t('petDismissReminder'),
+                            disabled: waterBusy,
+                            onClick: dismissWaterPopup,
+                          },
+                          iconSvg('close', 14),
+                        ),
+                      ),
                   h(
                     'div',
                     { className: 'owc-pet-scroll' },
                     h(
                       'div',
                       { ref: cardContent, className: 'owc-pet-natural' },
-                      h(
-                        React.Fragment,
-                        null,
-                        ui.pending
-                          ? draftGuard()
-                          : waterEditing
-                            ? waterSettings()
-                            : editing
-                              ? editor()
-                              : petDetails
-                                ? panelBody('clock')
-                                : ui.screen === 'earnings'
-                                  ? panelBody('earnings')
-                                  : petHome(),
-                        notices(),
-                      ),
+                      petShowing
+                        ? h(
+                            React.Fragment,
+                            null,
+                            ui.pending
+                              ? draftGuard()
+                              : waterEditing
+                                ? waterSettings()
+                                : editing
+                                  ? editor()
+                                  : petDetails
+                                    ? panelBody('clock')
+                                    : ui.screen === 'earnings'
+                                      ? panelBody('earnings')
+                                      : petHome(),
+                            notices(),
+                          )
+                        : waterReminder(),
                     ),
                   ),
                 ),
