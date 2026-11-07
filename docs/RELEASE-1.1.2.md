@@ -42,9 +42,14 @@
 
 ## 发布结果
 
-候选包及实际安装验证已完成，待推送标签、发布工作流与公开注册表核验。
+- 发布提交`e895fd8`已推送main及`v1.1.2`标签。
+- [标签工作流42367163740](https://github.com/SnowBeatRain/dsh-offwork/actions/runs/42367163740)的test与publish均成功；main检查也成功。
+- 2026-11-07 11:14 UTC，npm公开注册表确认latest=1.1.2；匿名下载的SHA-512及全部56个文件与验收包一致。
+- GitHub Release为正式公开版本，附件独立下载后的SHA-512与验收包一致。
+- 2026-11-07 11:15 UTC，xxy实例已运行1.1.2；部署目录中的全部发布文件与npm下载包一致，媒体Range返回206，服务active/running，退出状态0、重启计数0。
+- 原薪资配置与浏览器记录沿用原存储路径，部署没有重置数据。发布证据归档于`offwork-hydration-artifacts/release-1.1.2`。
 
-候选包：8,452,583字节；客户端：895,958字节。安装包SHA-512：
+安装包：8,452,583字节；客户端：895,958字节。安装包SHA-512：
 
 ```text
 sha512-5uCOc+jT1Jn80G6GNzHpK0LBAemsNZ5x4VBW8YjSZPROQawEIhL9oWqHdJ8OIVfPTAUMsbkb2KiOVJk1HSWrbg==

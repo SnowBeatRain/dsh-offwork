@@ -2,11 +2,13 @@
 
 更新于 2026-11-05。此文件用于缩短后续上下文检索，不表示系统对话已经执行压缩。
 
-## 当前发布：1.1.2
+## 当前发布：1.1.2 已完成
 
-用户已重新明确要求“小版本更新”，恢复发布授权，覆盖下方历史阶段的暂停发布限制。本轮release/1.1.2从1084e44开始，统一package/lock/client版本为1.1.2，更新文档与素材索引，验证实际安装包后合并并推送main/tag，通过既有Actions发布npm并创建GitHub Release，更新xxy实例。发布状态以docs/RELEASE-1.1.2.md文末为准；没有读取或重置真实薪资文件。
+用户重新要求“小版本更新”，恢复发布授权并覆盖下方历史暂停限制。发布代码e895fd8、标签v1.1.2已推送main，Actions 42367163740的test/publish成功，GitHub Release已公开。2026-11-07 11:14 UTC验证npm latest=1.1.2、下载SHA512及全部56个文件与验收包相同；GitHub附件也独立下载核验一致。xxy实例已更新1.1.2，活动文件逐一匹配npm包，服务active/running且NRestarts=0。没有读取或重置真实薪资文件。
 
-重点核验真正1.1.1发布包的旧客户端同源迁移，以及最新简洁页面、全天喝水与数据隔离。独立浏览器仍使用/tmp/offwork-experience-preview；发布包和核验脚本在/tmp/offwork-release-1.1.2，永久归档offwork-hydration-artifacts/release-1.1.2。
+171项测试、36个JS文件、56个打包文件检查通过；实际1.1.2包验证真正发布过的1.1.1旧客户端同源迁移，以及全天计时、无配置/无会话/慢读/失败、简洁页面、窄屏与完整7.5秒喝茶。源码版本、锁文件、客户端、README、changelog、locale和截图索引均已同步。
+
+编辑目录offwork-experience的release/1.1.2，主仓库plugins/offwork-clock的main，开发目录offwork-hydration-dev均同步到发布及后续核验文档提交。安装链接仍指向开发目录，私人data.json保留。发布材料/tmp/offwork-release-1.1.2，永久证据offwork-hydration-artifacts/release-1.1.2；详情docs/RELEASE-1.1.2.md。自己的隔离测试服务已停止。
 
 ## 已完成：统一简化展开详情页
 
