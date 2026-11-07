@@ -1592,12 +1592,12 @@ function petSurfaceWidth(screen, viewport) {
     {
       income: 320,
       earnings: 320,
-      home: 336,
+      home: 320,
       'water-countdown': 320,
-      smoking: 336,
+      smoking: 320,
       water: 360,
-      appearance: 360,
-      schedule: 400,
+      appearance: 340,
+      schedule: 360,
       menu: 224,
       reminder: 304,
     }[screen] ?? 336;
@@ -1815,6 +1815,80 @@ const PET_SURFACE_STYLE = `
 .owc-v2 .owc-pet-toast{border-radius:12px;font-size:12px}
 .owc-v2 .owc-pet-unsaved{padding:20px 16px}
 .owc-v2 .owc-pet-unsaved p{font-size:13px;overflow-wrap:anywhere}
+.owc-detail-page{--owc-detail-surface:var(--owc-surface);--owc-control-height:38px;border-radius:14px}
+@supports(color:oklch(from white l c h)){.owc-detail-page{--owc-detail-surface:oklch(from var(--owc-surface) clamp(0,calc(l + .02),1) calc(c * .55) h)}}
+.owc-detail-page>.owc-glass{background:var(--owc-detail-surface);border-color:var(--owc-border)}
+.owc-pet-workspace.owc-detail-page>.owc-head,.owc-classic.owc-detail-page .owc-classic-head{min-height:44px;padding:8px 16px;gap:8px;background:var(--owc-detail-surface);border-bottom:1px solid var(--owc-border)}
+.owc-detail-page .owc-head .owc-icon{width:28px;height:28px;min-width:28px;min-height:28px;padding:4px}
+.owc-detail-page [data-pet-page-title],.owc-classic.owc-detail-page .owc-classic-head .owc-title{font-size:14px;font-weight:550}
+.owc-detail-page .owc-form,.owc-detail-page .owc-water-form,.owc-detail-page .owc-main,.owc-detail-page .owc-pet-home{padding:16px}
+.owc-v2 .owc-pet-natural>.owc-form:last-child,.owc-v2 .owc-pet-natural>.owc-water-form:last-child{padding-bottom:16px}
+.owc-detail-page fieldset.owc-setting-group{border:0;border-radius:0;background:transparent;padding:0;margin:0 0 18px;min-width:0}
+.owc-detail-page fieldset.owc-setting-group legend{padding:0;margin-bottom:10px;font-size:12px;font-weight:550;color:var(--owc-text)}
+.owc-detail-page .owc-appearance legend{display:none}
+.owc-detail-page .owc-salary-legend{display:flex;align-items:center;justify-content:space-between;width:100%}
+.owc-detail-page .owc-salary-legend .owc-icon{min-width:24px;min-height:24px;padding:3px}
+.owc-detail-page .owc-field{position:relative;margin:0 0 12px}
+.owc-detail-page .owc-field>span{font-size:12px;margin-bottom:6px}
+.owc-detail-page .owc-row2{gap:12px}
+.owc-detail-page :is(input[type=text],input[type=number],input[type=time],select){min-height:38px;border-radius:8px;background:color-mix(in srgb,var(--owc-text) 3%,var(--owc-detail-surface));border-color:var(--owc-border);font-size:13px}
+.owc-detail-page .owc-private{box-sizing:border-box;min-height:38px;border:1px solid var(--owc-border);border-radius:8px;background:color-mix(in srgb,var(--owc-text) 3%,var(--owc-detail-surface));padding:8px 10px;font-size:14px}
+.owc-detail-page .owc-seg{padding:2px;border-radius:8px;background:var(--owc-subtle)}
+.owc-detail-page .owc-seg button{min-height:32px;font-size:12px;border-radius:6px}
+.owc-detail-page button.owc-primary{min-height:38px;border-radius:8px;font-size:13px;font-weight:550;box-shadow:none}
+.owc-v2 .owc-detail-page .owc-save,.owc-v2.owc-detail-page .owc-save{position:sticky;bottom:0;z-index:2;display:flex;justify-content:flex-end;gap:8px;padding:12px 0 0;margin:14px 0 0;border-top:1px solid var(--owc-border);background:var(--owc-detail-surface)}
+.owc-detail-page .owc-save button{min-height:38px;font-size:13px;border-radius:8px;padding:8px 16px}
+.owc-detail-page .owc-save button:not(.owc-primary){background:transparent;border-color:transparent;color:var(--owc-muted)}
+.owc-detail-page .owc-detail-hero{margin:0 0 16px}
+.owc-detail-page p.owc-detail-kicker{margin:0 0 6px;font-size:12px;color:var(--owc-muted)}
+.owc-detail-value,.owc-detail-page .owc-countdown-value,.owc-detail-page .owc-time,.owc-detail-page .owc-money{font-size:28px;line-height:1.25;font-weight:500;letter-spacing:-.3px;font-variant-numeric:tabular-nums}
+.owc-detail-page .owc-detail-state{font-size:20px;letter-spacing:0}
+.owc-detail-meta{display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:18px;margin-top:8px;font-size:11px;color:var(--owc-muted)}
+.owc-detail-feedback{color:var(--owc-accent);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.owc-detail-page .owc-detail-primary-actions{display:flex;align-items:center;gap:8px}
+.owc-detail-primary-actions>.owc-primary{flex:1}
+.owc-detail-page .owc-detail-secondary{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-top:10px}
+.owc-detail-page .owc-detail-secondary button{background:transparent;border:0;padding:6px 0;font-size:12px;color:var(--owc-muted);min-height:30px}
+.owc-detail-page details.owc-detail-more,.owc-detail-page .owc-water-form>details,.owc-detail-page details.owc-advanced{margin:12px 0 0;padding:0;border:0;border-radius:0;background:transparent;font-size:12px}
+.owc-detail-page details>summary{font-size:12px;color:var(--owc-muted);padding:4px 0;cursor:pointer}
+.owc-detail-page details p{font-size:11px;line-height:1.6;color:var(--owc-muted)}
+.owc-detail-options{display:flex;gap:8px;margin-top:10px}
+.owc-detail-options button{flex:1;min-height:34px;border:1px solid var(--owc-border);border-radius:8px;font-size:12px}
+.owc-detail-page .owc-pet-home.owc-water-due{background:transparent;border-radius:0}
+.owc-detail-page .owc-countdown-card{gap:12px}
+.owc-detail-page .owc-countdown-card .owc-detail-hero{margin-bottom:0}
+.owc-detail-page .owc-countdown-actions{gap:8px}
+.owc-detail-page .owc-countdown-actions>.owc-primary{flex:1 1 100%}
+.owc-detail-page .owc-countdown-actions>button:not(.owc-primary){min-height:30px;background:transparent;border:0;font-size:12px;color:var(--owc-muted)}
+.owc-detail-page .owc-water-toggle,.owc-detail-page .owc-appearance .owc-check{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:38px;margin:0 0 10px;padding:0;font-size:13px;font-weight:400}
+.owc-detail-page .owc-appearance .owc-check input{order:2;margin-left:auto}
+.owc-detail-page .owc-water-toggle input,.owc-detail-page .owc-appearance .owc-check input{appearance:none;flex:none;width:32px;height:18px;min-height:18px;padding:0;border:0;border-radius:20px;background:color-mix(in srgb,var(--owc-text) 22%,var(--owc-detail-surface));position:relative;cursor:pointer}
+.owc-detail-page .owc-water-toggle input:before,.owc-detail-page .owc-appearance .owc-check input:before{content:'';position:absolute;width:14px;height:14px;top:2px;left:2px;border-radius:50%;background:#fff;box-shadow:0 1px 3px #0002}
+.owc-detail-page .owc-water-toggle input:checked,.owc-detail-page .owc-appearance .owc-check input:checked{background:var(--owc-accent)}
+.owc-detail-page .owc-water-toggle input:checked:before,.owc-detail-page .owc-appearance .owc-check input:checked:before{left:16px}
+.owc-detail-page .owc-water-interval{display:flex;align-items:center;justify-content:space-between;gap:12px;font-size:12px;margin:6px 0 10px}
+.owc-detail-page .owc-water-interval input{width:92px;max-width:92px;text-align:center}
+.owc-detail-page .owc-water-presets{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:5px;margin:0 0 12px}
+.owc-detail-page .owc-water-presets button{font-size:12px;font-weight:400;min-height:32px;padding:4px;border-radius:7px;background:transparent}
+.owc-detail-page .owc-water-presets button[aria-pressed=true]{background:color-mix(in srgb,var(--owc-accent) 9%,var(--owc-detail-surface));border-color:color-mix(in srgb,var(--owc-accent) 35%,transparent);color:var(--owc-accent)}
+.owc-detail-page .owc-water-form>p{font-size:11px;line-height:1.6;margin:8px 0;color:var(--owc-muted)}
+.owc-detail-page p.owc-error{color:color-mix(in srgb,#dc4c64 70%,var(--owc-text))}
+.owc-detail-page .owc-stats{border:0;background:transparent;padding:0;gap:20px;margin:16px 0}
+.owc-detail-page .owc-stats>div{padding:0;border:0;border-radius:0;background:transparent;min-width:0}
+.owc-detail-page .owc-stats strong{font-size:15px;font-weight:500}
+.owc-detail-page .owc-meta{border:0;margin:8px 0 0;padding:0;font-size:11px}
+.owc-detail-page .owc-row-actions{margin-top:14px;gap:12px}
+.owc-detail-page .owc-row-actions button{font-size:11px;min-height:30px;padding:3px 0}
+.owc-detail-page .owc-progress{height:3px;margin:14px 0 16px}
+.owc-detail-page .owc-preview{background:transparent;border:0;padding:0;margin:10px 0;font-size:11px;color:var(--owc-muted)}
+.owc-v2 .owc-appearance-preview{height:180px;border-radius:10px;background:color-mix(in srgb,var(--owc-text) 3%,var(--owc-detail-surface,var(--owc-surface)))}
+.owc-v2 .owc-appearance-preview>.owc-pet-art{transform:scale(.7);transform-origin:50% 50%}
+.owc-detail-page .owc-appearance input[type=range]{width:100%}
+.owc-detail-page .owc-range-value{position:absolute;right:0;top:0;font-size:11px;color:var(--owc-muted)}
+.owc-detail-page .owc-preview-tools{margin-bottom:14px}
+.owc-detail-page .owc-preview-actions button{min-height:32px;font-size:12px;border-radius:7px}
+.owc-detail-page .owc-preview-status{font-size:11px;line-height:1.5}
+@media(pointer:coarse){.owc-detail-page{--owc-control-height:44px}.owc-detail-page .owc-head .owc-icon{width:44px;height:44px;min-width:44px;min-height:44px}.owc-detail-page button.owc-primary,.owc-detail-page .owc-save button{min-height:44px}.owc-detail-page :is(input[type=text],input[type=number],input[type=time],select){font-size:16px;min-height:44px}}
 @container (max-width:310px){.owc-v2 .owc-row2{grid-template-columns:1fr}.owc-v2 .owc-stats{gap:8px}.owc-v2 .owc-days{gap:2px}.owc-v2 .owc-days button{font-size:11px}}
 @media (pointer:coarse){.owc-v2{--owc-control-height:44px}.owc-v2 .owc-icon{min-width:44px}.owc-v2 button.owc-primary{min-height:44px}.owc-v2 :is(input[type=text],input[type=time],input[type=number],select){font-size:16px}.owc-v2 input[type=range]{min-height:36px}.owc-v2 .owc-check{min-height:44px}}
 @media (max-height:600px){.owc-v2 .owc-appearance-preview{height:120px}.owc-v2 .owc-appearance-preview>.owc-pet-art{transform:scale(.45);transform-origin:50% 50%}.owc-v2 .owc-appearance-preview>svg.owc-pet-art{transform:scale(.55)}}
@@ -2339,6 +2413,13 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         ...PET_MESSAGES.zh,
         ...PET_INTERACTION_MESSAGES.zh,
         ...PET_SURFACE_MESSAGES.zh,
+        detailHelp: '使用说明',
+        detailApply: '应用',
+        detailShift: '班次详情',
+        detailWaterRule: '全天按自然时间提醒，需保持页面打开。',
+        detailSavedInterval: '已生效间隔',
+        detailDraftHint: '保存后生效',
+        detailNextInterval: '用于下一轮计时',
         title: '下班计时器',
         classicMiniWorking: '距下班',
         classicMiniBefore: '距开工',
@@ -2428,7 +2509,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         opacityHint: '只影响背景，不影响文字。',
         waterTitle: '喝水提醒',
         waterEnable: '开启喝水提醒',
-        waterInterval: '自定义间隔（分钟）',
+        waterInterval: '提醒间隔（分钟）',
         waterSave: '保存提醒设置',
         waterEdit: '设置喝水提醒',
         waterBack: '返回',
@@ -2481,7 +2562,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         waterRetry: '重试读取',
         waterSetup: '开启后按所选间隔提醒。',
         waterLoading: '正在读取喝水提醒…',
-        waterChanged: '提醒设置已在本浏览器生效',
+        waterChanged: '提醒设置已保存',
         waterStale: '记录已更新，请重试读取。',
       },
       en: {
@@ -2489,6 +2570,13 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         ...PET_MESSAGES.en,
         ...PET_INTERACTION_MESSAGES.en,
         ...PET_SURFACE_MESSAGES.en,
+        detailHelp: 'How it works',
+        detailApply: 'Apply',
+        detailShift: 'Shift details',
+        detailWaterRule: 'Reminds you throughout the day. Keep the page open.',
+        detailSavedInterval: 'Saved interval',
+        detailDraftHint: 'Applies when saved',
+        detailNextInterval: 'Applies to the next timer',
         title: 'Offwork Clock',
         classicMiniWorking: 'To end',
         classicMiniBefore: 'To start',
@@ -2579,7 +2667,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         opacityHint: 'Affects the background only.',
         waterTitle: 'Water reminder',
         waterEnable: 'Enable water reminders',
-        waterInterval: 'Custom interval (minutes)',
+        waterInterval: 'Interval (minutes)',
         waterSave: 'Save reminder settings',
         waterEdit: 'Reminder settings',
         waterBack: 'Back',
@@ -2636,7 +2724,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         waterRetry: 'Retry loading',
         waterSetup: 'Enable reminders to start the selected interval.',
         waterLoading: 'Loading water reminders…',
-        waterChanged: 'Reminder preferences saved in this browser',
+        waterChanged: 'Reminder settings saved',
         waterStale: 'Records changed. Retry loading to continue.',
       },
     };
@@ -3389,6 +3477,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             const interval = Number(waterInterval);
             if (!Number.isInteger(interval) || interval < 5 || interval > 240) {
               setWaterInvalid(true);
+              box.current?.querySelector('[name=waterInterval]')?.focus();
               return;
             }
             const result = await waterAction({
@@ -3460,13 +3549,9 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                         ? '.owc-pet-handle'
                         : '.owc-grip,.owc-title'
                       : action.type === 'manual-drink'
-                        ? petMode
-                          ? '.owc-pet-water-row .owc-primary'
-                          : '.owc-water-actions .owc-primary'
+                        ? '.owc-water-record,.owc-water-actions .owc-primary'
                         : action.type === 'end-quiet'
-                          ? petMode
-                            ? '.owc-pet-quiet-row button'
-                            : '.owc-water-quiet summary'
+                          ? '.owc-detail-more summary,.owc-water-quiet summary'
                           : '.owc-water-form details > summary';
                     box.current?.querySelector(target)?.focus();
                   });
@@ -3910,13 +3995,13 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               'button',
               {
                 type: 'button',
-                className: 'owc-text',
+                className: 'owc-icon',
                 'aria-pressed': view.masked,
+                'aria-label': t(view.masked ? 'show' : 'hide'),
                 title: t(view.masked ? 'show' : 'hide'),
                 onClick: () => setPreference({ masked: !view.masked }),
               },
               iconSvg(view.masked ? 'eyeOff' : 'eye', 13),
-              t(view.masked ? 'show' : 'hide'),
             );
 
           const waterState = hydrationView(water, now);
@@ -4217,22 +4302,55 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               ),
             );
           };
-          const waterCountdownCard = () =>
-            h(
+          const waterHero = () => {
+            const ticking =
+              waterReady && !waterError && ['countdown', 'due', 'quiet'].includes(waterState.phase);
+            return h(
               'div',
-              { className: 'owc-countdown-card', 'data-water-countdown-card': true },
+              { className: 'owc-detail-hero' },
+              h(
+                'p',
+                { className: 'owc-detail-kicker', 'data-water-status': true },
+                t(
+                  ticking
+                    ? waterState.phase === 'quiet'
+                      ? 'waterQuiet'
+                      : waterState.phase === 'due'
+                        ? 'waterDue'
+                        : 'waterNext'
+                    : 'waterTitle',
+                ),
+              ),
               h(
                 'div',
                 {
-                  className: 'owc-countdown-value',
+                  className: 'owc-detail-value' + (ticking ? '' : ' owc-detail-state'),
                   role: 'timer',
                   'aria-label': t('waterCountdown'),
                 },
                 waterCountdownText(),
               ),
-              h('p', null, waterState.phase === 'countdown' ? t('waterNext') : waterSummary()),
-              waterNotice && h('p', { role: 'status' }, t(waterNotice.key)),
-              h('p', { className: 'owc-hint' }, t('waterTimerHint')),
+              h(
+                'div',
+                { className: 'owc-detail-meta' },
+                h(
+                  'span',
+                  { 'data-water-count': true },
+                  t('waterCount') + ' · ' + (waterReady && !waterError ? waterState.count : '—'),
+                ),
+                h(
+                  'span',
+                  { className: 'owc-detail-feedback' },
+                  waterNotice ? t(waterNotice.key) : '',
+                ),
+              ),
+            );
+          };
+          const waterCountdownCard = () =>
+            h(
+              'div',
+              { className: 'owc-countdown-card', 'data-water-countdown-card': true },
+              waterHero(),
               h(
                 'div',
                 { className: 'owc-countdown-actions' },
@@ -4240,7 +4358,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   'button',
                   {
                     type: 'button',
-                    className: 'owc-primary',
+                    className: 'owc-primary owc-water-record',
                     disabled: !waterCanRecord || waterBusy,
                     onClick: recordWater,
                   },
@@ -4250,15 +4368,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   'button',
                   {
                     type: 'button',
-                    disabled: busy || waterBusy,
-                    onClick: openWaterEditor,
-                  },
-                  t('petWaterSettings'),
-                ),
-                h(
-                  'button',
-                  {
-                    type: 'button',
+                    className: 'owc-text',
                     onClick: (event) => navigateScreen('home', event),
                   },
                   t('timerWaterDetails'),
@@ -4359,7 +4469,13 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                     t('timerStop'),
                   ),
               ),
-              h('p', { className: 'owc-hint' }, t('timerHint')),
+              h('p', { className: 'owc-hint' }, t('detailNextInterval')),
+              h(
+                'details',
+                { className: 'owc-detail-more' },
+                h('summary', null, t('detailHelp')),
+                h('p', null, t('timerHint')),
+              ),
               smokingError && h('p', { className: 'owc-error', role: 'alert' }, t(smokingError)),
               smokingError === 'timerStorageError' &&
                 h(
@@ -4546,6 +4662,46 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               waterNotice && !view.companion && h('p', null, t(waterNotice.key)),
             );
 
+          const waterIntervalField = () =>
+            h(
+              'label',
+              { className: 'owc-water-interval' },
+              h('span', null, t('waterInterval')),
+              h('input', {
+                name: 'waterInterval',
+                type: 'number',
+                inputMode: 'numeric',
+                min: '5',
+                max: '240',
+                step: '1',
+                value: waterInterval,
+                'aria-invalid': waterInvalid,
+                onChange: (event) => {
+                  setWaterInterval(event.target.value);
+                  setWaterInvalid(false);
+                },
+              }),
+            );
+          const waterSettingsActions = () =>
+            h(
+              'div',
+              { className: 'owc-save' },
+              h(
+                'button',
+                { type: 'button', disabled: waterBusy, onClick: closeWaterEditor },
+                t('cancel'),
+              ),
+              h(
+                'button',
+                {
+                  type: 'submit',
+                  className: 'owc-primary',
+                  'aria-label': t('waterSave'),
+                  disabled: !waterReady || waterError || waterBusy,
+                },
+                t(waterBusy ? 'busy' : 'save'),
+              ),
+            );
           const waterSettings = () =>
             h(
               'form',
@@ -4578,7 +4734,8 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               h(
                 'fieldset',
                 { disabled: !waterReady || waterError || waterBusy },
-                h('legend', { className: 'owc-muted' }, t('waterPresets')),
+                h('legend', { className: 'owc-sr-only' }, t('waterPresets')),
+                waterIntervalField(),
                 h(
                   'div',
                   { className: 'owc-water-presets' },
@@ -4589,62 +4746,33 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                         type: 'button',
                         key: minutes,
                         'aria-pressed': Number(waterInterval) === minutes,
+                        'aria-label': minutes + ' ' + t('waterMinutes'),
                         onClick: () => {
                           setWaterInterval(String(minutes));
                           setWaterInvalid(false);
                         },
                       },
-                      minutes + ' ' + t('waterMinutes'),
+                      String(minutes),
                     ),
                   ),
                 ),
-                h(
-                  'label',
-                  { className: 'owc-field' },
-                  h('span', null, t('waterInterval')),
-                  h('input', {
-                    name: 'waterInterval',
-                    type: 'number',
-                    inputMode: 'numeric',
-                    min: '5',
-                    max: '240',
-                    step: '1',
-                    value: waterInterval,
-                    'aria-invalid': waterInvalid,
-                    onChange: (event) => {
-                      setWaterInterval(event.target.value);
-                      setWaterInvalid(false);
-                    },
-                  }),
-                ),
               ),
               waterInvalid && h('p', { role: 'alert' }, t('waterInvalid')),
-              h(
-                'p',
-                { 'data-water-saved-interval': water.interval },
-                t('waterEffective') + ': ' + water.interval + ' ' + t('waterMinutes'),
-              ),
-              h('p', { className: 'owc-hint' }, t('waterSaveHint')),
-              h('p', { className: 'owc-hint' }, t('waterBrief')),
+              (Number(waterInterval) !== water.interval || waterEnabledDraft !== water.enabled) &&
+                h(
+                  'p',
+                  { className: 'owc-hint', 'data-water-saved-interval': water.interval },
+                  t('detailSavedInterval') +
+                    ': ' +
+                    water.interval +
+                    ' ' +
+                    t('waterMinutes') +
+                    ' · ' +
+                    t('detailDraftHint'),
+                ),
+              h('p', { className: 'owc-hint' }, t('detailWaterRule')),
               waterError && h('p', { role: 'alert' }, t('waterUnavailable')),
-              h(
-                'div',
-                { className: 'owc-save' },
-                h(
-                  'button',
-                  { type: 'button', disabled: waterBusy, onClick: closeWaterEditor },
-                  t('cancel'),
-                ),
-                h(
-                  'button',
-                  {
-                    type: 'submit',
-                    className: 'owc-primary',
-                    disabled: !waterReady || waterError || waterBusy,
-                  },
-                  t(waterBusy ? 'busy' : 'waterSave'),
-                ),
-              ),
+
               waterError &&
                 h(
                   'button',
@@ -4707,6 +4835,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                     ),
                   ),
               ),
+              waterSettingsActions(),
             );
           const waterReminder = () =>
             waterPrompt &&
@@ -4721,6 +4850,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   'button',
                   {
                     type: 'button',
+                    className: 'owc-primary',
                     disabled: waterBusy,
                     onClick: () => waterAction({ type: 'drink', eventId: waterState.eventId }),
                   },
@@ -4934,6 +5064,19 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 { className: 'owc-title', tabIndex: 0, title: t('drag'), onKeyDown: gripKeys },
                 t(ui.screen ? petPageTitle[ui.screen] || 'classicOverview' : 'classicOverview'),
               ),
+              ['home', 'water-countdown'].includes(ui.screen) &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-icon',
+                    'aria-label': t('petWaterSettings'),
+                    title: t('petWaterSettings'),
+                    disabled: busy || waterBusy || !!ui.pending,
+                    onClick: openWaterEditor,
+                  },
+                  iconSvg('sliders', 14),
+                ),
               waterPrompt &&
                 ui.screen &&
                 !['home', 'water-countdown'].includes(ui.screen) &&
@@ -5402,7 +5545,19 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   ),
                 ),
               );
-            const status = safeState.status === 'done' ? '' : t(safeState.status);
+            const clockSeconds = ['done', 'rest'].includes(safeState.status) ? null : seconds;
+            const clockTitle =
+              safeState.status === 'before'
+                ? 'before'
+                : ['working', 'lunch'].includes(safeState.status)
+                  ? 'working'
+                  : safeState.status;
+            const status =
+              clockSeconds === null
+                ? ''
+                : safeState.status === 'lunch'
+                  ? t('lunch') + ' · ' + t('working')
+                  : t(clockTitle);
             return h(
               'div',
               { className: 'owc-main' },
@@ -5412,10 +5567,15 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               section !== 'earnings' &&
                 h(
                   'div',
-                  { className: 'owc-time', 'aria-label': status + ' ' + duration },
-                  duration,
+                  {
+                    className: 'owc-time' + (clockSeconds === null ? ' owc-detail-state' : ''),
+                    role: clockSeconds === null ? 'status' : 'timer',
+                    'aria-label': t(clockTitle),
+                  },
+                  clockSeconds === null ? t(clockTitle) : formatDuration(clockSeconds),
                 ),
               section !== 'earnings' &&
+                ['working', 'lunch', 'done'].includes(safeState.status) &&
                 h(
                   'div',
                   {
@@ -5459,24 +5619,29 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   ),
                 ),
               h(
-                'div',
-                { className: 'owc-meta' },
+                'details',
+                { className: 'owc-detail-more' },
+                h('summary', null, t('detailShift')),
                 h(
-                  'span',
-                  null,
-                  settings.start +
-                    ' — ' +
-                    settings.end +
-                    (settings.end < settings.start ? ' +1' : '') +
-                    ' · ' +
-                    (settings.breakStart === settings.breakEnd
-                      ? t('noBreak')
-                      : settings.breakStart + '–' + settings.breakEnd),
-                ),
-                h(
-                  'span',
-                  null,
-                  t('shiftDate') + ' ' + safeState.shiftDate + ' · ' + settings.timezone,
+                  'div',
+                  { className: 'owc-meta' },
+                  h(
+                    'span',
+                    null,
+                    settings.start +
+                      ' — ' +
+                      settings.end +
+                      (settings.end < settings.start ? ' +1' : '') +
+                      ' · ' +
+                      (settings.breakStart === settings.breakEnd
+                        ? t('noBreak')
+                        : settings.breakStart + '–' + settings.breakEnd),
+                  ),
+                  h(
+                    'span',
+                    null,
+                    t('shiftDate') + ' ' + safeState.shiftDate + ' · ' + settings.timezone,
+                  ),
                 ),
               ),
               h(
@@ -5569,7 +5734,6 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   onChange: (event) => updateAppearance({ petSize: event.target.valueAsNumber }),
                 }),
               ),
-              h('p', { className: 'owc-hint' }, t('petAppearanceHint')),
               label(
                 t('opacity'),
                 h(
@@ -5589,8 +5753,8 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   }),
                   h(
                     'span',
-                    { className: 'owc-hint', style: { margin: 0 } },
-                    Math.round(view.opacity * 100) + '% · ' + t('opacityHint'),
+                    { className: 'owc-range-value', title: t('opacityHint') },
+                    Math.round(view.opacity * 100) + '%',
                   ),
                 ),
               ),
@@ -5670,7 +5834,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               return h(
                 'div',
                 { className: 'owc-form owc-appearance', 'data-appearance-settings': true },
-                h('p', { className: 'owc-hint' }, t('petAppearancePreview')),
+                h('p', { className: 'owc-sr-only' }, t('petAppearancePreview')),
                 h(
                   'div',
                   {
@@ -5698,8 +5862,13 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   h('button', { type: 'button', onClick: closeEditor }, t('cancel')),
                   h(
                     'button',
-                    { type: 'button', className: 'owc-primary', onClick: applyAppearance },
-                    t('petApplyAppearance'),
+                    {
+                      type: 'button',
+                      className: 'owc-primary',
+                      'aria-label': t('petApplyAppearance'),
+                      onClick: applyAppearance,
+                    },
+                    t('detailApply'),
                   ),
                 ),
               );
@@ -5707,21 +5876,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             const payDaily = workingDraft.payMode === 'daily';
             const salaryKey = payDaily ? 'dailySalary' : 'monthlySalary';
             const salaryControl = view.masked
-              ? h(
-                  'div',
-                  { className: 'owc-private' },
-                  h('span', null, '••••'),
-                  h(
-                    'button',
-                    {
-                      type: 'button',
-                      className: 'owc-text',
-                      'aria-label': t('show'),
-                      onClick: () => setPreference({ masked: false }),
-                    },
-                    t('show'),
-                  ),
-                )
+              ? h('div', { className: 'owc-private', 'aria-label': t('masked') }, '••••')
               : numberInput(salaryKey);
             const breakOn = workingDraft.breakStart !== workingDraft.breakEnd;
             const commonZones = [
@@ -5746,6 +5901,20 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             const zones = [
               ...new Set([workingDraft.timezone, ...commonZones, ...allZones].filter(Boolean)),
             ];
+            const timezoneField = () =>
+              label(
+                t('timezone'),
+                h(
+                  'select',
+                  {
+                    name: 'timezone',
+                    value: workingDraft.timezone ?? '',
+                    disabled: busy,
+                    onChange: (e) => update('timezone', e.target.value),
+                  },
+                  zones.map((zone) => h('option', { key: zone, value: zone }, zone)),
+                ),
+              );
             return h(
               'form',
               {
@@ -5762,7 +5931,22 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               h(
                 'fieldset',
                 { className: 'owc-setting-group' },
-                h('legend', null, t('salaryGroup')),
+                h(
+                  'legend',
+                  { className: 'owc-salary-legend' },
+                  h('span', null, t('salaryGroup')),
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'owc-icon',
+                      'aria-label': t(view.masked ? 'show' : 'hide'),
+                      title: t(view.masked ? 'show' : 'hide'),
+                      onClick: () => setPreference({ masked: !view.masked }),
+                    },
+                    iconSvg(view.masked ? 'eyeOff' : 'eye', 13),
+                  ),
+                ),
                 label(
                   t('payMode'),
                   h(
@@ -5856,22 +6040,10 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                     ),
                   ),
                 ),
-                label(
-                  t('timezone'),
-                  h(
-                    'select',
-                    {
-                      name: 'timezone',
-                      value: workingDraft.timezone ?? '',
-                      disabled: busy,
-                      onChange: (e) => update('timezone', e.target.value),
-                    },
-                    zones.map((zone) => h('option', { key: zone, value: zone }, zone)),
-                  ),
-                ),
               ),
               preview &&
                 !preview.error &&
+                !view.masked &&
                 h(
                   'div',
                   { className: 'owc-preview' },
@@ -5895,6 +6067,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 'details',
                 { className: 'owc-advanced' },
                 h('summary', null, t('advanced')),
+                timezoneField(),
                 h('p', { className: 'owc-hint' }, t('sessionHint')),
                 label(t('session'), sessionSelect()),
               ),
@@ -5966,6 +6139,13 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 waterPrompt ? t('waterDue') : waterNotice ? t(waterNotice.key) : '',
               ),
             );
+          React.useLayoutEffect(() => {
+            if (!ready) return;
+            const scroll = petMode
+              ? petPanel.current?.querySelector('.owc-pet-scroll')
+              : box.current?.querySelector('.owc-content');
+            if (scroll) scroll.scrollTop = 0;
+          }, [ready, petMode, ui.screen]);
           const petShowing = petOpen;
           const petFloating = petShowing || autoWaterPrompt;
           React.useLayoutEffect(() => {
@@ -6208,9 +6388,22 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 ),
               h(
                 'strong',
-                { 'data-pet-page-title': true, tabIndex: -1, style: { flex: 1, fontSize: 12 } },
+                { 'data-pet-page-title': true, tabIndex: -1, style: { flex: 1 } },
                 t(petPageTitle[ui.screen] || 'waterTitle'),
               ),
+              ['home', 'water-countdown'].includes(ui.screen) &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-icon',
+                    'aria-label': t('petWaterSettings'),
+                    title: t('petWaterSettings'),
+                    disabled: busy || waterBusy || !!ui.pending,
+                    onClick: openWaterEditor,
+                  },
+                  iconSvg('sliders', 14),
+                ),
               h(
                 'button',
                 {
@@ -6226,102 +6419,91 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
           const petHome = () =>
             h(
               'div',
-              { className: 'owc-pet-home', 'data-pet-home': true },
-
+              {
+                className: 'owc-pet-home' + (waterPrompt ? ' owc-water-due' : ''),
+                'data-pet-home': true,
+                'data-water-event': waterPrompt ? waterState.eventId : undefined,
+              },
+              waterHero(),
               h(
                 'div',
-                {
-                  className: 'owc-pet-water-card' + (waterPrompt ? ' owc-water-due' : ''),
-                  'data-water-event': waterPrompt ? waterState.eventId : undefined,
-                },
+                { className: 'owc-detail-primary-actions' },
                 h(
-                  'p',
-                  { className: 'owc-water-status', 'data-water-status': true },
-                  waterPrompt
-                    ? t('waterDue')
-                    : waterState.phase === 'quiet'
-                      ? t('petQuietActive')
-                      : waterSummary(),
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-primary owc-water-record',
+                    disabled: !waterCanRecord || waterBusy,
+                    onClick: recordWater,
+                  },
+                  t('petRecord'),
                 ),
+                waterPrompt &&
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'owc-text',
+                      disabled: waterBusy,
+                      onClick: () => waterAction({ type: 'snooze', eventId: waterState.eventId }),
+                    },
+                    t('waterSnooze'),
+                  ),
+              ),
+              h(
+                'div',
+                { className: 'owc-detail-secondary' },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-text',
+                    disabled: !water.enabled || busy || waterBusy || waterError || !waterReady,
+                    onClick: () => waterAction({ type: water.paused ? 'resume' : 'pause' }),
+                  },
+                  t(water.paused ? 'waterResume' : 'waterPause'),
+                ),
+                waterState.phase === 'quiet' &&
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'owc-text',
+                      disabled: waterBusy,
+                      onClick: () => waterAction({ type: 'end-quiet' }),
+                    },
+                    t('waterQuietEnd'),
+                  ),
+              ),
+              h(
+                'details',
+                { className: 'owc-detail-more' },
+                h('summary', null, t('waterQuiet')),
                 h(
                   'div',
-                  { className: 'owc-pet-water-row' },
-                  h(
-                    'button',
-                    {
-                      type: 'button',
-                      className: 'owc-primary',
-                      disabled: !waterCanRecord || waterBusy,
-                      onClick: recordWater,
-                    },
-                    t('petRecord'),
-                  ),
-                  h(
-                    'span',
-                    { 'data-water-count': true },
-                    t('waterCount') + ': ' + (waterReady && !waterError ? waterState.count : '—'),
-                  ),
-                ),
-              ),
-              h(
-                'div',
-                { className: 'owc-pet-quiet-row' },
-                [30, 60].map((minutes) =>
-                  h(
-                    'button',
-                    {
-                      type: 'button',
-                      key: minutes,
-                      disabled: !waterCanQuiet || waterBusy,
-                      onClick: () => waterAction({ type: 'quiet', minutes }),
-                    },
-                    t(minutes === 30 ? 'petQuiet30' : 'petQuiet60'),
-                  ),
-                ),
-              ),
-              h(
-                'div',
-                { className: 'owc-pet-quiet-status' },
-                waterPrompt
-                  ? h(
+                  { className: 'owc-detail-options' },
+                  [30, 60].map((minutes) =>
+                    h(
                       'button',
                       {
                         type: 'button',
-                        disabled: waterBusy,
-                        onClick: () => waterAction({ type: 'snooze', eventId: waterState.eventId }),
+                        key: minutes,
+                        disabled: !waterCanQuiet || waterBusy,
+                        onClick: (event) => {
+                          const menu = event.currentTarget.closest('details');
+                          menu.open = false;
+                          menu.querySelector('summary')?.focus();
+                          void waterAction({ type: 'quiet', minutes });
+                        },
                       },
-                      t('waterSnooze'),
-                    )
-                  : water.paused
-                    ? t('petPausedHint')
-                    : waterState.phase === 'quiet'
-                      ? h(
-                          React.Fragment,
-                          null,
-                          t('waterQuiet') +
-                            ' · ' +
-                            formatDuration(waterState.quietRemaining / 1000),
-                          h(
-                            'button',
-                            {
-                              type: 'button',
-                              disabled: waterBusy,
-                              onClick: () => waterAction({ type: 'end-quiet' }),
-                            },
-                            t('waterQuietEnd'),
-                          ),
-                        )
-                      : t('petQuietHint'),
+                      t(minutes === 30 ? 'petQuiet30' : 'petQuiet60'),
+                    ),
+                  ),
+                ),
+                h('p', { className: 'owc-hint' }, t('petQuietHint')),
               ),
-              h(
-                'div',
-                { className: 'owc-pet-feedback' },
-                waterNotice
-                  ? t(waterNotice.key)
-                  : waterError
-                    ? t('waterUnavailable')
-                    : t('petHomeHint'),
-              ),
+              waterError &&
+                h('p', { className: 'owc-error', role: 'alert' }, t('waterUnavailable')),
               waterError &&
                 h(
                   'button',
@@ -6332,20 +6514,6 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   },
                   t('waterRetry'),
                 ),
-              h(
-                'div',
-                { className: 'owc-pet-home-links' },
-                h('button', { type: 'button', onClick: openWaterEditor }, t('petWaterSettings')),
-                h(
-                  'button',
-                  {
-                    type: 'button',
-                    disabled: !water.enabled || busy || waterBusy || waterError || !waterReady,
-                    onClick: () => waterAction({ type: water.paused ? 'resume' : 'pause' }),
-                  },
-                  t(water.paused ? 'waterResume' : 'waterPause'),
-                ),
-              ),
             );
           const contextMenu = () =>
             ui.menu &&
@@ -6641,7 +6809,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   'div',
                   {
                     ref: petPanel,
-                    className: 'owc-pet-panel owc-pet-workspace',
+                    className: 'owc-pet-panel owc-pet-workspace owc-detail-page',
                     'data-pet-panel': petShowing ? 'open' : 'reminder',
                     'data-pet-screen': ui.screen || 'reminder',
                     'data-side': floatingPanel.side,
@@ -6714,6 +6882,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               ref: box,
               className:
                 'owc-v2 owc-classic' +
+                (!collapsed ? ' owc-detail-page' : '') +
                 (collapsed ? ' owc-compact' : '') +
                 (collapsed && waterQuickOpen ? ' owc-quick' : '') +
                 (editing || waterEditing ? ' owc-editing' : ''),
