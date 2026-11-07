@@ -18,7 +18,7 @@ window.__ModuleLoader__.load({
         classicMiniBefore: '距开工',
         classicMiniLunch: '午休中',
         classicMiniStatus: '本班状态',
-        classicMiniWaiting: '待上班',
+        classicMiniWaiting: '待开启',
         classicMiniFinished: '已结束',
         classicOverview: '今日概览',
         classicReturn: '返回概览',
@@ -32,10 +32,10 @@ window.__ModuleLoader__.load({
         classicBeforeHint: '班次尚未开始，显示距离开工的时间。',
         classicWorkingHint: '本班工作进行中。',
         classicLunchRemaining: '距离午休结束',
-        classicLunchHint: '午休期间喝水计时暂停，下班时间不变。',
+        classicLunchHint: '午休结束后继续工作；喝水提醒照常计时。',
         classicDoneHint: '本班计时已结束，下一班开始后继续。',
         classicRestHint: '今天不计工作时长，计时会在工作日恢复。',
-        classicWaterHint: '工作时间计时',
+        classicWaterHint: '自然时间计时',
         classicSmokeHint: '自然时间计时',
         classicConfigure: '设置作息与薪资',
         classicIncome: '本班收入',
@@ -112,21 +112,21 @@ window.__ModuleLoader__.load({
         waterEffective: '当前间隔',
         waterManage: '数据管理',
         waterSaveHint: '修改后点击保存，按新间隔重新计时。',
-        waterBrief: '按工作时间计时，午休暂停。关闭页面后不提醒。',
+        waterBrief: '按自然时间计时，午休、下班和休息日均可提醒。需要保持页面打开。',
         waterApply: '应用间隔',
         waterInvalid: '请输入 5–240 的整数。',
         waterNext: '下次喝水',
         waterDue: '该喝水啦',
         waterDrink: '喝了',
-        waterSnooze: '工作 10 分钟后',
-        waterPause: '本班暂停',
-        waterResume: '恢复本班提醒',
-        waterCount: '本班打卡',
+        waterSnooze: '10 分钟后',
+        waterPause: '暂停提醒',
+        waterResume: '恢复提醒',
+        waterCount: '饮水计数',
         waterManual: '喝了一杯',
         waterQuick: '喝水快捷操作',
         waterQuickClose: '收起喝水快捷操作',
         waterRecorded: '这杯记下啦。',
-        waterRecordHint: '工作和午休期间可以打卡，关闭提醒也能记录。',
+        waterRecordHint: '随时可以打卡，关闭提醒也能记录；计数可手动清零。',
         waterActionStale: '状态已变化，请再试一次。',
         waterQuiet: '免打扰',
         waterQuietAdjust: '调整时长',
@@ -137,25 +137,26 @@ window.__ModuleLoader__.load({
         waterQuietEnded: '免打扰已结束。',
         waterQuietHint: '按自然时间，到期自动恢复；已到期的提醒只提示一次。',
         waterOff: '提醒已关闭',
-        waterWaiting: '等待工作时段',
-        waterBreak: '休息中，提醒计时暂停',
-        waterPaused: '本班已暂停',
-        waterFinished: '本班不再安排新提醒',
+        waterWaiting: '等待开启提醒',
+        waterBreak: '提醒已暂停',
+        waterPaused: '提醒已暂停',
+        waterFinished: '提醒已结束',
         waterOther: '提醒已到期，等待可见标签页处理',
-        waterClear: '清除本班次数',
+        waterClear: '清除饮水计数',
         waterReset: '重置喝水提醒',
         waterConfirm: '确认操作',
-        waterClearHint: '仅清零本班次数，保留下一次提醒和暂停状态。',
-        waterResetHint: '清除喝水提醒设置和记录，恢复默认关闭。',
+        waterClearHint: '仅清零饮水计数，保留下一次提醒和暂停状态。',
+        waterResetHint: '清除当前喝水提醒设置和计数，恢复默认关闭。',
         waterLocal: '提醒设置和打卡仅保存在当前浏览器，不进入会话。与薪资配置分别保存。',
-        waterRules: '按工作分钟计时，午休冻结。开启、修改间隔或作息后重新计时；关闭页面后不提醒。',
+        waterRules:
+          '按自然分钟计时，与作息、薪资和会话无关。开启、修改间隔或手动恢复后重新计时；关闭页面后不提醒。',
         waterUnavailable:
-          '喝水提醒存储不可用或数据无效，自动提醒已停止。可重试；重置将清除原喝水数据。',
+          '喝水提醒存储不可用或数据无效，自动提醒已停止。可重试；重置将清除当前提醒设置和计数。',
         waterRetry: '重试读取',
-        waterSetup: '请先保存薪资与作息。',
+        waterSetup: '开启后按所选间隔提醒。',
         waterLoading: '正在读取喝水提醒…',
         waterChanged: '提醒设置已在本浏览器生效',
-        waterStale: '作息已变化，请点击“读取最新配置”后继续提醒。',
+        waterStale: '记录已更新，请重试读取。',
       },
       en: {
         ...COMPANION_MESSAGES.en,
@@ -181,10 +182,10 @@ window.__ModuleLoader__.load({
         classicBeforeHint: 'Your shift has not started. This is the time until work begins.',
         classicWorkingHint: 'Your shift is in progress.',
         classicLunchRemaining: 'Until lunch ends',
-        classicLunchHint: 'Water timing pauses during lunch. Your shift still ends as scheduled.',
+        classicLunchHint: 'Work resumes after lunch. Water reminders continue as usual.',
         classicDoneHint: 'This shift has ended. Timing resumes with your next shift.',
         classicRestHint: 'No work time is counted today. Timing resumes on a scheduled workday.',
-        classicWaterHint: 'Paid work time',
+        classicWaterHint: 'Clock time',
         classicSmokeHint: 'Clock time',
         classicConfigure: 'Set schedule and pay',
         classicIncome: 'Shift earnings',
@@ -262,21 +263,23 @@ window.__ModuleLoader__.load({
         waterEffective: 'Current interval',
         waterManage: 'Manage data',
         waterSaveHint: 'Save changes to restart with the new interval.',
-        waterBrief: 'Counts working time and pauses on unpaid breaks. Keep the page open.',
+        waterBrief:
+          'Uses clock time, including breaks, off-hours and days off. Keep the page open.',
         waterApply: 'Apply interval',
         waterInvalid: 'Enter a whole number from 5 to 240.',
         waterNext: 'Next water break',
         waterDue: 'Time for some water',
         waterDrink: 'Drank water',
-        waterSnooze: 'In 10 working minutes',
-        waterPause: 'Pause this shift',
-        waterResume: 'Resume this shift',
-        waterCount: 'Drinks this shift',
+        waterSnooze: 'In 10 minutes',
+        waterPause: 'Pause reminders',
+        waterResume: 'Resume reminders',
+        waterCount: 'Drinks recorded',
         waterManual: 'Had a glass',
         waterQuick: 'Quick water actions',
         waterQuickClose: 'Close quick water actions',
         waterRecorded: 'Got it, your drink is recorded.',
-        waterRecordHint: 'Check in during work or breaks, even with reminders off.',
+        waterRecordHint:
+          'Check in at any time, even with reminders off. Clear the count manually when needed.',
         waterActionStale: 'The state changed. Please try again.',
         waterQuiet: 'Quiet time',
         waterQuietAdjust: 'Change duration',
@@ -288,27 +291,27 @@ window.__ModuleLoader__.load({
         waterQuietHint:
           'Uses clock time. Resumes automatically, with just one reminder if overdue.',
         waterOff: 'Reminders off',
-        waterWaiting: 'Waiting for working hours',
-        waterBreak: 'On break; reminder timer paused',
-        waterPaused: 'Paused for this shift',
-        waterFinished: 'No more reminders this shift',
+        waterWaiting: 'Waiting for reminders to be enabled',
+        waterBreak: 'Reminders paused',
+        waterPaused: 'Reminders paused',
+        waterFinished: 'Reminders ended',
         waterOther: 'Reminder due; waiting for a visible tab',
-        waterClear: 'Clear shift count',
+        waterClear: 'Clear drink count',
         waterReset: 'Reset water reminders',
         waterConfirm: 'Confirm',
         waterClearHint: 'Clear the drink count only. Keep the next reminder and pause state.',
-        waterResetHint: 'Delete water preferences and records, then turn reminders off.',
+        waterResetHint: 'Clear current water preferences and count, then turn reminders off.',
         waterLocal:
           'Reminder preferences and check-ins stay in this browser, outside conversations. Saved separately from salary settings.',
         waterRules:
-          'Counts working minutes; unpaid breaks pause the timer. Enabling or changing interval or schedule restarts it. The page must stay open.',
+          'Uses clock time, independently of work, salary and sessions. Enabling, changing the interval or manually resuming starts a new interval. Keep the page open.',
         waterUnavailable:
-          'Water storage is unavailable or invalid; automatic reminders stopped. Retry, or reset to delete old water data.',
+          'Water storage is unavailable or invalid; automatic reminders stopped. Retry, or reset current water preferences and count.',
         waterRetry: 'Retry loading',
-        waterSetup: 'Save your salary and schedule first.',
+        waterSetup: 'Enable reminders to start the selected interval.',
         waterLoading: 'Loading water reminders…',
         waterChanged: 'Reminder preferences saved in this browser',
-        waterStale: 'Schedule changed. Reload the latest settings to continue reminders.',
+        waterStale: 'Records changed. Retry loading to continue.',
       },
     };
     const STYLE =
@@ -475,6 +478,7 @@ window.__ModuleLoader__.load({
         ['path', { d: 'M13.1 3v3.2H9.9' }],
       ],
     };
+    const LOCAL_SCREENS = [null, 'appearance', 'smoking', 'water-countdown', 'water', 'home'];
     const iconSvg = (name, size = 15) =>
       h(
         'svg',
@@ -533,7 +537,9 @@ window.__ModuleLoader__.load({
           const menuBox = React.useRef(null);
           const menuTrigger = React.useRef(null);
           const [dragPosition, setDragPosition] = React.useState(null);
-          const [busy, setBusy] = React.useState(false);
+          const requestBusy = React.useRef(false);
+          const [hostBusy, setBusy] = React.useState(false);
+          const busy = hostBusy && (requestBusy.current || !LOCAL_SCREENS.includes(ui.screen));
           const [error, setError] = React.useState('');
           const [notice, setNotice] = React.useState('');
           const [storageError, setStorageError] = React.useState(false);
@@ -559,7 +565,6 @@ window.__ModuleLoader__.load({
           const dragState = React.useRef(null);
           const lastPosition = React.useRef(null);
           const generation = React.useRef(0);
-          const requestBusy = React.useRef(false);
           const focusReturn = React.useRef(null);
           const [smoking, setSmoking] = React.useState(defaultCountdown);
           const [smokingReady, setSmokingReady] = React.useState(false);
@@ -698,11 +703,7 @@ window.__ModuleLoader__.load({
             waterOwner.current =
               window.crypto?.randomUUID?.() || String(Math.random()) + Date.now();
           const waterInputs = React.useRef(null);
-          const waterScheduleChange = React.useRef(null);
-          waterInputs.current = {
-            settings: data?.configured && !error ? data.settings : null,
-            editing: editing || waterEditing,
-          };
+          waterInputs.current = { editing: editing || waterEditing };
 
           const settings = data?.settings;
           const workingDraft = draft || settings;
@@ -901,17 +902,8 @@ window.__ModuleLoader__.load({
               store = createHydrationStore(null);
             }
             try {
-              channel = new BroadcastChannel('dsh.offwork-clock.hydration.v1');
+              channel = new BroadcastChannel('dsh.offwork-clock.hydration.wall-clock.v3');
             } catch {}
-            const contextAt = (time) => {
-              const current = waterInputs.current.settings;
-              if (!current) return null;
-              try {
-                return hydrationContext(current, calculate(current, time));
-              } catch {
-                return null;
-              }
-            };
             const update = async (action = { type: 'tick' }, automatic = false) => {
               if (!active || (automatic && (running || failed))) return;
               running++;
@@ -927,59 +919,31 @@ window.__ModuleLoader__.load({
                 let changed = false;
                 let recorded = false;
                 let quietChanged = false;
-                let usedPermit = null;
                 const result = await store.update(
                   (current) => {
                     const time = Date.now();
-                    const context = contextAt(time);
                     if (action.type === 'sync') return current;
-                    const permit = waterScheduleChange.current;
-                    const operation =
-                      permit && context && permit.schedule === context.schedule
-                        ? { ...action, baseSchedule: permit.baseSchedule }
-                        : action;
-                    let next = transitionHydration(
-                      current,
-                      context,
-                      operation,
-                      time,
-                      waterOwner.current,
-                    );
+                    let next = transitionHydration(current, action, time, waterOwner.current);
                     recorded =
-                      ['drink', 'manual-drink'].includes(action.type) &&
-                      next.shift?.count >
-                        (current.shift?.id === next.shift?.id ? (current.shift?.count ?? 0) : 0);
+                      ['drink', 'manual-drink'].includes(action.type) && next.count > current.count;
                     quietChanged =
                       ['quiet', 'end-quiet'].includes(action.type) &&
-                      next.shift?.quietUntil !== current.shift?.quietUntil;
+                      next.quietUntil !== current.quietUntil;
                     if (automatic) {
                       const allow = !document.hidden && !waterInputs.current.editing;
                       next = transitionHydration(
                         next,
-                        context,
                         { type: allow ? 'claim' : 'release' },
                         time,
                         waterOwner.current,
                       );
                     }
-                    if (
-                      permit &&
-                      context &&
-                      permit.schedule === context.schedule &&
-                      next.shift?.schedule === context.schedule
-                    )
-                      usedPermit = permit;
                     changed = JSON.stringify(next) !== JSON.stringify(current);
                     return next;
                   },
                   { reset: action.type === 'reset' },
                 );
                 if (!active) return;
-                if (
-                  action.type === 'reset' ||
-                  (usedPermit && waterScheduleChange.current === usedPermit)
-                )
-                  waterScheduleChange.current = null;
                 failed = false;
                 setWater(result);
                 setWaterReady(true);
@@ -1043,8 +1007,7 @@ window.__ModuleLoader__.load({
               channel?.close();
               void store
                 .update((current) => {
-                  if (current.shift?.claim?.owner === waterOwner.current)
-                    current.shift.claim = null;
+                  if (current.claim?.owner === waterOwner.current) current.claim = null;
                   return current;
                 })
                 .catch(() => {})
@@ -1054,7 +1017,7 @@ window.__ModuleLoader__.load({
 
           React.useEffect(() => {
             waterRuntime.current?.tick();
-          }, [settings, editing, waterEditing, error]);
+          }, [editing, waterEditing]);
 
           React.useEffect(() => {
             if (!waterNotice) return;
@@ -1132,7 +1095,7 @@ window.__ModuleLoader__.load({
                   setWaterNotice({ key: 'waterRecorded', kind: 'drink', token: result.revision });
                 if (action.type === 'manual-drink') {
                   setWaterNotice({
-                    key: result.shift?.recentActions.includes(action.actionId)
+                    key: result.recentActions.includes(action.actionId)
                       ? 'waterRecorded'
                       : 'waterActionStale',
                     kind: outcome.recorded ? 'drink' : 'notice',
@@ -1143,7 +1106,7 @@ window.__ModuleLoader__.load({
                 if (action.type === 'quiet')
                   setWaterNotice({
                     key:
-                      outcome.quietChanged && result.shift?.quietUntil > Date.now()
+                      outcome.quietChanged && result.quietUntil > Date.now()
                         ? 'waterQuietStarted'
                         : 'waterActionStale',
                     kind: 'notice',
@@ -1298,17 +1261,8 @@ window.__ModuleLoader__.load({
             setBusy(true);
             setError('');
             try {
-              const baseSchedule = (await waterRuntime.current?.update({ type: 'sync' }))?.state
-                ?.shift?.schedule;
-              if (token !== generation.current) return;
               const next = await request('get');
               if (token !== generation.current) return;
-              if (next.configured)
-                waterScheduleChange.current = {
-                  baseSchedule,
-                  schedule: hydrationContext(next.settings, calculate(next.settings, Date.now()))
-                    .schedule,
-                };
               setData(next);
               if (!next.configured) {
                 setDraft({ ...next.settings });
@@ -1330,19 +1284,11 @@ window.__ModuleLoader__.load({
             setError('');
             const token = ++generation.current;
             try {
-              const baseSchedule = (await waterRuntime.current?.update({ type: 'sync' }))?.state
-                ?.shift?.schedule;
-              if (token !== generation.current) return;
               const next = await request(
                 'set',
                 changedSettings(salaryBase.current ?? settings, draft),
               );
               if (token === generation.current) {
-                waterScheduleChange.current = {
-                  baseSchedule,
-                  schedule: hydrationContext(next.settings, calculate(next.settings, Date.now()))
-                    .schedule,
-                };
                 setData(next);
                 dispatchUI({ type: 'navigate', screen: ui.back, discard: true });
                 setDraft(null);
@@ -1448,7 +1394,7 @@ window.__ModuleLoader__.load({
             petDragged.current = false;
             if (ui.pending) return true;
             if (!petMode) {
-              if (!busy && !waterBusy) navigateScreen('appearance', event);
+              if (!requestBusy.current && !waterBusy) navigateScreen('appearance', event);
               return true;
             }
             const trigger =
@@ -1507,11 +1453,17 @@ window.__ModuleLoader__.load({
           function navigateScreen(screen, event) {
             if (
               screen !== null &&
-              !['appearance', 'smoking', 'water-countdown'].includes(screen) &&
+              !LOCAL_SCREENS.includes(screen) &&
               (!data || (!data.configured && screen !== 'schedule'))
             )
               return;
-            if (ui.pending || busy || waterBusy || requestBusy.current || waterPending.current)
+            if (
+              ui.pending ||
+              waterBusy ||
+              requestBusy.current ||
+              waterPending.current ||
+              (hostBusy && !LOCAL_SCREENS.includes(screen))
+            )
               return;
             const root = event?.currentTarget?.getAttribute?.('role') === 'menuitem';
             if (event?.currentTarget) focusReturn.current = event.currentTarget;
@@ -1641,10 +1593,8 @@ window.__ModuleLoader__.load({
               t(view.masked ? 'show' : 'hide'),
             );
 
-          const waterContext =
-            data?.configured && safeState && !error ? hydrationContext(settings, safeState) : null;
-          const waterState = hydrationView(water, waterContext, now);
-          const waterClaim = water.shift?.claim;
+          const waterState = hydrationView(water, now);
+          const waterClaim = water.claim;
           const waterPrompt =
             waterReady &&
             !waterError &&
@@ -1654,10 +1604,10 @@ window.__ModuleLoader__.load({
             !document.hidden &&
             waterState.phase === 'due' &&
             waterClaim?.owner === waterOwner.current &&
-            waterClaim.sequence === water.shift.sequence &&
+            waterClaim.sequence === water.sequence &&
             waterClaim.until > Date.now() &&
             waterClaim.until <= Date.now() + HYDRATION_LEASE_MS;
-          const reminderReady = !!(petMode && waterReady && !waterError && waterContext);
+          const reminderReady = !!(petMode && waterReady && !waterError);
           const reminderVisible = waterVisible && !document.hidden;
           const reminderAvailable = !petOpen && !ui.menu && !ui.pending && !busy;
           React.useEffect(() => {
@@ -1728,8 +1678,8 @@ window.__ModuleLoader__.load({
             workStatus: safeState?.status,
             phase: waterState.phase,
             ownsPrompt: waterPrompt,
-            ready: waterReady && !!safeState,
-            failed: waterError || !!error,
+            ready: waterReady,
+            failed: waterError,
             feedback: waterNotice || null,
             visible: view.companion,
             motion: view.companionMotion && !reactionState.current?.stopped,
@@ -1760,11 +1710,10 @@ window.__ModuleLoader__.load({
                 waterVisible &&
                 waterReady &&
                 !waterError &&
-                !error &&
                 !editing &&
                 !waterEditing &&
                 !ui.menu,
-              resting: ['quiet', 'rest', 'offline'].includes(companion.pose),
+              resting: ['quiet', 'offline'].includes(companion.pose),
             });
           }, [
             petMode,
@@ -1869,13 +1818,6 @@ window.__ModuleLoader__.load({
           const waterSummary = () => {
             if (!waterReady) return t('waterLoading');
             if (waterError) return t('waterUnavailable');
-            if (
-              water.enabled &&
-              waterContext &&
-              water.shift &&
-              water.shift.config !== waterContext.config
-            )
-              return t('waterStale');
             const labels = {
               off: 'waterOff',
               waiting: 'waterWaiting',
@@ -1891,10 +1833,8 @@ window.__ModuleLoader__.load({
               : t(labels[waterState.phase]);
           };
           const waterCountdownText = () => {
-            if (waterError || error) return t('timerUnavailable');
+            if (waterError) return t('timerUnavailable');
             if (!waterReady) return t('timerLoading');
-            if (waterContext && water.shift && water.shift.config !== waterContext.config)
-              return t('timerUnavailable');
             if (['countdown', 'due', 'break'].includes(waterState.phase))
               return formatDuration(Math.ceil(waterState.remaining / 1000));
             if (waterState.phase === 'quiet')
@@ -1984,7 +1924,7 @@ window.__ModuleLoader__.load({
                   'button',
                   {
                     type: 'button',
-                    disabled: busy || waterBusy || !data?.configured,
+                    disabled: busy || waterBusy,
                     onClick: openWaterEditor,
                   },
                   t('petWaterSettings'),
@@ -1993,7 +1933,6 @@ window.__ModuleLoader__.load({
                   'button',
                   {
                     type: 'button',
-                    disabled: !data?.configured,
                     onClick: (event) => navigateScreen('home', event),
                   },
                   t('timerWaterDetails'),
@@ -2107,19 +2046,13 @@ window.__ModuleLoader__.load({
                   t('timerRetry'),
                 ),
             );
-          const waterCanRecord =
-            waterReady &&
-            !waterError &&
-            data?.configured &&
-            ['working', 'lunch'].includes(waterContext?.status) &&
-            (!water.shift || water.shift.config === waterContext.config);
-          const waterCanQuiet = waterCanRecord && water.enabled && !water.shift?.paused;
+          const waterCanRecord = waterReady && !waterError;
+          const waterCanQuiet = waterCanRecord && water.enabled && !water.paused;
           const recordWater = (event) => {
             if (event.detail > 1) return;
             if (!manualAttempt.current)
               manualAttempt.current = {
                 type: 'manual-drink',
-                shiftId: waterContext.id,
                 actionId: window.crypto?.randomUUID?.() || String(Math.random()) + Date.now(),
                 ...(waterState.phase === 'due' ? { eventId: waterState.eventId } : {}),
               };
@@ -2188,14 +2121,10 @@ window.__ModuleLoader__.load({
                   'button',
                   {
                     type: 'button',
-                    disabled:
-                      waterError ||
-                      waterBusy ||
-                      !waterContext ||
-                      water.shift?.id !== waterContext.id,
-                    onClick: () => waterAction({ type: water.shift?.paused ? 'resume' : 'pause' }),
+                    disabled: waterError || waterBusy || !waterReady,
+                    onClick: () => waterAction({ type: water.paused ? 'resume' : 'pause' }),
                   },
-                  t(water.shift?.paused ? 'waterResume' : 'waterPause'),
+                  t(water.paused ? 'waterResume' : 'waterPause'),
                 ),
               waterError &&
                 h(
@@ -2245,7 +2174,7 @@ window.__ModuleLoader__.load({
                     className: 'owc-text',
                     style: { marginLeft: 'auto' },
                     'aria-label': t('waterEdit'),
-                    disabled: !waterReady || !data?.configured,
+                    disabled: !waterReady,
                     onClick: openWaterEditor,
                   },
                   t('settings'),
@@ -2278,11 +2207,14 @@ window.__ModuleLoader__.load({
                   { 'data-water-effective': water.interval },
                   t('waterEvery') + ' ' + water.interval + ' ' + t('waterMinutes'),
                 ),
-                h('span', { 'data-water-count': true }, t('waterCount') + ': ' + waterState.count),
+                h(
+                  'span',
+                  { 'data-water-count': true },
+                  t('waterCount') + ': ' + (waterReady && !waterError ? waterState.count : '—'),
+                ),
               ),
               waterControls(),
-              !['working', 'lunch'].includes(waterContext?.status) &&
-                h('p', { className: 'owc-hint' }, t('waterRecordHint')),
+              h('p', { className: 'owc-hint' }, t('waterRecordHint')),
               waterState.phase === 'quiet' &&
                 h('p', { className: 'owc-hint' }, t('waterQuietHint')),
               waterNotice && !view.companion && h('p', null, t(waterNotice.key)),
@@ -2310,7 +2242,7 @@ window.__ModuleLoader__.load({
                 h('input', {
                   type: 'checkbox',
                   checked: waterEnabledDraft,
-                  disabled: !waterReady || waterError || waterBusy || !data?.configured,
+                  disabled: !waterReady || waterError || waterBusy,
                   onChange: (event) => {
                     setWaterEnabledDraft(event.target.checked);
                     setWaterNotice(false);
@@ -2319,7 +2251,7 @@ window.__ModuleLoader__.load({
               ),
               h(
                 'fieldset',
-                { disabled: !waterReady || waterError || waterBusy || !data?.configured },
+                { disabled: !waterReady || waterError || waterBusy },
                 h('legend', { className: 'owc-muted' }, t('waterPresets')),
                 h(
                   'div',
@@ -2369,7 +2301,6 @@ window.__ModuleLoader__.load({
               h('p', { className: 'owc-hint' }, t('waterSaveHint')),
               h('p', { className: 'owc-hint' }, t('waterBrief')),
               waterError && h('p', { role: 'alert' }, t('waterUnavailable')),
-              !data?.configured && h('p', null, t('waterSetup')),
               h(
                 'div',
                 { className: 'owc-save' },
@@ -2383,7 +2314,7 @@ window.__ModuleLoader__.load({
                   {
                     type: 'submit',
                     className: 'owc-primary',
-                    disabled: !waterReady || waterError || waterBusy || !data?.configured,
+                    disabled: !waterReady || waterError || waterBusy,
                   },
                   t(waterBusy ? 'busy' : 'waterSave'),
                 ),
@@ -2552,7 +2483,7 @@ window.__ModuleLoader__.load({
                           {
                             type: 'button',
                             className: 'owc-classic-mini-state',
-                            disabled: busy,
+                            disabled: hostBusy,
                             'aria-label': t(
                               classicClock.phase === 'setup' ? 'classicConfigure' : 'retry',
                             ),
@@ -2707,7 +2638,7 @@ window.__ModuleLoader__.load({
                       className: 'owc-icon',
                       'aria-label': t('petWorkSettings'),
                       title: t('petWorkSettings'),
-                      disabled: busy || !data,
+                      disabled: hostBusy || !data,
                       onClick: openEditor,
                     },
                     iconSvg('sliders'),
@@ -2790,7 +2721,11 @@ window.__ModuleLoader__.load({
                 classicClock.phase === 'error' &&
                   h(
                     'button',
-                    { type: 'button', disabled: busy || !sessionId, onClick: () => reload(true) },
+                    {
+                      type: 'button',
+                      disabled: hostBusy || !sessionId,
+                      onClick: () => reload(true),
+                    },
                     iconSvg('refresh', 12),
                     t('retry'),
                   ),
@@ -3134,7 +3069,7 @@ window.__ModuleLoader__.load({
                       type: 'button',
                       className: 'owc-text',
                       onClick: () => reload(true),
-                      disabled: busy || !sessionId,
+                      disabled: hostBusy || !sessionId,
                     },
                     iconSvg('refresh', 12),
                     t('retry'),
@@ -3227,7 +3162,7 @@ window.__ModuleLoader__.load({
                     type: 'button',
                     className: 'owc-text',
                     onClick: () => reload(true),
-                    disabled: busy,
+                    disabled: hostBusy,
                   },
                   iconSvg('refresh', 12),
                   t('refresh'),
@@ -3661,13 +3596,11 @@ window.__ModuleLoader__.load({
               React.Fragment,
               null,
               showBusinessError &&
-                !appearanceOnly &&
-                ui.screen !== 'smoking' &&
+                !LOCAL_SCREENS.includes(ui.screen) &&
                 error &&
                 h('p', { className: 'owc-error', role: 'alert' }, error),
               showBusinessError &&
-                !appearanceOnly &&
-                ui.screen !== 'smoking' &&
+                !LOCAL_SCREENS.includes(ui.screen) &&
                 state?.error &&
                 h('p', { className: 'owc-error', role: 'alert' }, state.error),
               notice && h('p', { className: 'owc-note', role: 'status' }, notice),
@@ -4000,7 +3933,7 @@ window.__ModuleLoader__.load({
                   h(
                     'span',
                     { 'data-water-count': true },
-                    t('waterCount') + ': ' + waterState.count,
+                    t('waterCount') + ': ' + (waterReady && !waterError ? waterState.count : '—'),
                   ),
                 ),
               ),
@@ -4033,7 +3966,7 @@ window.__ModuleLoader__.load({
                       },
                       t('waterSnooze'),
                     )
-                  : water.shift?.paused
+                  : water.paused
                     ? t('petPausedHint')
                     : waterState.phase === 'quiet'
                       ? h(
@@ -4081,16 +4014,10 @@ window.__ModuleLoader__.load({
                   'button',
                   {
                     type: 'button',
-                    disabled:
-                      !water.enabled ||
-                      busy ||
-                      waterBusy ||
-                      waterError ||
-                      !waterContext ||
-                      water.shift?.id !== waterContext.id,
-                    onClick: () => waterAction({ type: water.shift?.paused ? 'resume' : 'pause' }),
+                    disabled: !water.enabled || busy || waterBusy || waterError || !waterReady,
+                    onClick: () => waterAction({ type: water.paused ? 'resume' : 'pause' }),
                   },
-                  t(water.shift?.paused ? 'waterResume' : 'waterPause'),
+                  t(water.paused ? 'waterResume' : 'waterPause'),
                 ),
               ),
             );
@@ -4162,10 +4089,10 @@ window.__ModuleLoader__.load({
                       'data-pet-menu-screen': screen,
                       tabIndex: -1,
                       disabled:
-                        busy ||
+                        requestBusy.current ||
                         waterBusy ||
-                        (!['appearance', 'smoking', 'water-countdown'].includes(screen) &&
-                          (!data || (!data.configured && screen !== 'schedule'))),
+                        (!LOCAL_SCREENS.includes(screen) &&
+                          (hostBusy || !data || (!data.configured && screen !== 'schedule'))),
                       onClick: (event) => navigateScreen(screen, event),
                     },
                     t(label),
@@ -4179,7 +4106,7 @@ window.__ModuleLoader__.load({
                       type: 'button',
                       role: 'menuitem',
                       tabIndex: -1,
-                      disabled: busy || !sessionId,
+                      disabled: hostBusy || !sessionId,
                       onClick: () => {
                         closePetMenu();
                         void reload(true);

@@ -2,7 +2,19 @@
 
 更新于 2026-11-05。此文件用于缩短后续上下文检索，不表示系统对话已经执行压缩。
 
-## 当前设计：独立AI评审与横向小卡片
+## 当前开发：全天自然时间喝水提醒
+
+用户要求喝水不要关联上班、午休或休息日。本轮feature/wall-clock-water从187517c继续，将提醒改为自然时间deadline，取消Host作息/薪资/会话依赖。间隔仍5–240分钟、默认关闭，稍后为自然10分钟；手动暂停直到恢复，恢复重计完整间隔；免打扰可跨下班/午夜。饮水计数保留并继续记录，不再随班次自动清零。
+
+hydration.js为schema3平面状态（count/paused/dueAt/sequence/claim/quietUntil/recentActions），不再接收工作context。工资读取/保存移除对喝水计划的同步和作息授权；UI区分Host读取与保存忙态，本地喝水页在无会话、未配置、读取失败/慢读时可用。宿主错误不覆盖喝水错误。角色已确认打卡在休息时间也可完整播放，减少动态/手动暂停/免打扰仍生效。
+
+IndexedDB数据库名dsh.offwork-clock.hydration.v1不变，版本升至2，新仓库wall-clock/current。旧state/current保留；在跨仓库事务中迁移schema1/2并写legacy-imported标记，防止重置/删除新记录后旧数复活。保留开关、间隔、次数、暂停、有效免打扰和近期ID；匹配旧班次时按剩余工作分钟一次性换成自然分钟，其他旧记录从本次迁移开始完整间隔。旧版open(version1)失败，不能覆盖新数据；升级后需刷新全部旧标签页。无效旧记录不覆写，可显式重置当前状态。
+
+测试：更新旧工作时间用例为自然时间断言，补充原子迁移/旧写入隔离/异常恢复；浏览器water-wall-migration.cjs用同源旧/新客户端验证迁移（从design-review旧tgz提取client.js，只在响应中替换该精确子串，不能覆盖整份多模块响应），water-wall-time.cjs验证午休、自然稍后、作息修改不重排、跨下班免打扰和双标签；water-wall-independent.cjs验证Host慢读/失败/无会话/无薪资与存储恢复；water-wall-motion.cjs验证休息日只记录一次并播完7.5秒喝茶。均在自己的/tmp/offwork-experience-preview运行。
+
+当前规则docs/HYDRATION.md；旧验收/调研标记为历史。发版仍暂停，保留1.1.1开发预览，不推送main或发布npm。
+
+## 已完成设计：独立AI评审与横向小卡片
 
 用户再次否定外观并明确要求调用UI工具或设计评审。本轮design/compact-time-ticket从7ac950e继续，实际调用本机Codex CLI进行独立AI视觉评审（仅读提供的旧界面截图），用Playwright渲染两份HTML/CSS视觉稿，选横向方案接入真实Harness，再将真实浅深截图送第二轮复审。复审反馈可交付、无必须修正项。没有真人设计师或Figma连接，不要混称。
 

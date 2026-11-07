@@ -297,9 +297,7 @@ function companionPresentation({
     return { visible: false, pose: 'calm', message: null, announce: false, animate: false };
   let pose = 'calm';
   let message = 'companionWorking';
-  const quiet =
-    ['quiet', 'paused'].includes(phase) && !['before', 'done', 'rest'].includes(workStatus);
-  const resting = ['lunch', 'rest', 'done', 'before'].includes(workStatus);
+  const quiet = ['quiet', 'paused'].includes(phase);
   if (!ready) {
     pose = 'rest';
     message = 'companionLoading';
@@ -309,6 +307,9 @@ function companionPresentation({
   } else if (quiet) {
     pose = 'quiet';
     message = phase === 'quiet' ? 'companionQuiet' : 'companionPaused';
+  } else if (phase === 'due' && ownsPrompt) {
+    pose = 'drink';
+    message = null;
   } else if (workStatus === 'lunch') {
     pose = 'rest';
     message = 'companionBreak';
@@ -321,17 +322,13 @@ function companionPresentation({
   } else if (workStatus === 'before') {
     pose = 'rest';
     message = 'companionBefore';
-  } else if (phase === 'due' && ownsPrompt) {
-    // The existing leased reminder is the only source of the due message.
-    pose = 'drink';
-    message = null;
   }
   let announce = false;
   let animate = false;
   if (ready && !failed && !(phase === 'due' && ownsPrompt) && feedback) {
     message = feedback.key;
     announce = true;
-    if (feedback.kind === 'drink' && !quiet && !resting) {
+    if (feedback.kind === 'drink' && !quiet) {
       pose = 'happy';
       animate = motion && pageVisible;
     }
@@ -415,7 +412,7 @@ const COMPANION_MESSAGES = {
     companionPreferences: '立即生效，保存在本浏览器。隐藏角色后仍可使用计时和喝水操作。',
     companionWorking: '你忙你的，我陪你记着时间。',
     companionQuiet: '好，先安静陪着你。',
-    companionPaused: '本班先不提醒，需要时再叫我。',
+    companionPaused: '提醒先暂停，需要时再叫我。',
     companionBreak: '休息一下，回来再继续。',
     companionBefore: '还没开工，先慢慢准备。',
     companionDone: '这一班结束啦，辛苦了。',
@@ -1449,18 +1446,18 @@ const PET_INTERACTION_MESSAGES = {
     timerChanged: '计时已在其他标签页更新，请按最新状态操作。',
     timerRetry: '重试读取计时',
     timerLoading: '读取中',
-    waterTimerHint: '按有效工作时间计算；午休暂停。喝水打卡和提醒设置沿用原有记录。',
+    waterTimerHint: '按自然时间计时，午休、下班和休息日也可提醒；可随时打卡。',
     timerQuiet: '免打扰',
     timerOff: '未开启',
-    timerWaiting: '等待班次',
-    timerBreak: '午休暂停',
-    timerFinished: '本班已结束提醒',
+    timerWaiting: '等待开启',
+    timerBreak: '已暂停',
+    timerFinished: '已结束',
     timerUnavailable: '暂不可用',
     petCountdownCard: '下班倒计时',
     petCountdownGroup: '计时概览',
     petEarningsCard: '收入',
     petWaterAlert: '查看喝水提醒',
-    petPausedHint: '本班已暂停，可手动恢复。',
+    petPausedHint: '提醒已暂停，手动恢复后重新计时。',
     petMenu: '宠物菜单',
     petBack: '返回',
     petCloseAll: '关闭面板',
@@ -1480,7 +1477,7 @@ const PET_INTERACTION_MESSAGES = {
     petQuietActive: '喝水提醒已静音',
     petHomeHint: '喝水、歇一会儿，都在这里。',
     petQuietHint: '按自然时间，到期自动恢复。',
-    petResume: '恢复本班提醒',
+    petResume: '恢复提醒',
     petDismissReminder: '收起提醒',
   },
   en: {
@@ -1508,18 +1505,18 @@ const PET_INTERACTION_MESSAGES = {
     timerRetry: 'Retry loading timer',
     timerLoading: 'Loading',
     waterTimerHint:
-      'Uses paid work time and pauses during lunch. Drinking and reminder settings use your existing records.',
+      'Uses clock time, including lunch, off-hours and days off. You can record a drink at any time.',
     timerQuiet: 'Quiet time',
     timerOff: 'Disabled',
-    timerWaiting: 'Waiting for shift',
-    timerBreak: 'Lunch pause',
-    timerFinished: 'No more reminders this shift',
+    timerWaiting: 'Waiting',
+    timerBreak: 'Paused',
+    timerFinished: 'Finished',
     timerUnavailable: 'Unavailable',
     petCountdownCard: 'Shift countdown',
     petCountdownGroup: 'Timer overview',
     petEarningsCard: 'Earnings',
     petWaterAlert: 'View water reminder',
-    petPausedHint: 'Paused for this shift. Resume when ready.',
+    petPausedHint: 'Reminders paused. Resume manually to start a fresh interval.',
     petMenu: 'Pet menu',
     petBack: 'Back',
     petCloseAll: 'Close panel',
@@ -1825,203 +1822,205 @@ const PET_SURFACE_STYLE = `
 @media (prefers-reduced-transparency:reduce){.owc-v2 .owc-glass{opacity:1!important;backdrop-filter:none;-webkit-backdrop-filter:none}}
 `;
 
-// Pure hydration rules. Time is measured in paid-work milliseconds from calculate().
-const HYDRATION_SCHEMA = 2;
+
+// Hydration uses wall-clock deadlines, independently of salary and work schedules.
+const HYDRATION_SCHEMA = 3;
 const HYDRATION_ACTION_LIMIT = 64;
 const HYDRATION_LEASE_MS = 8000;
+const hydrationInteger = (number, max = Number.MAX_SAFE_INTEGER) =>
+  Number.isSafeInteger(number) && number >= 0 && number <= max;
+const hydrationText = (value, max = 1024) =>
+  typeof value === 'string' && value.length > 0 && value.length <= max;
+const hydrationKeys = (value, keys) =>
+  value &&
+  typeof value === 'object' &&
+  !Array.isArray(value) &&
+  Object.keys(value).every((key) => keys.includes(key));
+const hydrationClaim = (claim) =>
+  claim === null ||
+  (hydrationKeys(claim, ['owner', 'until', 'sequence']) &&
+    hydrationText(claim.owner) &&
+    hydrationInteger(claim.until) &&
+    hydrationInteger(claim.sequence));
+const hydrationActions = (actions) =>
+  Array.isArray(actions) &&
+  actions.length <= HYDRATION_ACTION_LIMIT &&
+  actions.every((id) => hydrationText(id, 128)) &&
+  new Set(actions).size === actions.length;
 
 function defaultHydration() {
-  return { schema: HYDRATION_SCHEMA, revision: 0, enabled: false, interval: 60, shift: null };
-}
-
-function validateHydration(value) {
-  const integer = (number, max = Number.MAX_SAFE_INTEGER) =>
-    Number.isSafeInteger(number) && number >= 0 && number <= max;
-  const text = (string) => typeof string === 'string' && string.length > 0 && string.length <= 1024;
-  const keys = (object, allowed) =>
-    object &&
-    typeof object === 'object' &&
-    !Array.isArray(object) &&
-    Object.keys(object).every((key) => allowed.includes(key));
-  if (
-    !keys(value, ['schema', 'revision', 'enabled', 'interval', 'shift']) ||
-    ![1, HYDRATION_SCHEMA].includes(value.schema) ||
-    !integer(value.revision) ||
-    typeof value.enabled !== 'boolean' ||
-    !integer(value.interval, 240) ||
-    value.interval < 5
-  ) {
-    throw new Error('Invalid hydration data');
-  }
-  const shift = value.shift;
-  if (shift !== null) {
-    if (
-      !keys(shift, [
-        'id',
-        'schedule',
-        'config',
-        'count',
-        'paused',
-        'due',
-        'sequence',
-        'claim',
-        ...(value.schema === 2 ? ['quietUntil', 'recentActions'] : []),
-      ]) ||
-      !text(shift.id) ||
-      !text(shift.schedule) ||
-      !text(shift.config) ||
-      !integer(shift.count, 1000000) ||
-      typeof shift.paused !== 'boolean' ||
-      !integer(shift.sequence) ||
-      !integer(shift.due, 172800000)
-    ) {
-      throw new Error('Invalid hydration shift');
-    }
-    if (
-      value.schema === 2 &&
-      (!integer(shift.quietUntil) ||
-        !Array.isArray(shift.recentActions) ||
-        shift.recentActions.length > HYDRATION_ACTION_LIMIT ||
-        !shift.recentActions.every((id) => text(id) && id.length <= 128) ||
-        new Set(shift.recentActions).size !== shift.recentActions.length)
-    )
-      throw new Error('Invalid hydration actions');
-    if (
-      shift.claim !== null &&
-      (!keys(shift.claim, ['owner', 'until', 'sequence']) ||
-        !text(shift.claim.owner) ||
-        !integer(shift.claim.until) ||
-        !integer(shift.claim.sequence))
-    ) {
-      throw new Error('Invalid hydration claim');
-    }
-  }
-  const result = structuredClone(value);
-  if (result.schema === 1) {
-    result.schema = HYDRATION_SCHEMA;
-    if (result.shift) {
-      result.shift.quietUntil = 0;
-      result.shift.recentActions = [];
-      result.shift.claim = null;
-      result.shift.sequence++;
-      if (!Number.isSafeInteger(result.shift.sequence))
-        throw new Error('Invalid hydration sequence');
-    }
-  }
-  return result;
-}
-
-function hydrationContext(settings, clock) {
-  if (!settings || !clock || !Number.isFinite(clock.elapsed) || !Number.isFinite(clock.total))
-    return null;
   return {
-    id: JSON.stringify([settings.timezone, clock.shiftDate]),
-    config: JSON.stringify([
-      settings.timezone,
-      settings.start,
-      settings.end,
-      settings.breakStart,
-      settings.breakEnd,
-      [...settings.weekdays].sort(),
-    ]),
-    schedule: JSON.stringify([
-      settings.start,
-      settings.end,
-      settings.breakStart,
-      settings.breakEnd,
-      [...settings.weekdays].sort(),
-      clock.shiftStart,
-      clock.shiftEnd,
-    ]),
-    status: clock.status,
-    end: clock.shiftEnd,
-    elapsed: Math.max(0, Math.floor(clock.elapsed * 1000)),
-    total: Math.max(0, Math.floor(clock.total * 1000)),
+    schema: HYDRATION_SCHEMA,
+    revision: 0,
+    enabled: false,
+    interval: 60,
+    count: 0,
+    paused: false,
+    dueAt: 0,
+    sequence: 0,
+    claim: null,
+    quietUntil: 0,
+    recentActions: [],
   };
 }
-
-function reconcileHydration(state, context, manual = false) {
-  const next = structuredClone(state);
-  if (!context) return next;
-  if (!next.enabled && !manual) {
-    if (next.shift) next.shift.claim = null;
-    return next;
-  }
-  if (next.shift?.id !== context.id) {
-    // Do not discard the last shift's count on a day off. New working shifts
-    // are initialized once the user opens the page, never backfilled.
-    if (!['before', 'working', 'lunch'].includes(context.status)) return next;
-    next.shift = {
-      id: context.id,
-      schedule: context.schedule,
-      config: context.config,
-      count: 0,
-      paused: false,
-      due: context.elapsed + next.interval * 60000,
-      sequence: 0,
-      claim: null,
-      quietUntil: 0,
-      recentActions: [],
-    };
-  } else if (next.shift.schedule !== context.schedule) {
-    next.shift.schedule = context.schedule;
-    next.shift.config = context.config;
-    next.shift.due = context.elapsed + next.interval * 60000;
-    next.shift.sequence++;
-    next.shift.claim = null;
-    next.shift.quietUntil = Math.min(next.shift.quietUntil, context.end);
-  }
-  if (next.shift && (!next.enabled || context.status !== 'working')) next.shift.claim = null;
-  return next;
-}
-
-function hydrationView(state, context, now = 0) {
-  const same =
-    context && state.shift?.id === context.id && state.shift.schedule === context.schedule;
-  const shift = same ? state.shift : null;
-  const count = shift?.count ?? 0;
-  const remaining = shift ? Math.max(0, shift.due - context.elapsed) : state.interval * 60000;
-  const eventId = shift
-    ? JSON.stringify([shift.id, shift.schedule, shift.sequence, shift.due])
-    : null;
-  const quietRemaining =
-    shift && ['working', 'lunch'].includes(context.status)
-      ? Math.max(0, Math.min(shift.quietUntil, context.end) - now)
-      : 0;
-  let phase = 'waiting';
-  if (!state.enabled) phase = 'off';
-  else if (shift?.paused) phase = 'paused';
-  else if (quietRemaining > 0) phase = 'quiet';
-  else if (context?.status === 'lunch') phase = 'break';
-  else if (shift && context.status === 'working') {
-    phase = remaining === 0 ? 'due' : shift.due >= context.total ? 'finished' : 'countdown';
-  }
-  return { phase, count, remaining, eventId, quietRemaining };
-}
-
-function transitionHydration(state, context, action, now, owner) {
-  if (!Number.isSafeInteger(now) || now < 0) throw new Error('Invalid reminder time');
-  // Reconfiguration requires an explicit compare-and-set grant obtained before
-  // reading/saving Host settings. A stale tab may release its lease or disable
-  // reminders, but cannot silently restore its previous schedule.
+function validateHydration(value) {
   if (
-    context &&
-    state.shift &&
-    (state.shift.config !== context.config ||
-      (state.shift.id === context.id && state.shift.schedule !== context.schedule)) &&
-    action.baseSchedule !== state.shift.schedule
+    !hydrationKeys(value, [
+      'schema',
+      'revision',
+      'enabled',
+      'interval',
+      'count',
+      'paused',
+      'dueAt',
+      'sequence',
+      'claim',
+      'quietUntil',
+      'recentActions',
+    ]) ||
+    value.schema !== HYDRATION_SCHEMA ||
+    !hydrationInteger(value.revision) ||
+    typeof value.enabled !== 'boolean' ||
+    !hydrationInteger(value.interval, 240) ||
+    value.interval < 5 ||
+    !hydrationInteger(value.count, 1000000) ||
+    typeof value.paused !== 'boolean' ||
+    !hydrationInteger(value.dueAt) ||
+    !hydrationInteger(value.sequence) ||
+    !hydrationInteger(value.quietUntil) ||
+    !hydrationClaim(value.claim) ||
+    !hydrationActions(value.recentActions)
   )
-    context = null;
-  const manual =
-    action.type === 'manual-drink' &&
-    action.shiftId === context?.id &&
-    ['working', 'lunch'].includes(context?.status);
-  let next = reconcileHydration(state, context, manual);
+    throw new Error('Invalid hydration data');
+  return structuredClone(value);
+}
+
+function validateLegacyHydration(value) {
+  if (
+    !hydrationKeys(value, ['schema', 'revision', 'enabled', 'interval', 'shift']) ||
+    ![1, 2].includes(value.schema) ||
+    !hydrationInteger(value.revision) ||
+    typeof value.enabled !== 'boolean' ||
+    !hydrationInteger(value.interval, 240) ||
+    value.interval < 5
+  )
+    throw new Error('Invalid legacy hydration data');
+  const shift = value.shift;
+  if (
+    shift !== null &&
+    (!hydrationKeys(shift, [
+      'id',
+      'schedule',
+      'config',
+      'count',
+      'paused',
+      'due',
+      'sequence',
+      'claim',
+      ...(value.schema === 2 ? ['quietUntil', 'recentActions'] : []),
+    ]) ||
+      !hydrationText(shift.id) ||
+      !hydrationText(shift.schedule) ||
+      !hydrationText(shift.config) ||
+      !hydrationInteger(shift.count, 1000000) ||
+      typeof shift.paused !== 'boolean' ||
+      !hydrationInteger(shift.due, 172800000) ||
+      !hydrationInteger(shift.sequence) ||
+      !hydrationClaim(shift.claim) ||
+      (value.schema === 2 &&
+        (!hydrationInteger(shift.quietUntil) || !hydrationActions(shift.recentActions))))
+  )
+    throw new Error('Invalid legacy hydration record');
+  return structuredClone(value);
+}
+
+// Invoked only inside the one-time, two-store migration transaction. The original
+// work-based record stays untouched in its old object store for preservation.
+function migrateHydration(value, now) {
+  if (!hydrationInteger(now)) throw new Error('Invalid hydration migration time');
+  if (value === undefined) return defaultHydration();
+  const old = validateLegacyHydration(value),
+    next = defaultHydration(),
+    shift = old.shift;
+  next.revision = old.revision;
+  next.enabled = old.enabled;
+  next.interval = old.interval;
+  let remaining = next.interval * 60000;
+  if (shift) {
+    next.count = shift.count;
+    next.paused = shift.paused;
+    next.sequence = shift.sequence + 1;
+    next.quietUntil = old.schema === 2 && shift.quietUntil > now ? shift.quietUntil : 0;
+    next.recentActions = old.schema === 2 ? shift.recentActions : [];
+    // A matching retained shift supplies the remaining paid minutes. Convert
+    // that remainder once; never consult work settings again after migration.
+    try {
+      const [timezone, start, end, breakStart, breakEnd, weekdays] = JSON.parse(shift.config);
+      const clock = calculate(
+        { timezone, start, end, breakStart, breakEnd, weekdays, payMode: 'daily', dailySalary: 1 },
+        now,
+      );
+      const id = JSON.stringify([timezone, clock.shiftDate]);
+      const schedule = JSON.stringify([
+        start,
+        end,
+        breakStart,
+        breakEnd,
+        [...weekdays].sort(),
+        clock.shiftStart,
+        clock.shiftEnd,
+      ]);
+      if (id === shift.id && schedule === shift.schedule && !shift.paused)
+        remaining = Math.max(0, shift.due - Math.floor(clock.elapsed * 1000));
+    } catch {
+      /* Older/unknown schedule text: start one full configured interval. */
+    }
+  }
+  next.dueAt = next.enabled ? now + remaining : 0;
+  return validateHydration(next);
+}
+
+function reconcileHydration(state, now) {
+  const next = validateHydration(state);
+  if (!hydrationInteger(now)) throw new Error('Invalid reminder time');
+  if (next.enabled && next.dueAt === 0) next.dueAt = now + next.interval * 60000;
+  if (next.quietUntil <= now) next.quietUntil = 0;
+  if (!next.enabled || next.paused || next.quietUntil > now) next.claim = null;
+  return validateHydration(next);
+}
+function hydrationView(state, now) {
+  const remaining = state.dueAt ? Math.max(0, state.dueAt - now) : state.interval * 60000;
+  const quietRemaining = state.enabled && !state.paused ? Math.max(0, state.quietUntil - now) : 0;
+  const phase = !state.enabled
+    ? 'off'
+    : state.paused
+      ? 'paused'
+      : quietRemaining > 0
+        ? 'quiet'
+        : remaining === 0
+          ? 'due'
+          : 'countdown';
+  return {
+    phase,
+    count: state.count,
+    remaining,
+    quietRemaining,
+    eventId:
+      state.enabled && state.dueAt
+        ? JSON.stringify(['wall-clock', state.sequence, state.dueAt])
+        : null,
+  };
+}
+function transitionHydration(state, action, now, owner) {
+  let next = reconcileHydration(state, now);
+  const finish = () => validateHydration(next);
+  const invalidate = () => {
+    next.sequence++;
+    next.claim = null;
+  };
   const restart = () => {
-    if (!next.shift || !context || next.shift.id !== context.id) return;
-    next.shift.due = context.elapsed + next.interval * 60000;
-    next.shift.sequence++;
-    next.shift.claim = null;
+    next.dueAt = now + next.interval * 60000;
+    invalidate();
   };
   if (action.type === 'reset') return defaultHydration();
   if (action.type === 'preferences') {
@@ -2034,86 +2033,65 @@ function transitionHydration(state, context, action, now, owner) {
       interval > 240
     )
       throw new Error('Invalid reminder preferences');
-    const changed = next.enabled !== enabled || next.interval !== interval;
+    const changed = enabled !== next.enabled || interval !== next.interval;
     next.enabled = enabled;
     next.interval = interval;
-    next = reconcileHydration(next, context);
-    if (!next.enabled && next.shift) {
-      next.shift.claim = null;
-      next.shift.quietUntil = 0;
+    if (!enabled) {
+      next.claim = null;
+      next.quietUntil = 0;
     }
-    if (changed) restart();
-    return next;
+    if (changed) {
+      if (enabled) restart();
+      else invalidate();
+    }
+    return finish();
   }
-  const shift = next.shift;
-  if (action.type === 'release') {
-    if (shift?.claim?.owner === owner) shift.claim = null;
-    return next;
-  }
-  if (!shift || !context || shift.id !== context.id) return next;
-  if (shift.quietUntil && (now >= shift.quietUntil || now >= context.end)) shift.quietUntil = 0;
-  const view = hydrationView(next, context, now);
+  const view = hydrationView(next, now);
   const validClaim =
-    shift.claim &&
-    shift.claim.owner === owner &&
-    shift.claim.sequence === shift.sequence &&
-    shift.claim.until > now &&
-    shift.claim.until <= now + HYDRATION_LEASE_MS;
-  if (action.type === 'manual-drink' && manual) {
+    next.claim &&
+    next.claim.owner === owner &&
+    next.claim.sequence === next.sequence &&
+    next.claim.until > now &&
+    next.claim.until <= now + HYDRATION_LEASE_MS;
+  if (action.type === 'release') {
+    if (next.claim?.owner === owner) next.claim = null;
+  } else if (action.type === 'manual-drink') {
+    if (!hydrationText(action.actionId, 128)) throw new Error('Invalid hydration action id');
     if (
-      typeof action.actionId !== 'string' ||
-      !action.actionId.length ||
-      action.actionId.length > 128
-    )
-      throw new Error('Invalid hydration action id');
-    if (
-      shift.recentActions.includes(action.actionId) ||
+      next.recentActions.includes(action.actionId) ||
       (action.eventId !== undefined && action.eventId !== view.eventId)
     )
-      return next;
-    shift.recentActions = [
-      ...shift.recentActions.slice(-(HYDRATION_ACTION_LIMIT - 1)),
+      return finish();
+    next.recentActions = [
+      ...next.recentActions.slice(-(HYDRATION_ACTION_LIMIT - 1)),
       action.actionId,
     ];
-    shift.count = Math.min(1000000, shift.count + 1);
-    if (next.enabled && !shift.paused) restart();
-    else {
-      shift.sequence++;
-      shift.claim = null;
-    }
-  } else if (
-    action.type === 'quiet' &&
-    next.enabled &&
-    !shift.paused &&
-    ['working', 'lunch'].includes(context.status)
-  ) {
+    next.count = Math.min(1000000, next.count + 1);
+    if (next.enabled && !next.paused) restart();
+    else invalidate();
+  } else if (action.type === 'quiet' && next.enabled && !next.paused) {
     if (![30, 60].includes(action.minutes)) throw new Error('Invalid quiet duration');
-    shift.quietUntil = Math.min(now + action.minutes * 60000, context.end);
-    shift.claim = null;
-    shift.sequence++;
-  } else if (action.type === 'end-quiet' && shift.quietUntil) {
-    shift.quietUntil = 0;
-    shift.claim = null;
-    shift.sequence++;
+    next.quietUntil = now + action.minutes * 60000;
+    invalidate();
+  } else if (action.type === 'end-quiet' && next.quietUntil) {
+    next.quietUntil = 0;
+    invalidate();
   } else if (action.type === 'claim' && view.phase === 'due') {
-    const claim = shift.claim;
+    if (!hydrationText(owner)) throw new Error('Invalid reminder owner');
     if (
-      !claim ||
-      claim.owner === owner ||
-      claim.until <= now ||
-      claim.until > now + HYDRATION_LEASE_MS
-    ) {
-      shift.claim = { owner, until: now + HYDRATION_LEASE_MS, sequence: shift.sequence };
-    }
-  } else if (action.type === 'clear-count') {
-    shift.count = 0;
-  } else if (action.type === 'pause' && next.enabled && !shift.paused) {
-    shift.paused = true;
-    shift.quietUntil = 0;
-    shift.claim = null;
-    shift.sequence++;
-  } else if (action.type === 'resume' && next.enabled && shift.paused) {
-    shift.paused = false;
+      !next.claim ||
+      next.claim.owner === owner ||
+      next.claim.until <= now ||
+      next.claim.until > now + HYDRATION_LEASE_MS
+    )
+      next.claim = { owner, until: now + HYDRATION_LEASE_MS, sequence: next.sequence };
+  } else if (action.type === 'clear-count') next.count = 0;
+  else if (action.type === 'pause' && next.enabled && !next.paused) {
+    next.paused = true;
+    next.quietUntil = 0;
+    invalidate();
+  } else if (action.type === 'resume' && next.enabled && next.paused) {
+    next.paused = false;
     restart();
   } else if (
     ['drink', 'snooze'].includes(action.type) &&
@@ -2121,22 +2099,31 @@ function transitionHydration(state, context, action, now, owner) {
     validClaim &&
     action.eventId === view.eventId
   ) {
-    if (action.type === 'drink') shift.count = Math.min(1000000, shift.count + 1);
-    shift.due = context.elapsed + (action.type === 'snooze' ? 10 : next.interval) * 60000;
-    shift.sequence++;
-    shift.claim = null;
+    if (action.type === 'drink') next.count = Math.min(1000000, next.count + 1);
+    next.dueAt = now + (action.type === 'snooze' ? 10 : next.interval) * 60000;
+    invalidate();
   }
-  return next;
+  return finish();
 }
 
 
 // A single IndexedDB read/write transaction is the cross-tab mutex. Neither
 // notification delivery nor localStorage read-back is used as an atomic lock.
-function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1') {
-  return createStateStore(indexedDB, name, defaultHydration, validateHydration);
+function createHydrationStore(
+  indexedDB,
+  name = 'dsh.offwork-clock.hydration.v1',
+  now = () => Date.now(),
+) {
+  return createStateStore(indexedDB, name, defaultHydration, validateHydration, {
+    version: 2,
+    storeName: 'wall-clock',
+    legacyStore: 'state',
+    migrate: (value) => migrateHydration(value, now()),
+  });
 }
 
-function createStateStore(indexedDB, name, initial, validate) {
+function createStateStore(indexedDB, name, initial, validate, options = {}) {
+  const storeName = options.storeName || 'state';
   let database = null;
   let opening = null;
   let closed = false;
@@ -2154,8 +2141,11 @@ function createStateStore(indexedDB, name, initial, validate) {
         reject(new Error('Hydration storage unavailable'));
         return;
       }
-      const request = indexedDB.open(name, 1);
-      request.onupgradeneeded = () => request.result.createObjectStore('state');
+      const request = indexedDB.open(name, options.version || 1);
+      request.onupgradeneeded = () => {
+        if (!request.result.objectStoreNames.contains(storeName))
+          request.result.createObjectStore(storeName);
+      };
       request.onerror = () => fail(request.error ?? new Error('Hydration storage unavailable'));
       request.onblocked = () => fail(new Error('Hydration storage blocked'));
       request.onsuccess = () => {
@@ -2187,34 +2177,58 @@ function createStateStore(indexedDB, name, initial, validate) {
       const db = await open();
       if (closed) throw new Error('Hydration store closed');
       return new Promise((resolve, reject) => {
-        const transaction = db.transaction('state', 'readwrite');
-        const store = transaction.objectStore('state');
+        const hasLegacy =
+          !!options.legacyStore && db.objectStoreNames.contains(options.legacyStore);
+        const transaction = db.transaction(
+          hasLegacy ? [storeName, options.legacyStore] : storeName,
+          'readwrite',
+        );
+        const store = transaction.objectStore(storeName);
         const request = store.get('current');
         let output;
         let failure;
-        request.onsuccess = () => {
+        const apply = (stored, legacy, imported = false) => {
           try {
-            const current =
-              reset || request.result === undefined ? initial() : validate(request.result);
+            const current = reset
+              ? initial()
+              : stored !== undefined
+                ? validate(stored)
+                : imported
+                  ? validate(options.migrate(legacy))
+                  : initial();
             const next = validate(reducer(structuredClone(current)));
             const changed = JSON.stringify(next) !== JSON.stringify(current);
-            const migrated =
-              request.result !== undefined && request.result.schema !== current.schema;
+            const migrated = imported || (stored !== undefined && stored.schema !== current.schema);
             if (reset || changed || migrated) {
               const previousRevision =
-                Number.isSafeInteger(request.result?.revision) && request.result.revision >= 0
-                  ? request.result.revision
+                Number.isSafeInteger(stored?.revision) && stored.revision >= 0
+                  ? stored.revision
                   : current.revision;
               next.revision = previousRevision + 1;
               if (!Number.isSafeInteger(next.revision))
                 throw new Error('Hydration revision exhausted');
               store.put(next, 'current');
             }
+            if (imported || (reset && hasLegacy)) store.put(true, 'legacy-imported');
             output = next;
           } catch (error) {
             failure = error;
             transaction.abort();
           }
+        };
+        request.onsuccess = () => {
+          if (hasLegacy) {
+            const marker = store.get('legacy-imported');
+            marker.onsuccess = () => {
+              if (!reset && request.result === undefined && marker.result !== true) {
+                const legacy = transaction.objectStore(options.legacyStore).get('current');
+                legacy.onsuccess = () => apply(undefined, legacy.result, true);
+              } else {
+                if (marker.result !== true) store.put(true, 'legacy-imported');
+                apply(request.result);
+              }
+            };
+          } else apply(request.result);
         };
         transaction.oncomplete = () => resolve(output);
         transaction.onabort = () =>
@@ -2330,7 +2344,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         classicMiniBefore: '距开工',
         classicMiniLunch: '午休中',
         classicMiniStatus: '本班状态',
-        classicMiniWaiting: '待上班',
+        classicMiniWaiting: '待开启',
         classicMiniFinished: '已结束',
         classicOverview: '今日概览',
         classicReturn: '返回概览',
@@ -2344,10 +2358,10 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         classicBeforeHint: '班次尚未开始，显示距离开工的时间。',
         classicWorkingHint: '本班工作进行中。',
         classicLunchRemaining: '距离午休结束',
-        classicLunchHint: '午休期间喝水计时暂停，下班时间不变。',
+        classicLunchHint: '午休结束后继续工作；喝水提醒照常计时。',
         classicDoneHint: '本班计时已结束，下一班开始后继续。',
         classicRestHint: '今天不计工作时长，计时会在工作日恢复。',
-        classicWaterHint: '工作时间计时',
+        classicWaterHint: '自然时间计时',
         classicSmokeHint: '自然时间计时',
         classicConfigure: '设置作息与薪资',
         classicIncome: '本班收入',
@@ -2424,21 +2438,21 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         waterEffective: '当前间隔',
         waterManage: '数据管理',
         waterSaveHint: '修改后点击保存，按新间隔重新计时。',
-        waterBrief: '按工作时间计时，午休暂停。关闭页面后不提醒。',
+        waterBrief: '按自然时间计时，午休、下班和休息日均可提醒。需要保持页面打开。',
         waterApply: '应用间隔',
         waterInvalid: '请输入 5–240 的整数。',
         waterNext: '下次喝水',
         waterDue: '该喝水啦',
         waterDrink: '喝了',
-        waterSnooze: '工作 10 分钟后',
-        waterPause: '本班暂停',
-        waterResume: '恢复本班提醒',
-        waterCount: '本班打卡',
+        waterSnooze: '10 分钟后',
+        waterPause: '暂停提醒',
+        waterResume: '恢复提醒',
+        waterCount: '饮水计数',
         waterManual: '喝了一杯',
         waterQuick: '喝水快捷操作',
         waterQuickClose: '收起喝水快捷操作',
         waterRecorded: '这杯记下啦。',
-        waterRecordHint: '工作和午休期间可以打卡，关闭提醒也能记录。',
+        waterRecordHint: '随时可以打卡，关闭提醒也能记录；计数可手动清零。',
         waterActionStale: '状态已变化，请再试一次。',
         waterQuiet: '免打扰',
         waterQuietAdjust: '调整时长',
@@ -2449,25 +2463,26 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         waterQuietEnded: '免打扰已结束。',
         waterQuietHint: '按自然时间，到期自动恢复；已到期的提醒只提示一次。',
         waterOff: '提醒已关闭',
-        waterWaiting: '等待工作时段',
-        waterBreak: '休息中，提醒计时暂停',
-        waterPaused: '本班已暂停',
-        waterFinished: '本班不再安排新提醒',
+        waterWaiting: '等待开启提醒',
+        waterBreak: '提醒已暂停',
+        waterPaused: '提醒已暂停',
+        waterFinished: '提醒已结束',
         waterOther: '提醒已到期，等待可见标签页处理',
-        waterClear: '清除本班次数',
+        waterClear: '清除饮水计数',
         waterReset: '重置喝水提醒',
         waterConfirm: '确认操作',
-        waterClearHint: '仅清零本班次数，保留下一次提醒和暂停状态。',
-        waterResetHint: '清除喝水提醒设置和记录，恢复默认关闭。',
+        waterClearHint: '仅清零饮水计数，保留下一次提醒和暂停状态。',
+        waterResetHint: '清除当前喝水提醒设置和计数，恢复默认关闭。',
         waterLocal: '提醒设置和打卡仅保存在当前浏览器，不进入会话。与薪资配置分别保存。',
-        waterRules: '按工作分钟计时，午休冻结。开启、修改间隔或作息后重新计时；关闭页面后不提醒。',
+        waterRules:
+          '按自然分钟计时，与作息、薪资和会话无关。开启、修改间隔或手动恢复后重新计时；关闭页面后不提醒。',
         waterUnavailable:
-          '喝水提醒存储不可用或数据无效，自动提醒已停止。可重试；重置将清除原喝水数据。',
+          '喝水提醒存储不可用或数据无效，自动提醒已停止。可重试；重置将清除当前提醒设置和计数。',
         waterRetry: '重试读取',
-        waterSetup: '请先保存薪资与作息。',
+        waterSetup: '开启后按所选间隔提醒。',
         waterLoading: '正在读取喝水提醒…',
         waterChanged: '提醒设置已在本浏览器生效',
-        waterStale: '作息已变化，请点击“读取最新配置”后继续提醒。',
+        waterStale: '记录已更新，请重试读取。',
       },
       en: {
         ...COMPANION_MESSAGES.en,
@@ -2493,10 +2508,10 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         classicBeforeHint: 'Your shift has not started. This is the time until work begins.',
         classicWorkingHint: 'Your shift is in progress.',
         classicLunchRemaining: 'Until lunch ends',
-        classicLunchHint: 'Water timing pauses during lunch. Your shift still ends as scheduled.',
+        classicLunchHint: 'Work resumes after lunch. Water reminders continue as usual.',
         classicDoneHint: 'This shift has ended. Timing resumes with your next shift.',
         classicRestHint: 'No work time is counted today. Timing resumes on a scheduled workday.',
-        classicWaterHint: 'Paid work time',
+        classicWaterHint: 'Clock time',
         classicSmokeHint: 'Clock time',
         classicConfigure: 'Set schedule and pay',
         classicIncome: 'Shift earnings',
@@ -2574,21 +2589,23 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         waterEffective: 'Current interval',
         waterManage: 'Manage data',
         waterSaveHint: 'Save changes to restart with the new interval.',
-        waterBrief: 'Counts working time and pauses on unpaid breaks. Keep the page open.',
+        waterBrief:
+          'Uses clock time, including breaks, off-hours and days off. Keep the page open.',
         waterApply: 'Apply interval',
         waterInvalid: 'Enter a whole number from 5 to 240.',
         waterNext: 'Next water break',
         waterDue: 'Time for some water',
         waterDrink: 'Drank water',
-        waterSnooze: 'In 10 working minutes',
-        waterPause: 'Pause this shift',
-        waterResume: 'Resume this shift',
-        waterCount: 'Drinks this shift',
+        waterSnooze: 'In 10 minutes',
+        waterPause: 'Pause reminders',
+        waterResume: 'Resume reminders',
+        waterCount: 'Drinks recorded',
         waterManual: 'Had a glass',
         waterQuick: 'Quick water actions',
         waterQuickClose: 'Close quick water actions',
         waterRecorded: 'Got it, your drink is recorded.',
-        waterRecordHint: 'Check in during work or breaks, even with reminders off.',
+        waterRecordHint:
+          'Check in at any time, even with reminders off. Clear the count manually when needed.',
         waterActionStale: 'The state changed. Please try again.',
         waterQuiet: 'Quiet time',
         waterQuietAdjust: 'Change duration',
@@ -2600,27 +2617,27 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         waterQuietHint:
           'Uses clock time. Resumes automatically, with just one reminder if overdue.',
         waterOff: 'Reminders off',
-        waterWaiting: 'Waiting for working hours',
-        waterBreak: 'On break; reminder timer paused',
-        waterPaused: 'Paused for this shift',
-        waterFinished: 'No more reminders this shift',
+        waterWaiting: 'Waiting for reminders to be enabled',
+        waterBreak: 'Reminders paused',
+        waterPaused: 'Reminders paused',
+        waterFinished: 'Reminders ended',
         waterOther: 'Reminder due; waiting for a visible tab',
-        waterClear: 'Clear shift count',
+        waterClear: 'Clear drink count',
         waterReset: 'Reset water reminders',
         waterConfirm: 'Confirm',
         waterClearHint: 'Clear the drink count only. Keep the next reminder and pause state.',
-        waterResetHint: 'Delete water preferences and records, then turn reminders off.',
+        waterResetHint: 'Clear current water preferences and count, then turn reminders off.',
         waterLocal:
           'Reminder preferences and check-ins stay in this browser, outside conversations. Saved separately from salary settings.',
         waterRules:
-          'Counts working minutes; unpaid breaks pause the timer. Enabling or changing interval or schedule restarts it. The page must stay open.',
+          'Uses clock time, independently of work, salary and sessions. Enabling, changing the interval or manually resuming starts a new interval. Keep the page open.',
         waterUnavailable:
-          'Water storage is unavailable or invalid; automatic reminders stopped. Retry, or reset to delete old water data.',
+          'Water storage is unavailable or invalid; automatic reminders stopped. Retry, or reset current water preferences and count.',
         waterRetry: 'Retry loading',
-        waterSetup: 'Save your salary and schedule first.',
+        waterSetup: 'Enable reminders to start the selected interval.',
         waterLoading: 'Loading water reminders…',
         waterChanged: 'Reminder preferences saved in this browser',
-        waterStale: 'Schedule changed. Reload the latest settings to continue reminders.',
+        waterStale: 'Records changed. Retry loading to continue.',
       },
     };
     const STYLE =
@@ -2787,6 +2804,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
         ['path', { d: 'M13.1 3v3.2H9.9' }],
       ],
     };
+    const LOCAL_SCREENS = [null, 'appearance', 'smoking', 'water-countdown', 'water', 'home'];
     const iconSvg = (name, size = 15) =>
       h(
         'svg',
@@ -2845,7 +2863,9 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
           const menuBox = React.useRef(null);
           const menuTrigger = React.useRef(null);
           const [dragPosition, setDragPosition] = React.useState(null);
-          const [busy, setBusy] = React.useState(false);
+          const requestBusy = React.useRef(false);
+          const [hostBusy, setBusy] = React.useState(false);
+          const busy = hostBusy && (requestBusy.current || !LOCAL_SCREENS.includes(ui.screen));
           const [error, setError] = React.useState('');
           const [notice, setNotice] = React.useState('');
           const [storageError, setStorageError] = React.useState(false);
@@ -2871,7 +2891,6 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
           const dragState = React.useRef(null);
           const lastPosition = React.useRef(null);
           const generation = React.useRef(0);
-          const requestBusy = React.useRef(false);
           const focusReturn = React.useRef(null);
           const [smoking, setSmoking] = React.useState(defaultCountdown);
           const [smokingReady, setSmokingReady] = React.useState(false);
@@ -3010,11 +3029,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             waterOwner.current =
               window.crypto?.randomUUID?.() || String(Math.random()) + Date.now();
           const waterInputs = React.useRef(null);
-          const waterScheduleChange = React.useRef(null);
-          waterInputs.current = {
-            settings: data?.configured && !error ? data.settings : null,
-            editing: editing || waterEditing,
-          };
+          waterInputs.current = { editing: editing || waterEditing };
 
           const settings = data?.settings;
           const workingDraft = draft || settings;
@@ -3213,17 +3228,8 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               store = createHydrationStore(null);
             }
             try {
-              channel = new BroadcastChannel('dsh.offwork-clock.hydration.v1');
+              channel = new BroadcastChannel('dsh.offwork-clock.hydration.wall-clock.v3');
             } catch {}
-            const contextAt = (time) => {
-              const current = waterInputs.current.settings;
-              if (!current) return null;
-              try {
-                return hydrationContext(current, calculate(current, time));
-              } catch {
-                return null;
-              }
-            };
             const update = async (action = { type: 'tick' }, automatic = false) => {
               if (!active || (automatic && (running || failed))) return;
               running++;
@@ -3239,59 +3245,31 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 let changed = false;
                 let recorded = false;
                 let quietChanged = false;
-                let usedPermit = null;
                 const result = await store.update(
                   (current) => {
                     const time = Date.now();
-                    const context = contextAt(time);
                     if (action.type === 'sync') return current;
-                    const permit = waterScheduleChange.current;
-                    const operation =
-                      permit && context && permit.schedule === context.schedule
-                        ? { ...action, baseSchedule: permit.baseSchedule }
-                        : action;
-                    let next = transitionHydration(
-                      current,
-                      context,
-                      operation,
-                      time,
-                      waterOwner.current,
-                    );
+                    let next = transitionHydration(current, action, time, waterOwner.current);
                     recorded =
-                      ['drink', 'manual-drink'].includes(action.type) &&
-                      next.shift?.count >
-                        (current.shift?.id === next.shift?.id ? (current.shift?.count ?? 0) : 0);
+                      ['drink', 'manual-drink'].includes(action.type) && next.count > current.count;
                     quietChanged =
                       ['quiet', 'end-quiet'].includes(action.type) &&
-                      next.shift?.quietUntil !== current.shift?.quietUntil;
+                      next.quietUntil !== current.quietUntil;
                     if (automatic) {
                       const allow = !document.hidden && !waterInputs.current.editing;
                       next = transitionHydration(
                         next,
-                        context,
                         { type: allow ? 'claim' : 'release' },
                         time,
                         waterOwner.current,
                       );
                     }
-                    if (
-                      permit &&
-                      context &&
-                      permit.schedule === context.schedule &&
-                      next.shift?.schedule === context.schedule
-                    )
-                      usedPermit = permit;
                     changed = JSON.stringify(next) !== JSON.stringify(current);
                     return next;
                   },
                   { reset: action.type === 'reset' },
                 );
                 if (!active) return;
-                if (
-                  action.type === 'reset' ||
-                  (usedPermit && waterScheduleChange.current === usedPermit)
-                )
-                  waterScheduleChange.current = null;
                 failed = false;
                 setWater(result);
                 setWaterReady(true);
@@ -3355,8 +3333,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               channel?.close();
               void store
                 .update((current) => {
-                  if (current.shift?.claim?.owner === waterOwner.current)
-                    current.shift.claim = null;
+                  if (current.claim?.owner === waterOwner.current) current.claim = null;
                   return current;
                 })
                 .catch(() => {})
@@ -3366,7 +3343,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
 
           React.useEffect(() => {
             waterRuntime.current?.tick();
-          }, [settings, editing, waterEditing, error]);
+          }, [editing, waterEditing]);
 
           React.useEffect(() => {
             if (!waterNotice) return;
@@ -3444,7 +3421,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   setWaterNotice({ key: 'waterRecorded', kind: 'drink', token: result.revision });
                 if (action.type === 'manual-drink') {
                   setWaterNotice({
-                    key: result.shift?.recentActions.includes(action.actionId)
+                    key: result.recentActions.includes(action.actionId)
                       ? 'waterRecorded'
                       : 'waterActionStale',
                     kind: outcome.recorded ? 'drink' : 'notice',
@@ -3455,7 +3432,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 if (action.type === 'quiet')
                   setWaterNotice({
                     key:
-                      outcome.quietChanged && result.shift?.quietUntil > Date.now()
+                      outcome.quietChanged && result.quietUntil > Date.now()
                         ? 'waterQuietStarted'
                         : 'waterActionStale',
                     kind: 'notice',
@@ -3610,17 +3587,8 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             setBusy(true);
             setError('');
             try {
-              const baseSchedule = (await waterRuntime.current?.update({ type: 'sync' }))?.state
-                ?.shift?.schedule;
-              if (token !== generation.current) return;
               const next = await request('get');
               if (token !== generation.current) return;
-              if (next.configured)
-                waterScheduleChange.current = {
-                  baseSchedule,
-                  schedule: hydrationContext(next.settings, calculate(next.settings, Date.now()))
-                    .schedule,
-                };
               setData(next);
               if (!next.configured) {
                 setDraft({ ...next.settings });
@@ -3642,19 +3610,11 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             setError('');
             const token = ++generation.current;
             try {
-              const baseSchedule = (await waterRuntime.current?.update({ type: 'sync' }))?.state
-                ?.shift?.schedule;
-              if (token !== generation.current) return;
               const next = await request(
                 'set',
                 changedSettings(salaryBase.current ?? settings, draft),
               );
               if (token === generation.current) {
-                waterScheduleChange.current = {
-                  baseSchedule,
-                  schedule: hydrationContext(next.settings, calculate(next.settings, Date.now()))
-                    .schedule,
-                };
                 setData(next);
                 dispatchUI({ type: 'navigate', screen: ui.back, discard: true });
                 setDraft(null);
@@ -3760,7 +3720,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             petDragged.current = false;
             if (ui.pending) return true;
             if (!petMode) {
-              if (!busy && !waterBusy) navigateScreen('appearance', event);
+              if (!requestBusy.current && !waterBusy) navigateScreen('appearance', event);
               return true;
             }
             const trigger =
@@ -3819,11 +3779,17 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
           function navigateScreen(screen, event) {
             if (
               screen !== null &&
-              !['appearance', 'smoking', 'water-countdown'].includes(screen) &&
+              !LOCAL_SCREENS.includes(screen) &&
               (!data || (!data.configured && screen !== 'schedule'))
             )
               return;
-            if (ui.pending || busy || waterBusy || requestBusy.current || waterPending.current)
+            if (
+              ui.pending ||
+              waterBusy ||
+              requestBusy.current ||
+              waterPending.current ||
+              (hostBusy && !LOCAL_SCREENS.includes(screen))
+            )
               return;
             const root = event?.currentTarget?.getAttribute?.('role') === 'menuitem';
             if (event?.currentTarget) focusReturn.current = event.currentTarget;
@@ -3953,10 +3919,8 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               t(view.masked ? 'show' : 'hide'),
             );
 
-          const waterContext =
-            data?.configured && safeState && !error ? hydrationContext(settings, safeState) : null;
-          const waterState = hydrationView(water, waterContext, now);
-          const waterClaim = water.shift?.claim;
+          const waterState = hydrationView(water, now);
+          const waterClaim = water.claim;
           const waterPrompt =
             waterReady &&
             !waterError &&
@@ -3966,10 +3930,10 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             !document.hidden &&
             waterState.phase === 'due' &&
             waterClaim?.owner === waterOwner.current &&
-            waterClaim.sequence === water.shift.sequence &&
+            waterClaim.sequence === water.sequence &&
             waterClaim.until > Date.now() &&
             waterClaim.until <= Date.now() + HYDRATION_LEASE_MS;
-          const reminderReady = !!(petMode && waterReady && !waterError && waterContext);
+          const reminderReady = !!(petMode && waterReady && !waterError);
           const reminderVisible = waterVisible && !document.hidden;
           const reminderAvailable = !petOpen && !ui.menu && !ui.pending && !busy;
           React.useEffect(() => {
@@ -4040,8 +4004,8 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             workStatus: safeState?.status,
             phase: waterState.phase,
             ownsPrompt: waterPrompt,
-            ready: waterReady && !!safeState,
-            failed: waterError || !!error,
+            ready: waterReady,
+            failed: waterError,
             feedback: waterNotice || null,
             visible: view.companion,
             motion: view.companionMotion && !reactionState.current?.stopped,
@@ -4072,11 +4036,10 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 waterVisible &&
                 waterReady &&
                 !waterError &&
-                !error &&
                 !editing &&
                 !waterEditing &&
                 !ui.menu,
-              resting: ['quiet', 'rest', 'offline'].includes(companion.pose),
+              resting: ['quiet', 'offline'].includes(companion.pose),
             });
           }, [
             petMode,
@@ -4181,13 +4144,6 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
           const waterSummary = () => {
             if (!waterReady) return t('waterLoading');
             if (waterError) return t('waterUnavailable');
-            if (
-              water.enabled &&
-              waterContext &&
-              water.shift &&
-              water.shift.config !== waterContext.config
-            )
-              return t('waterStale');
             const labels = {
               off: 'waterOff',
               waiting: 'waterWaiting',
@@ -4203,10 +4159,8 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               : t(labels[waterState.phase]);
           };
           const waterCountdownText = () => {
-            if (waterError || error) return t('timerUnavailable');
+            if (waterError) return t('timerUnavailable');
             if (!waterReady) return t('timerLoading');
-            if (waterContext && water.shift && water.shift.config !== waterContext.config)
-              return t('timerUnavailable');
             if (['countdown', 'due', 'break'].includes(waterState.phase))
               return formatDuration(Math.ceil(waterState.remaining / 1000));
             if (waterState.phase === 'quiet')
@@ -4296,7 +4250,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   'button',
                   {
                     type: 'button',
-                    disabled: busy || waterBusy || !data?.configured,
+                    disabled: busy || waterBusy,
                     onClick: openWaterEditor,
                   },
                   t('petWaterSettings'),
@@ -4305,7 +4259,6 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   'button',
                   {
                     type: 'button',
-                    disabled: !data?.configured,
                     onClick: (event) => navigateScreen('home', event),
                   },
                   t('timerWaterDetails'),
@@ -4419,19 +4372,13 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   t('timerRetry'),
                 ),
             );
-          const waterCanRecord =
-            waterReady &&
-            !waterError &&
-            data?.configured &&
-            ['working', 'lunch'].includes(waterContext?.status) &&
-            (!water.shift || water.shift.config === waterContext.config);
-          const waterCanQuiet = waterCanRecord && water.enabled && !water.shift?.paused;
+          const waterCanRecord = waterReady && !waterError;
+          const waterCanQuiet = waterCanRecord && water.enabled && !water.paused;
           const recordWater = (event) => {
             if (event.detail > 1) return;
             if (!manualAttempt.current)
               manualAttempt.current = {
                 type: 'manual-drink',
-                shiftId: waterContext.id,
                 actionId: window.crypto?.randomUUID?.() || String(Math.random()) + Date.now(),
                 ...(waterState.phase === 'due' ? { eventId: waterState.eventId } : {}),
               };
@@ -4500,14 +4447,10 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   'button',
                   {
                     type: 'button',
-                    disabled:
-                      waterError ||
-                      waterBusy ||
-                      !waterContext ||
-                      water.shift?.id !== waterContext.id,
-                    onClick: () => waterAction({ type: water.shift?.paused ? 'resume' : 'pause' }),
+                    disabled: waterError || waterBusy || !waterReady,
+                    onClick: () => waterAction({ type: water.paused ? 'resume' : 'pause' }),
                   },
-                  t(water.shift?.paused ? 'waterResume' : 'waterPause'),
+                  t(water.paused ? 'waterResume' : 'waterPause'),
                 ),
               waterError &&
                 h(
@@ -4557,7 +4500,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                     className: 'owc-text',
                     style: { marginLeft: 'auto' },
                     'aria-label': t('waterEdit'),
-                    disabled: !waterReady || !data?.configured,
+                    disabled: !waterReady,
                     onClick: openWaterEditor,
                   },
                   t('settings'),
@@ -4590,11 +4533,14 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   { 'data-water-effective': water.interval },
                   t('waterEvery') + ' ' + water.interval + ' ' + t('waterMinutes'),
                 ),
-                h('span', { 'data-water-count': true }, t('waterCount') + ': ' + waterState.count),
+                h(
+                  'span',
+                  { 'data-water-count': true },
+                  t('waterCount') + ': ' + (waterReady && !waterError ? waterState.count : '—'),
+                ),
               ),
               waterControls(),
-              !['working', 'lunch'].includes(waterContext?.status) &&
-                h('p', { className: 'owc-hint' }, t('waterRecordHint')),
+              h('p', { className: 'owc-hint' }, t('waterRecordHint')),
               waterState.phase === 'quiet' &&
                 h('p', { className: 'owc-hint' }, t('waterQuietHint')),
               waterNotice && !view.companion && h('p', null, t(waterNotice.key)),
@@ -4622,7 +4568,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 h('input', {
                   type: 'checkbox',
                   checked: waterEnabledDraft,
-                  disabled: !waterReady || waterError || waterBusy || !data?.configured,
+                  disabled: !waterReady || waterError || waterBusy,
                   onChange: (event) => {
                     setWaterEnabledDraft(event.target.checked);
                     setWaterNotice(false);
@@ -4631,7 +4577,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               ),
               h(
                 'fieldset',
-                { disabled: !waterReady || waterError || waterBusy || !data?.configured },
+                { disabled: !waterReady || waterError || waterBusy },
                 h('legend', { className: 'owc-muted' }, t('waterPresets')),
                 h(
                   'div',
@@ -4681,7 +4627,6 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               h('p', { className: 'owc-hint' }, t('waterSaveHint')),
               h('p', { className: 'owc-hint' }, t('waterBrief')),
               waterError && h('p', { role: 'alert' }, t('waterUnavailable')),
-              !data?.configured && h('p', null, t('waterSetup')),
               h(
                 'div',
                 { className: 'owc-save' },
@@ -4695,7 +4640,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   {
                     type: 'submit',
                     className: 'owc-primary',
-                    disabled: !waterReady || waterError || waterBusy || !data?.configured,
+                    disabled: !waterReady || waterError || waterBusy,
                   },
                   t(waterBusy ? 'busy' : 'waterSave'),
                 ),
@@ -4864,7 +4809,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                           {
                             type: 'button',
                             className: 'owc-classic-mini-state',
-                            disabled: busy,
+                            disabled: hostBusy,
                             'aria-label': t(
                               classicClock.phase === 'setup' ? 'classicConfigure' : 'retry',
                             ),
@@ -5019,7 +4964,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                       className: 'owc-icon',
                       'aria-label': t('petWorkSettings'),
                       title: t('petWorkSettings'),
-                      disabled: busy || !data,
+                      disabled: hostBusy || !data,
                       onClick: openEditor,
                     },
                     iconSvg('sliders'),
@@ -5102,7 +5047,11 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 classicClock.phase === 'error' &&
                   h(
                     'button',
-                    { type: 'button', disabled: busy || !sessionId, onClick: () => reload(true) },
+                    {
+                      type: 'button',
+                      disabled: hostBusy || !sessionId,
+                      onClick: () => reload(true),
+                    },
                     iconSvg('refresh', 12),
                     t('retry'),
                   ),
@@ -5446,7 +5395,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                       type: 'button',
                       className: 'owc-text',
                       onClick: () => reload(true),
-                      disabled: busy || !sessionId,
+                      disabled: hostBusy || !sessionId,
                     },
                     iconSvg('refresh', 12),
                     t('retry'),
@@ -5539,7 +5488,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                     type: 'button',
                     className: 'owc-text',
                     onClick: () => reload(true),
-                    disabled: busy,
+                    disabled: hostBusy,
                   },
                   iconSvg('refresh', 12),
                   t('refresh'),
@@ -5973,13 +5922,11 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               React.Fragment,
               null,
               showBusinessError &&
-                !appearanceOnly &&
-                ui.screen !== 'smoking' &&
+                !LOCAL_SCREENS.includes(ui.screen) &&
                 error &&
                 h('p', { className: 'owc-error', role: 'alert' }, error),
               showBusinessError &&
-                !appearanceOnly &&
-                ui.screen !== 'smoking' &&
+                !LOCAL_SCREENS.includes(ui.screen) &&
                 state?.error &&
                 h('p', { className: 'owc-error', role: 'alert' }, state.error),
               notice && h('p', { className: 'owc-note', role: 'status' }, notice),
@@ -6312,7 +6259,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   h(
                     'span',
                     { 'data-water-count': true },
-                    t('waterCount') + ': ' + waterState.count,
+                    t('waterCount') + ': ' + (waterReady && !waterError ? waterState.count : '—'),
                   ),
                 ),
               ),
@@ -6345,7 +6292,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                       },
                       t('waterSnooze'),
                     )
-                  : water.shift?.paused
+                  : water.paused
                     ? t('petPausedHint')
                     : waterState.phase === 'quiet'
                       ? h(
@@ -6393,16 +6340,10 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   'button',
                   {
                     type: 'button',
-                    disabled:
-                      !water.enabled ||
-                      busy ||
-                      waterBusy ||
-                      waterError ||
-                      !waterContext ||
-                      water.shift?.id !== waterContext.id,
-                    onClick: () => waterAction({ type: water.shift?.paused ? 'resume' : 'pause' }),
+                    disabled: !water.enabled || busy || waterBusy || waterError || !waterReady,
+                    onClick: () => waterAction({ type: water.paused ? 'resume' : 'pause' }),
                   },
-                  t(water.shift?.paused ? 'waterResume' : 'waterPause'),
+                  t(water.paused ? 'waterResume' : 'waterPause'),
                 ),
               ),
             );
@@ -6474,10 +6415,10 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                       'data-pet-menu-screen': screen,
                       tabIndex: -1,
                       disabled:
-                        busy ||
+                        requestBusy.current ||
                         waterBusy ||
-                        (!['appearance', 'smoking', 'water-countdown'].includes(screen) &&
-                          (!data || (!data.configured && screen !== 'schedule'))),
+                        (!LOCAL_SCREENS.includes(screen) &&
+                          (hostBusy || !data || (!data.configured && screen !== 'schedule'))),
                       onClick: (event) => navigateScreen(screen, event),
                     },
                     t(label),
@@ -6491,7 +6432,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                       type: 'button',
                       role: 'menuitem',
                       tabIndex: -1,
-                      disabled: busy || !sessionId,
+                      disabled: hostBusy || !sessionId,
                       onClick: () => {
                         closePetMenu();
                         void reload(true);

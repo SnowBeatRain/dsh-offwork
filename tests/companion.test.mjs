@@ -16,25 +16,25 @@ test('only a leased due reminder changes the character to a drinking pose; it ad
   assert.equal(here.announce, false);
 });
 
-test('explicit drink feedback is acknowledged once; quiet and break states never celebrate or animate', () => {
+test('explicit drinking works outside work hours while manual quiet/pause still suppress animation', () => {
   const happy = show({ feedback: drink });
   assert.equal(happy.pose, 'happy');
   assert.equal(happy.animate, true);
   assert.equal(happy.announce, true);
-  for (const patch of [
-    { phase: 'quiet' },
-    { phase: 'paused' },
-    { workStatus: 'lunch' },
-    { workStatus: 'rest' },
-    { workStatus: 'done' },
-    { workStatus: 'before' },
-  ]) {
+  for (const patch of [{ phase: 'quiet' }, { phase: 'paused' }]) {
     const result = show({ ...patch, feedback: drink });
     assert.equal(result.animate, false);
     assert.equal(result.message, 'waterRecorded');
   }
+  for (const workStatus of ['lunch', 'rest', 'done', 'before', undefined]) {
+    const result = show({ workStatus, feedback: drink });
+    assert.equal(result.pose, 'happy');
+    assert.equal(result.animate, true);
+    const due = show({ workStatus, phase: 'due', ownsPrompt: true });
+    assert.equal(due.pose, 'drink');
+    assert.equal(due.message, null);
+  }
   assert.equal(show({ phase: 'quiet', feedback: drink }).pose, 'quiet');
-  assert.equal(show({ workStatus: 'lunch', feedback: drink }).pose, 'rest');
   assert.equal(show({ feedback: { ...drink, kind: 'notice' } }).animate, false);
 });
 
@@ -71,8 +71,8 @@ test('quiet, paused and work states have stable localized messages with no autom
     assert.deepEqual(show(input), result);
   }
   assert.notEqual(show({ phase: 'quiet' }).message, show({}).message);
-  assert.equal(show({ phase: 'paused', workStatus: 'done' }).message, 'companionDone');
-  assert.equal(show({ phase: 'paused', workStatus: 'rest' }).message, 'companionDayOff');
+  assert.equal(show({ phase: 'paused', workStatus: 'done' }).message, 'companionPaused');
+  assert.equal(show({ phase: 'paused', workStatus: 'rest' }).message, 'companionPaused');
 });
 
 test('existing view data keeps its position, privacy and opacity while explicit companion opt-out survives reload', () => {

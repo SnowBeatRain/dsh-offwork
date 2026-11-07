@@ -2,286 +2,272 @@ import test from 'node:test';
 import assert from 'node:assert/strict';
 import { IDBFactory } from 'fake-indexeddb';
 import { createHydrationStore } from '../hydration-store.js';
-import { calculate } from '../clock.js';
-import {
-  defaultHydration,
-  hydrationContext,
-  hydrationView,
-  transitionHydration,
-} from '../hydration.js';
-
-const settings = {
-  payMode: 'monthly',
-  monthlySalary: 12000,
-  workdaysPerMonth: 20,
-  start: '09:00',
-  end: '18:00',
-  breakStart: '12:00',
-  breakEnd: '13:00',
-  weekdays: [1, 2, 3, 4, 5],
-  timezone: 'Asia/Shanghai',
-};
-const begin = Date.parse('2026-11-04T09:00:00+08:00');
-const due = begin + 3600000;
-const context = (at, patch = {}) => {
-  const config = { ...settings, ...patch };
-  return hydrationContext(config, calculate(config, at));
-};
-const read = (store) => store.update((state) => state);
+import { defaultHydration, hydrationView, transitionHydration } from '../hydration.js';
+const name = 'dsh.offwork-clock.hydration.v1',
+  begin = Date.parse('2026-11-06T20:00:00+08:00'),
+  due = begin + 3600000;
+const read = (store) => store.update((s) => s);
+const raw = (idb, storeName, value, version) =>
+  new Promise((resolve, reject) => {
+    const r = version ? idb.open(name, version) : idb.open(name);
+    r.onupgradeneeded = () => {
+      if (!r.result.objectStoreNames.contains(storeName)) r.result.createObjectStore(storeName);
+    };
+    r.onerror = () => reject(r.error);
+    r.onsuccess = () => {
+      const db = r.result,
+        tx = db.transaction(storeName, value === undefined ? 'readonly' : 'readwrite'),
+        s = tx.objectStore(storeName);
+      let result;
+      if (value !== undefined) s.put(value, 'current');
+      else {
+        const q = s.get('current');
+        q.onsuccess = () => (result = q.result);
+      }
+      tx.oncomplete = () => {
+        db.close();
+        resolve(result);
+      };
+      tx.onabort = () => {
+        db.close();
+        reject(tx.error);
+      };
+    };
+  });
+const legacy = (schema = 2) => ({
+  schema,
+  revision: 40,
+  enabled: true,
+  interval: 5,
+  shift: {
+    id: 'retained-shift',
+    schedule: 'retained-schedule',
+    config: 'retained-config',
+    count: 9,
+    paused: true,
+    due: 300000,
+    sequence: 4,
+    claim: null,
+    ...(schema === 2 ? { quietUntil: begin + 1800000, recentActions: ['old-cup'] } : {}),
+  },
+});
 const fixture = (t) => {
-  const indexedDB = new IDBFactory();
-  const first = createHydrationStore(indexedDB);
-  const second = createHydrationStore(indexedDB);
+  const idb = new IDBFactory(),
+    first = createHydrationStore(idb, name, () => begin),
+    second = createHydrationStore(idb, name, () => begin);
   t.after(() => {
     first.close();
     second.close();
   });
-  return { indexedDB, first, second };
+  return { idb, first, second };
 };
 const seed = (store) =>
-  store.update((state) =>
-    transitionHydration(
-      state,
-      context(begin),
-      { type: 'preferences', enabled: true, interval: 60 },
-      begin,
-      'a',
-    ),
+  store.update((s) =>
+    transitionHydration(s, { type: 'preferences', enabled: true, interval: 60 }, begin, 'a'),
   );
-const rawWrite = (indexedDB, state) =>
-  new Promise((resolve, reject) => {
-    const request = indexedDB.open('dsh.offwork-clock.hydration.v1', 1);
-    request.onsuccess = () => {
-      const db = request.result;
-      const transaction = db.transaction('state', 'readwrite');
-      transaction.objectStore('state').put(state, 'current');
-      transaction.oncomplete = () => {
-        db.close();
-        resolve();
-      };
-      transaction.onabort = () => {
-        db.close();
-        reject(transaction.error);
-      };
-    };
-    request.onerror = () => reject(request.error);
-  });
-
-test('read-only first load does not create a default record; committed state survives reopening', async (t) => {
-  const { indexedDB, first } = fixture(t);
+test('fresh reads do not write a default record and committed deadlines survive reopening', async (t) => {
+  const { idb, first } = fixture(t);
   assert.deepEqual(await read(first), defaultHydration());
+  assert.equal(await raw(idb, 'wall-clock'), undefined);
   const state = await seed(first);
   first.close();
-  const reopened = createHydrationStore(indexedDB);
+  const reopened = createHydrationStore(idb);
   t.after(() => reopened.close());
   assert.deepEqual(await read(reopened), state);
-  assert.ok(state.revision > 0);
 });
-
-test('transactions serialize competing claims and duplicate processing across connections', async (t) => {
+test('competing leases and repeated reminder acknowledgments serialize across connections', async (t) => {
   const { first, second } = fixture(t);
   await seed(first);
-  await Promise.all([
-    first.update((s) => transitionHydration(s, context(due), { type: 'claim' }, due, 'a')),
-    second.update((s) => transitionHydration(s, context(due), { type: 'claim' }, due, 'b')),
-  ]);
-  const claimed = await read(first);
-  const owner = claimed.shift.claim.owner;
-  const eventId = hydrationView(claimed, context(due)).eventId;
   await Promise.all(
-    [first, second].map((store) =>
-      store.update((s) =>
-        transitionHydration(s, context(due), { type: 'drink', eventId }, due, owner),
-      ),
+    [first, second].map((s, i) =>
+      s.update((v) => transitionHydration(v, { type: 'claim' }, due, i ? 'b' : 'a')),
     ),
   );
-  assert.equal((await read(first)).shift.count, 1);
+  const claimed = await read(first),
+    eventId = hydrationView(claimed, due).eventId;
+  await Promise.all(
+    [first, second].map((s) =>
+      s.update((v) => transitionHydration(v, { type: 'drink', eventId }, due, claimed.claim.owner)),
+    ),
+  );
+  assert.equal((await read(first)).count, 1);
   assert.deepEqual(await read(first), await read(second));
 });
-
-test('stale tabs cannot revert a changed schedule with tick, release, pause, or clear actions', async (t) => {
+test('concurrent manual records deduplicate the same ID and retain independent IDs without Host settings', async (t) => {
   const { first, second } = fixture(t);
-  await seed(first);
-  const initial = await read(first);
-  const current = await first.update((s) =>
-    transitionHydration(
-      s,
-      context(due, { end: '19:00' }),
-      { type: 'tick', baseSchedule: initial.shift.schedule },
-      due,
-      'a',
-    ),
-  );
-  assert.notEqual(current.shift.schedule, initial.shift.schedule);
-  for (const type of ['tick', 'claim', 'release', 'pause', 'resume', 'clear-count']) {
-    await second.update((s) => transitionHydration(s, context(due), { type }, due, 'b'));
-    assert.deepEqual(await read(first), current, type);
-  }
-  // Even a newly opened stale tab cannot revert a timezone change that changes the shift id.
-  const timezone = await first.update((s) =>
-    transitionHydration(
-      s,
-      context(due, { timezone: 'UTC', end: '19:00' }),
-      { type: 'tick', baseSchedule: current.shift.schedule },
-      due,
-      'a',
-    ),
-  );
-  await second.update((s) => transitionHydration(s, context(due), { type: 'tick' }, due, 'b'));
-  assert.deepEqual(await read(first), timezone);
+  const record = (store, id) =>
+    store.update((s) => transitionHydration(s, { type: 'manual-drink', actionId: id }, begin, 'a'));
+  await Promise.all([record(first, 'same'), record(second, 'same')]);
+  assert.equal((await read(first)).count, 1);
+  await Promise.all([record(first, 'one'), record(second, 'two')]);
+  assert.equal((await read(first)).count, 3);
 });
-
-test('a tab without Host settings cannot erase another tab claim', async (t) => {
+test('foreign release does not erase ownership, while the owner can release without a schedule', async (t) => {
   const { first, second } = fixture(t);
   await seed(first);
-  const claimed = await first.update((s) =>
-    transitionHydration(s, context(due), { type: 'claim' }, due, 'a'),
-  );
-  await second.update((s) => transitionHydration(s, null, { type: 'release' }, due, 'b'));
+  const claimed = await first.update((s) => transitionHydration(s, { type: 'claim' }, due, 'a'));
+  await second.update((s) => transitionHydration(s, { type: 'release' }, due, 'b'));
   assert.deepEqual(await read(first), claimed);
-  await first.update((s) => transitionHydration(s, null, { type: 'release' }, due, 'a'));
-  assert.equal((await read(first)).shift.claim, null);
+  await first.update((s) => transitionHydration(s, { type: 'release' }, due, 'a'));
+  assert.equal((await read(first)).claim, null);
 });
-
-test('explicit reset is monotonic and unknown data is rejected without overwriting', async (t) => {
-  const { indexedDB, first, second } = fixture(t);
-  await seed(first);
-  await rawWrite(indexedDB, { schema: 99, revision: 40 });
-  await assert.rejects(read(second), /Invalid hydration data/);
-  const reset = await first.update(() => defaultHydration(), { reset: true });
-  assert.equal(reset.revision, 41);
-  assert.equal(reset.enabled, false);
-  assert.equal(reset.shift, null);
-  assert.deepEqual(await read(second), reset);
-});
-
-test('mutating reducers and aborting reducers cannot silently lose or partially commit updates', async (t) => {
-  const { first } = fixture(t);
-  await seed(first);
-  const state = await first.update((s) => {
-    s.interval = 30;
-    return s;
-  });
-  assert.equal((await read(first)).interval, 30);
-  await assert.rejects(
-    first.update((s) => {
-      s.interval = 10;
-      throw new Error('abort');
-    }),
-    /abort/,
-  );
-  assert.deepEqual(await read(first), state);
-});
-
-test('partial preference updates preserve changes made by another connection', async (t) => {
+test('partial preference updates preserve another tab interval change', async (t) => {
   const { first, second } = fixture(t);
   await seed(first);
   await first.update((s) =>
-    transitionHydration(s, context(begin), { type: 'preferences', interval: 30 }, begin, 'a'),
+    transitionHydration(s, { type: 'preferences', interval: 30 }, begin, 'a'),
   );
   await second.update((s) =>
-    transitionHydration(s, context(begin), { type: 'preferences', enabled: false }, begin, 'b'),
+    transitionHydration(s, { type: 'preferences', enabled: false }, begin, 'b'),
   );
   const state = await read(first);
   assert.equal(state.interval, 30);
   assert.equal(state.enabled, false);
 });
-
-test('transient opening errors recover and unavailable storage rejects explicitly', async () => {
+for (const schema of [1, 2])
+  test(`legacy schema ${schema} migrates once in a shared transaction and keeps the original snapshot`, async (t) => {
+    const { idb, first, second } = fixture(t),
+      old = legacy(schema);
+    await raw(idb, 'state', old, 1);
+    const [a, b] = await Promise.all([read(first), read(second)]);
+    assert.equal(a.schema, 3);
+    assert.equal(a.revision, 41);
+    assert.deepEqual(a, b);
+    assert.equal(a.count, 9);
+    assert.equal(a.interval, 5);
+    assert.equal(a.paused, true);
+    assert.equal(a.claim, null);
+    assert.deepEqual(a.recentActions, schema === 2 ? ['old-cup'] : []);
+    assert.equal(a.quietUntil, schema === 2 ? begin + 1800000 : 0);
+    assert.deepEqual(await raw(idb, 'state'), old);
+    assert.deepEqual(await read(second), a);
+    const oldClient = new Promise((resolve, reject) => {
+      const r = idb.open(name, 1);
+      r.onerror = () => reject(r.error);
+      r.onsuccess = () => {
+        r.result.close();
+        resolve();
+      };
+    });
+    await assert.rejects(oldClient, { name: 'VersionError' });
+    await first.update(() => defaultHydration(), { reset: true });
+    assert.equal((await read(second)).count, 0);
+    assert.equal((await read(second)).enabled, false);
+    assert.deepEqual(await raw(idb, 'state'), old);
+  });
+test('invalid legacy records abort migration without overwriting either record; explicit reset does not reimport', async (t) => {
+  const { idb, first } = fixture(t),
+    bad = { schema: 99, revision: 40 };
+  await raw(idb, 'state', bad, 1);
+  await assert.rejects(read(first), /Invalid legacy/);
+  assert.equal(await raw(idb, 'wall-clock'), undefined);
+  assert.deepEqual(await raw(idb, 'state'), bad);
+  const reset = await first.update(() => defaultHydration(), { reset: true });
+  assert.equal(reset.count, 0);
+  assert.deepEqual(await read(first), reset);
+});
+test('invalid new records fail closed and explicit reset increments their stored revision', async (t) => {
+  const { idb, first, second } = fixture(t);
+  await seed(first);
+  await raw(idb, 'wall-clock', { schema: 99, revision: 40 });
+  await assert.rejects(read(second), /Invalid hydration data/);
+  const reset = await first.update(() => defaultHydration(), { reset: true });
+  assert.equal(reset.revision, 41);
+  assert.equal(reset.count, 0);
+  assert.deepEqual(await read(second), reset);
+});
+test('mutating and aborting reducers are atomic, including revision exhaustion', async (t) => {
+  const { idb, first } = fixture(t);
+  await seed(first);
+  const state = await first.update((s) => {
+    s.interval = 30;
+    return s;
+  });
+  await assert.rejects(
+    first.update((s) => {
+      s.interval = 5;
+      throw new Error('abort');
+    }),
+    /abort/,
+  );
+  assert.deepEqual(await read(first), state);
+  const exhausted = { ...state, revision: Number.MAX_SAFE_INTEGER };
+  await raw(idb, 'wall-clock', exhausted);
+  await assert.rejects(
+    first.update((s) => ({ ...s, interval: 5 })),
+    /revision exhausted/,
+  );
+  assert.deepEqual(await read(first), exhausted);
+});
+test('transient opening errors recover while missing storage rejects explicitly', async () => {
+  const idb = new IDBFactory();
   let calls = 0;
-  const indexedDB = new IDBFactory();
   const store = createHydrationStore({
     open(...args) {
       if (++calls === 1) throw new Error('temporary');
-      return indexedDB.open(...args);
+      return idb.open(...args);
     },
   });
   await assert.rejects(read(store), /temporary/);
   assert.deepEqual(await read(store), defaultHydration());
   assert.equal(calls, 2);
   store.close();
-  const unavailable = createHydrationStore(null);
-  await assert.rejects(read(unavailable), /unavailable/);
-  unavailable.close();
+  const missing = createHydrationStore(null);
+  await assert.rejects(read(missing), /unavailable/);
+  missing.close();
+});
+test('a blocked upgrade reports failure and can retry after the old connection closes', async (t) => {
+  const { idb, first } = fixture(t);
+  await raw(idb, 'state', legacy(), 1);
+  const old = await new Promise((resolve, reject) => {
+    const r = idb.open(name, 1);
+    r.onsuccess = () => resolve(r.result);
+    r.onerror = () => reject(r.error);
+  });
+  await assert.rejects(read(first), /blocked/);
+  old.close();
+  const migrated = await read(first);
+  assert.equal(migrated.count, 9);
+  assert.equal(migrated.schema, 3);
+});
+test('deleting a migrated current record never resurrects the retained legacy count', async (t) => {
+  const { idb, first } = fixture(t);
+  await raw(idb, 'state', legacy(), 1);
+  await read(first);
+  await new Promise((resolve, reject) => {
+    const request = idb.open(name);
+    request.onerror = () => reject(request.error);
+    request.onsuccess = () => {
+      const db = request.result,
+        tx = db.transaction('wall-clock', 'readwrite');
+      tx.objectStore('wall-clock').delete('current');
+      tx.oncomplete = () => {
+        db.close();
+        resolve();
+      };
+      tx.onabort = () => {
+        db.close();
+        reject(tx.error);
+      };
+    };
+  });
+  const next = await read(first);
+  assert.equal(next.count, 0);
+  assert.equal(next.enabled, false);
+  assert.equal((await raw(idb, 'state')).shift.count, 9);
 });
 
-test('legacy records migrate atomically once without losing user data', async (t) => {
-  const { indexedDB, first, second } = fixture(t);
-  const legacy = await seed(first);
-  legacy.schema = 1;
-  legacy.revision = 40;
-  legacy.interval = 5;
-  legacy.shift.count = 9;
-  legacy.shift.paused = true;
-  delete legacy.shift.quietUntil;
-  delete legacy.shift.recentActions;
-  await rawWrite(indexedDB, legacy);
-  const [a, b] = await Promise.all([read(first), read(second)]);
-  assert.equal(a.schema, 2);
-  assert.equal(a.revision, 41);
-  assert.deepEqual(a, b);
-  assert.equal(a.interval, 5);
-  assert.equal(a.shift.count, 9);
-  assert.equal(a.shift.paused, true);
-  assert.equal(a.shift.due, legacy.shift.due);
-  assert.deepEqual(await read(second), a);
-});
-
-test('concurrent check-ins deduplicate the same ID but retain independent IDs', async (t) => {
-  const { first, second } = fixture(t);
-  await seed(first);
-  const record = (store, id) =>
-    store.update((s) =>
-      transitionHydration(
-        s,
-        context(begin),
-        {
-          type: 'manual-drink',
-          actionId: id,
-          shiftId: context(begin).id,
-        },
-        begin,
-        'a',
-      ),
-    );
-  await Promise.all([record(first, 'same'), record(second, 'same')]);
-  assert.equal((await read(first)).shift.count, 1);
-  await Promise.all([record(first, 'one'), record(second, 'two')]);
-  assert.equal((await read(first)).shift.count, 3);
-});
-
-test('exhausted revisions abort an update instead of persisting invalid data', async (t) => {
-  const { indexedDB, first } = fixture(t);
-  const current = await seed(first);
-  current.revision = Number.MAX_SAFE_INTEGER;
-  await rawWrite(indexedDB, current);
-  await assert.rejects(
-    first.update((s) => ({ ...s, interval: 5 })),
-    /revision exhausted/,
-  );
-  assert.deepEqual(await read(first), current);
-});
-
-test('quiet and manual actions preserve each other across connections', async (t) => {
+test('quiet time and manual drinking preserve each other across connections', async (t) => {
   const { first, second } = fixture(t);
   await seed(first);
   await Promise.all([
-    first.update((s) =>
-      transitionHydration(s, context(begin), { type: 'quiet', minutes: 30 }, begin, 'a'),
-    ),
+    first.update((s) => transitionHydration(s, { type: 'quiet', minutes: 60 }, begin, 'a')),
     second.update((s) =>
-      transitionHydration(
-        s,
-        context(begin),
-        { type: 'manual-drink', actionId: 'cup', shiftId: context(begin).id },
-        begin,
-        'b',
-      ),
+      transitionHydration(s, { type: 'manual-drink', actionId: 'cup' }, begin, 'b'),
     ),
   ]);
   const state = await read(first);
-  assert.equal(state.shift.count, 1);
-  assert.equal(state.shift.quietUntil, begin + 1800000);
-  assert.equal(hydrationView(state, context(begin), begin).phase, 'quiet');
-  assert.deepEqual(await read(second), state);
+  assert.equal(state.count, 1);
+  assert.equal(state.quietUntil, begin + 3600000);
+  assert.equal(state.dueAt, begin + 3600000);
 });

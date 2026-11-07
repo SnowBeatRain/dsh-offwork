@@ -1,12 +1,22 @@
-import { defaultHydration, validateHydration } from './hydration.js';
+import { defaultHydration, validateHydration, migrateHydration } from './hydration.js';
 
 // A single IndexedDB read/write transaction is the cross-tab mutex. Neither
 // notification delivery nor localStorage read-back is used as an atomic lock.
-export function createHydrationStore(indexedDB, name = 'dsh.offwork-clock.hydration.v1') {
-  return createStateStore(indexedDB, name, defaultHydration, validateHydration);
+export function createHydrationStore(
+  indexedDB,
+  name = 'dsh.offwork-clock.hydration.v1',
+  now = () => Date.now(),
+) {
+  return createStateStore(indexedDB, name, defaultHydration, validateHydration, {
+    version: 2,
+    storeName: 'wall-clock',
+    legacyStore: 'state',
+    migrate: (value) => migrateHydration(value, now()),
+  });
 }
 
-export function createStateStore(indexedDB, name, initial, validate) {
+export function createStateStore(indexedDB, name, initial, validate, options = {}) {
+  const storeName = options.storeName || 'state';
   let database = null;
   let opening = null;
   let closed = false;
@@ -24,8 +34,11 @@ export function createStateStore(indexedDB, name, initial, validate) {
         reject(new Error('Hydration storage unavailable'));
         return;
       }
-      const request = indexedDB.open(name, 1);
-      request.onupgradeneeded = () => request.result.createObjectStore('state');
+      const request = indexedDB.open(name, options.version || 1);
+      request.onupgradeneeded = () => {
+        if (!request.result.objectStoreNames.contains(storeName))
+          request.result.createObjectStore(storeName);
+      };
       request.onerror = () => fail(request.error ?? new Error('Hydration storage unavailable'));
       request.onblocked = () => fail(new Error('Hydration storage blocked'));
       request.onsuccess = () => {
@@ -57,34 +70,58 @@ export function createStateStore(indexedDB, name, initial, validate) {
       const db = await open();
       if (closed) throw new Error('Hydration store closed');
       return new Promise((resolve, reject) => {
-        const transaction = db.transaction('state', 'readwrite');
-        const store = transaction.objectStore('state');
+        const hasLegacy =
+          !!options.legacyStore && db.objectStoreNames.contains(options.legacyStore);
+        const transaction = db.transaction(
+          hasLegacy ? [storeName, options.legacyStore] : storeName,
+          'readwrite',
+        );
+        const store = transaction.objectStore(storeName);
         const request = store.get('current');
         let output;
         let failure;
-        request.onsuccess = () => {
+        const apply = (stored, legacy, imported = false) => {
           try {
-            const current =
-              reset || request.result === undefined ? initial() : validate(request.result);
+            const current = reset
+              ? initial()
+              : stored !== undefined
+                ? validate(stored)
+                : imported
+                  ? validate(options.migrate(legacy))
+                  : initial();
             const next = validate(reducer(structuredClone(current)));
             const changed = JSON.stringify(next) !== JSON.stringify(current);
-            const migrated =
-              request.result !== undefined && request.result.schema !== current.schema;
+            const migrated = imported || (stored !== undefined && stored.schema !== current.schema);
             if (reset || changed || migrated) {
               const previousRevision =
-                Number.isSafeInteger(request.result?.revision) && request.result.revision >= 0
-                  ? request.result.revision
+                Number.isSafeInteger(stored?.revision) && stored.revision >= 0
+                  ? stored.revision
                   : current.revision;
               next.revision = previousRevision + 1;
               if (!Number.isSafeInteger(next.revision))
                 throw new Error('Hydration revision exhausted');
               store.put(next, 'current');
             }
+            if (imported || (reset && hasLegacy)) store.put(true, 'legacy-imported');
             output = next;
           } catch (error) {
             failure = error;
             transaction.abort();
           }
+        };
+        request.onsuccess = () => {
+          if (hasLegacy) {
+            const marker = store.get('legacy-imported');
+            marker.onsuccess = () => {
+              if (!reset && request.result === undefined && marker.result !== true) {
+                const legacy = transaction.objectStore(options.legacyStore).get('current');
+                legacy.onsuccess = () => apply(undefined, legacy.result, true);
+              } else {
+                if (marker.result !== true) store.put(true, 'legacy-imported');
+                apply(request.result);
+              }
+            };
+          } else apply(request.result);
         };
         transaction.oncomplete = () => resolve(output);
         transaction.onabort = () =>

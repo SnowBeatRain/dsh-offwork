@@ -14,9 +14,7 @@ export function companionPresentation({
     return { visible: false, pose: 'calm', message: null, announce: false, animate: false };
   let pose = 'calm';
   let message = 'companionWorking';
-  const quiet =
-    ['quiet', 'paused'].includes(phase) && !['before', 'done', 'rest'].includes(workStatus);
-  const resting = ['lunch', 'rest', 'done', 'before'].includes(workStatus);
+  const quiet = ['quiet', 'paused'].includes(phase);
   if (!ready) {
     pose = 'rest';
     message = 'companionLoading';
@@ -26,6 +24,9 @@ export function companionPresentation({
   } else if (quiet) {
     pose = 'quiet';
     message = phase === 'quiet' ? 'companionQuiet' : 'companionPaused';
+  } else if (phase === 'due' && ownsPrompt) {
+    pose = 'drink';
+    message = null;
   } else if (workStatus === 'lunch') {
     pose = 'rest';
     message = 'companionBreak';
@@ -38,17 +39,13 @@ export function companionPresentation({
   } else if (workStatus === 'before') {
     pose = 'rest';
     message = 'companionBefore';
-  } else if (phase === 'due' && ownsPrompt) {
-    // The existing leased reminder is the only source of the due message.
-    pose = 'drink';
-    message = null;
   }
   let announce = false;
   let animate = false;
   if (ready && !failed && !(phase === 'due' && ownsPrompt) && feedback) {
     message = feedback.key;
     announce = true;
-    if (feedback.kind === 'drink' && !quiet && !resting) {
+    if (feedback.kind === 'drink' && !quiet) {
       pose = 'happy';
       animate = motion && pageVisible;
     }
@@ -132,7 +129,7 @@ export const COMPANION_MESSAGES = {
     companionPreferences: '立即生效，保存在本浏览器。隐藏角色后仍可使用计时和喝水操作。',
     companionWorking: '你忙你的，我陪你记着时间。',
     companionQuiet: '好，先安静陪着你。',
-    companionPaused: '本班先不提醒，需要时再叫我。',
+    companionPaused: '提醒先暂停，需要时再叫我。',
     companionBreak: '休息一下，回来再继续。',
     companionBefore: '还没开工，先慢慢准备。',
     companionDone: '这一班结束啦，辛苦了。',
