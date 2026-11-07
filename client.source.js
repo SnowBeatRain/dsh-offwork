@@ -14,6 +14,12 @@ window.__ModuleLoader__.load({
         ...PET_INTERACTION_MESSAGES.zh,
         ...PET_SURFACE_MESSAGES.zh,
         title: '下班计时器',
+        classicMiniWorking: '距下班',
+        classicMiniBefore: '距开工',
+        classicMiniLunch: '午休中',
+        classicMiniStatus: '本班状态',
+        classicMiniWaiting: '待上班',
+        classicMiniFinished: '已结束',
         classicOverview: '今日概览',
         classicReturn: '返回概览',
         classicMore: '展开作息详情',
@@ -157,6 +163,12 @@ window.__ModuleLoader__.load({
         ...PET_INTERACTION_MESSAGES.en,
         ...PET_SURFACE_MESSAGES.en,
         title: 'Offwork Clock',
+        classicMiniWorking: 'To end',
+        classicMiniBefore: 'To start',
+        classicMiniLunch: 'Break',
+        classicMiniStatus: 'Status',
+        classicMiniWaiting: 'Waiting',
+        classicMiniFinished: 'Done',
         classicOverview: 'Today at a glance',
         classicReturn: 'Back to overview',
         classicMore: 'Show schedule details',
@@ -806,7 +818,7 @@ window.__ModuleLoader__.load({
           const cardStyle = {
             width: ui.screen
               ? petSurfaceWidth(ui.screen, viewport)
-              : Math.min(collapsed ? 220 : 320, Math.max(1, viewport.width - 24)),
+              : Math.min(collapsed ? 224 : 320, Math.max(1, viewport.width - 24)),
             '--owc-alpha': String(view.opacity),
             '--owc-viewport-height': Math.max(1, viewport.height - 24) + 'px',
             left: classicPosition.x,
@@ -2471,10 +2483,24 @@ window.__ModuleLoader__.load({
 
           const classicMini = () => {
             const countdown = classicClock.seconds !== null;
+            const caption =
+              {
+                working: 'classicMiniWorking',
+                before: 'classicMiniBefore',
+                lunch: 'classicMiniLunch',
+              }[classicClock.phase] || 'classicMiniStatus';
+            const stateTitle =
+              { setup: 'petNeedsSetup', error: 'petLoadFailed', waiting: 'petNeedsSession' }[
+                classicClock.phase
+              ] || classicClock.title;
             const valid = !!data?.configured && !!safeState && !error;
             const showIncome = valid && ['working', 'lunch', 'done'].includes(safeState.status);
-            const compact = (value) =>
-              value.startsWith('00:') ? value.slice(3) : value.replace(/^0(?=\d:)/, '');
+            const compact = (value) => {
+              if (value === t('timerUnavailable')) return '—';
+              if (value === t('timerWaiting')) return t('classicMiniWaiting');
+              if (value === t('timerFinished')) return t('classicMiniFinished');
+              return value.startsWith('00:') ? value.slice(3) : value.replace(/^0(?=\d:)/, '');
+            };
             const tile = (kind, screen, label, value, summary, due) =>
               h(
                 'button',
@@ -2509,12 +2535,7 @@ window.__ModuleLoader__.load({
                     title: t(classicClock.hint) + ' · ' + t('drag'),
                     onKeyDown: gripKeys,
                   },
-                  h(
-                    'span',
-                    { className: 'owc-classic-mini-label' },
-                    iconSvg('alarm', 11),
-                    t(countdown ? classicClock.title : 'title'),
-                  ),
+                  h('span', { className: 'owc-classic-mini-label' }, t(caption)),
                   countdown
                     ? h(
                         'strong',
@@ -2538,12 +2559,12 @@ window.__ModuleLoader__.load({
                             onClick:
                               classicClock.phase === 'setup' ? openEditor : () => reload(true),
                           },
-                          t(classicClock.title),
+                          t(stateTitle),
                         )
                       : h(
                           'strong',
                           { className: 'owc-classic-mini-state', role: 'status' },
-                          t(classicClock.title),
+                          t(stateTitle),
                         ),
                 ),
                 h(
@@ -2585,35 +2606,42 @@ window.__ModuleLoader__.load({
                   ),
                   smokingState.phase === 'due',
                 ),
-              ),
-              h(
-                'div',
-                { className: 'owc-classic-mini-income' },
                 h(
-                  'button',
-                  {
-                    type: 'button',
-                    className: 'owc-classic-mini-income-link',
-                    'aria-label': t('classicIncomeEntry'),
-                    disabled: !valid,
-                    onClick: (event) => navigateScreen('earnings', event),
-                  },
-                  h('span', null, t('petEarningsCard')),
+                  'div',
+                  { className: 'owc-classic-mini-income' },
                   showIncome &&
-                    h('span', { 'aria-label': view.masked ? t('masked') : moneyText }, moneyText),
-                ),
-                showIncome &&
+                    !view.masked &&
+                    h(
+                      'button',
+                      {
+                        type: 'button',
+                        className: 'owc-classic-mini-amount',
+                        'aria-label': t('classicIncomeEntry'),
+                        'aria-description': moneyText,
+                        title: moneyText,
+                        onClick: (event) => navigateScreen('earnings', event),
+                      },
+                      moneyText,
+                    ),
                   h(
                     'button',
                     {
                       type: 'button',
                       className: 'owc-icon',
-                      'aria-label': t(view.masked ? 'show' : 'hide'),
-                      title: t(view.masked ? 'show' : 'hide'),
-                      onClick: () => setPreference({ masked: !view.masked }),
+                      disabled: !valid,
+                      'aria-label': t(
+                        showIncome ? (view.masked ? 'show' : 'hide') : 'classicIncomeEntry',
+                      ),
+                      title: t(showIncome ? (view.masked ? 'show' : 'hide') : 'classicIncomeEntry'),
+                      'aria-pressed': showIncome ? !view.masked : undefined,
+                      onClick: (event) =>
+                        showIncome
+                          ? setPreference({ masked: !view.masked })
+                          : navigateScreen('earnings', event),
                     },
-                    iconSvg(view.masked ? 'eyeOff' : 'eye', 12),
+                    iconSvg(view.masked || !showIncome ? 'eyeOff' : 'eye', 13),
                   ),
+                ),
               ),
             );
           };
