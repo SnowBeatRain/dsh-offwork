@@ -1774,6 +1774,22 @@ const PET_SURFACE_STYLE = `
 .owc-classic .owc-content{max-height:calc(var(--owc-viewport-height) - 2px);overflow:auto}
 .owc-v2 .owc-classic-head{position:sticky;top:0;z-index:2;min-height:46px;padding:8px 12px;background:var(--owc-surface);border-bottom:1px solid var(--owc-border);gap:6px}
 .owc-classic-head .owc-title{font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;touch-action:none}
+.owc-classic-mini{padding:8px 10px 6px}
+.owc-classic-mini-top{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.owc-classic-mini .owc-grip{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;min-height:34px;justify-content:center}
+.owc-classic-mini-label{display:flex;align-items:center;gap:4px;font-size:10px;line-height:1.2;color:var(--owc-muted)}
+.owc-classic-mini-time{font-size:21px;line-height:1.05;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.owc-v2 .owc-classic-mini-state{font-size:13px;font-weight:600;line-height:1.3;margin:0;padding:0;min-height:0;text-align:left;overflow-wrap:anywhere}
+.owc-v2 .owc-classic-mini .owc-icon{padding:3px;min-width:24px;min-height:24px;flex-shrink:0}
+.owc-classic-mini-timers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;padding:4px 0;border-top:1px solid var(--owc-border);border-bottom:1px solid var(--owc-border)}
+.owc-v2 .owc-classic-mini-timer{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:24px;padding:3px 5px;border-radius:7px;background:var(--owc-subtle);font-size:11px;line-height:1.3;color:var(--owc-muted)}
+.owc-classic-mini-timer svg{flex-shrink:0}
+.owc-classic-mini-timer strong{font-variant-numeric:tabular-nums;font-weight:550;color:var(--owc-text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.owc-v2 .owc-classic-mini-timer[data-countdown-due=true]{color:var(--owc-accent);background:color-mix(in srgb,var(--owc-accent) 10%,var(--owc-surface))}
+.owc-classic-mini-income{display:flex;align-items:center;gap:4px;padding-top:2px}
+.owc-v2 .owc-classic-mini-income-link{display:flex;align-items:center;justify-content:space-between;flex:1;min-width:0;min-height:20px;padding:0 2px;font-size:10px;color:var(--owc-muted);font-variant-numeric:tabular-nums}
+.owc-v2 .owc-classic-mini-income .owc-icon{min-height:20px}
+@media(pointer:coarse){.owc-v2 .owc-classic-mini button{min-height:36px}.owc-v2 .owc-classic-mini .owc-icon{min-width:36px}}
 .owc-classic-overview{padding:16px;display:flex;flex-direction:column;gap:14px}
 .owc-classic-kicker{display:flex;align-items:center;gap:6px;color:var(--owc-muted);font-size:11px;margin-bottom:7px}
 .owc-classic-time{font-size:34px;font-weight:650;line-height:1.2;letter-spacing:.5px;font-variant-numeric:tabular-nums}
@@ -3099,7 +3115,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
           const cardStyle = {
             width: ui.screen
               ? petSurfaceWidth(ui.screen, viewport)
-              : Math.min(320, Math.max(1, viewport.width - 24)),
+              : Math.min(collapsed ? 220 : 320, Math.max(1, viewport.width - 24)),
             '--owc-alpha': String(view.opacity),
             '--owc-viewport-height': Math.max(1, viewport.height - 24) + 'px',
             left: classicPosition.x,
@@ -4762,6 +4778,155 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               ),
             );
 
+          const classicMini = () => {
+            const countdown = classicClock.seconds !== null;
+            const valid = !!data?.configured && !!safeState && !error;
+            const showIncome = valid && ['working', 'lunch', 'done'].includes(safeState.status);
+            const compact = (value) =>
+              value.startsWith('00:') ? value.slice(3) : value.replace(/^0(?=\d:)/, '');
+            const tile = (kind, screen, label, value, summary, due) =>
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'owc-classic-mini-timer',
+                  'data-classic-timer': kind,
+                  'data-countdown-due': due,
+                  'aria-label': t(label),
+                  title: t(label) + ' · ' + summary,
+                  disabled: busy || waterBusy,
+                  onClick: (event) => navigateScreen(screen, event),
+                },
+                iconSvg(kind, 13),
+                h('strong', null, compact(value)),
+              );
+            return h(
+              'div',
+              {
+                className: 'owc-classic-mini',
+                'data-classic-overview': true,
+                'data-clock-phase': classicClock.phase,
+              },
+              h(
+                'div',
+                { className: 'owc-classic-mini-top' },
+                h(
+                  'div',
+                  {
+                    className: 'owc-grip',
+                    tabIndex: 0,
+                    title: t(classicClock.hint) + ' · ' + t('drag'),
+                    onKeyDown: gripKeys,
+                  },
+                  h(
+                    'span',
+                    { className: 'owc-classic-mini-label' },
+                    iconSvg('alarm', 11),
+                    t(countdown ? classicClock.title : 'title'),
+                  ),
+                  countdown
+                    ? h(
+                        'strong',
+                        {
+                          className: 'owc-classic-mini-time',
+                          role: 'timer',
+                          'aria-label': t(classicClock.title),
+                        },
+                        formatDuration(classicClock.seconds),
+                      )
+                    : ['setup', 'error'].includes(classicClock.phase)
+                      ? h(
+                          'button',
+                          {
+                            type: 'button',
+                            className: 'owc-classic-mini-state',
+                            disabled: busy,
+                            'aria-label': t(
+                              classicClock.phase === 'setup' ? 'classicConfigure' : 'retry',
+                            ),
+                            onClick:
+                              classicClock.phase === 'setup' ? openEditor : () => reload(true),
+                          },
+                          t(classicClock.title),
+                        )
+                      : h(
+                          'strong',
+                          { className: 'owc-classic-mini-state', role: 'status' },
+                          t(classicClock.title),
+                        ),
+                ),
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-icon',
+                    title: t('expand'),
+                    'aria-label': t('expand'),
+                    onClick: () => setPreference({ mini: false }),
+                  },
+                  iconSvg('chevronDown', 14),
+                ),
+              ),
+              h(
+                'div',
+                { className: 'owc-classic-mini-timers' },
+                tile(
+                  'water',
+                  'water-countdown',
+                  'waterCountdown',
+                  waterCountdownText(),
+                  waterSummary(),
+                  waterState.phase === 'due',
+                ),
+                tile(
+                  'smoking',
+                  'smoking',
+                  'smokingCountdown',
+                  smokingCountdownText(),
+                  t(
+                    smokingState.phase === 'paused'
+                      ? 'timerPaused'
+                      : smokingState.phase === 'due'
+                        ? 'timerDue'
+                        : smokingState.phase === 'idle'
+                          ? 'timerIdle'
+                          : 'timerRunning',
+                  ),
+                  smokingState.phase === 'due',
+                ),
+              ),
+              h(
+                'div',
+                { className: 'owc-classic-mini-income' },
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-classic-mini-income-link',
+                    'aria-label': t('classicIncomeEntry'),
+                    disabled: !valid,
+                    onClick: (event) => navigateScreen('earnings', event),
+                  },
+                  h('span', null, t('petEarningsCard')),
+                  showIncome &&
+                    h('span', { 'aria-label': view.masked ? t('masked') : moneyText }, moneyText),
+                ),
+                showIncome &&
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      className: 'owc-icon',
+                      'aria-label': t(view.masked ? 'show' : 'hide'),
+                      title: t(view.masked ? 'show' : 'hide'),
+                      onClick: () => setPreference({ masked: !view.masked }),
+                    },
+                    iconSvg(view.masked ? 'eyeOff' : 'eye', 12),
+                  ),
+              ),
+            );
+          };
+
           const classicHeader = () =>
             h(
               'div',
@@ -5967,7 +6132,9 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 const target =
                   !ui.screen && ['water', 'smoking'].includes(kind)
                     ? box.current?.querySelector(`[data-classic-timer="${kind}"]`)
-                    : box.current?.querySelector('.owc-classic-head .owc-title');
+                    : box.current?.querySelector(
+                        '.owc-classic-head .owc-title,.owc-classic-mini .owc-grip',
+                      );
                 target?.focus();
               } else if (previous.pending)
                 box.current?.querySelector('form input,form select,form button')?.focus();
@@ -6622,7 +6789,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   waterPrompt ? t('waterDue') : waterNotice ? t(waterNotice.key) : '',
                 ),
               ),
-              classicHeader(),
+              !collapsed && classicHeader(),
               ui.pending
                 ? draftGuard()
                 : waterEditing
@@ -6639,7 +6806,9 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                             ? panelBody('earnings')
                             : ui.screen === 'income'
                               ? panelBody('clock')
-                              : classicOverview(),
+                              : collapsed
+                                ? classicMini()
+                                : classicOverview(),
               notices(ui.screen !== null),
               ui.screen === null && waterReminder(),
             ),

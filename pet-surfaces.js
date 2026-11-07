@@ -192,6 +192,22 @@ export const PET_SURFACE_STYLE = `
 .owc-classic .owc-content{max-height:calc(var(--owc-viewport-height) - 2px);overflow:auto}
 .owc-v2 .owc-classic-head{position:sticky;top:0;z-index:2;min-height:46px;padding:8px 12px;background:var(--owc-surface);border-bottom:1px solid var(--owc-border);gap:6px}
 .owc-classic-head .owc-title{font-size:12px;min-width:0;overflow:hidden;text-overflow:ellipsis;touch-action:none}
+.owc-classic-mini{padding:8px 10px 6px}
+.owc-classic-mini-top{display:flex;align-items:center;gap:6px;margin-bottom:4px}
+.owc-classic-mini .owc-grip{flex:1;display:flex;flex-direction:column;align-items:flex-start;gap:2px;min-width:0;min-height:34px;justify-content:center}
+.owc-classic-mini-label{display:flex;align-items:center;gap:4px;font-size:10px;line-height:1.2;color:var(--owc-muted)}
+.owc-classic-mini-time{font-size:21px;line-height:1.05;font-weight:600;font-variant-numeric:tabular-nums;white-space:nowrap}
+.owc-v2 .owc-classic-mini-state{font-size:13px;font-weight:600;line-height:1.3;margin:0;padding:0;min-height:0;text-align:left;overflow-wrap:anywhere}
+.owc-v2 .owc-classic-mini .owc-icon{padding:3px;min-width:24px;min-height:24px;flex-shrink:0}
+.owc-classic-mini-timers{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:6px;padding:4px 0;border-top:1px solid var(--owc-border);border-bottom:1px solid var(--owc-border)}
+.owc-v2 .owc-classic-mini-timer{display:flex;align-items:center;justify-content:center;gap:5px;min-width:0;min-height:24px;padding:3px 5px;border-radius:7px;background:var(--owc-subtle);font-size:11px;line-height:1.3;color:var(--owc-muted)}
+.owc-classic-mini-timer svg{flex-shrink:0}
+.owc-classic-mini-timer strong{font-variant-numeric:tabular-nums;font-weight:550;color:var(--owc-text);min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.owc-v2 .owc-classic-mini-timer[data-countdown-due=true]{color:var(--owc-accent);background:color-mix(in srgb,var(--owc-accent) 10%,var(--owc-surface))}
+.owc-classic-mini-income{display:flex;align-items:center;gap:4px;padding-top:2px}
+.owc-v2 .owc-classic-mini-income-link{display:flex;align-items:center;justify-content:space-between;flex:1;min-width:0;min-height:20px;padding:0 2px;font-size:10px;color:var(--owc-muted);font-variant-numeric:tabular-nums}
+.owc-v2 .owc-classic-mini-income .owc-icon{min-height:20px}
+@media(pointer:coarse){.owc-v2 .owc-classic-mini button{min-height:36px}.owc-v2 .owc-classic-mini .owc-icon{min-width:36px}}
 .owc-classic-overview{padding:16px;display:flex;flex-direction:column;gap:14px}
 .owc-classic-kicker{display:flex;align-items:center;gap:6px;color:var(--owc-muted);font-size:11px;margin-bottom:7px}
 .owc-classic-time{font-size:34px;font-weight:650;line-height:1.2;letter-spacing:.5px;font-variant-numeric:tabular-nums}
