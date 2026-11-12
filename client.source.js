@@ -4527,7 +4527,7 @@ window.__ModuleLoader__.load({
               {
                 ref: box,
                 className: 'owc-v2 owc-pet-shell',
-                'data-version': '1.2.0',
+                'data-version': '1.2.1',
                 'data-pet-model': stageModel,
                 'data-status':
                   error || state?.error
@@ -4782,7 +4782,7 @@ window.__ModuleLoader__.load({
                 (collapsed && waterQuickOpen ? ' owc-quick' : '') +
                 (editing || waterEditing ? ' owc-editing' : ''),
               'aria-label': t('title'),
-              'data-version': '1.2.0',
+              'data-version': '1.2.1',
               'data-status': classicClock.phase,
               style: cardStyle,
               onPointerDown: dragDown,
