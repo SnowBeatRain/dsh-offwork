@@ -65,6 +65,25 @@ test('dirty navigation retains the root destination for explicit save or discard
   assert.equal(next.screen, 'appearance');
 });
 
+test('contextual backup and wrap-up return to their owning cards', () => {
+  const settings = go(initialPetUI, 'preferences', { root: true });
+  const backup = go(settings, 'data');
+  assert.equal(backup.back, 'preferences');
+  assert.equal(go(backup, backup.back).screen, 'preferences');
+  assert.equal(
+    go(backup, backup.back).back,
+    null,
+    'back must not bounce between settings and backup',
+  );
+  const appearance = go(settings, 'appearance');
+  assert.equal(appearance.back, 'preferences');
+  const wrap = go(go(initialPetUI, 'income'), 'wrap');
+  assert.equal(wrap.back, 'income');
+  const pending = go(wrap, 'smoking', { dirty: true });
+  assert.equal(pending.screen, 'wrap');
+  assert.equal(go(pending, pending.pending.screen, { discard: true }).screen, 'smoking');
+});
+
 test('appearance snapshots omit position and salary preferences', () => {
   assert.deepEqual(
     appearanceValues({

@@ -1,7 +1,7 @@
 export const COMPANION_APP_STYLE = `
-.owc-hub-launch{display:flex!important;align-items:center;justify-content:center;gap:7px;width:100%;min-height:30px!important;border-radius:10px!important;margin:4px 0!important;font-size:12px!important;cursor:pointer}
-.owc-hub{box-sizing:border-box;--hub-accent:var(--owc-accent,#7779bc);position:fixed;z-index:65;right:16px;bottom:16px;width:min(370px,calc(100vw - 24px));max-height:calc(100dvh - 32px);overflow:auto;border:1px solid color-mix(in srgb,var(--hub-accent) 25%,transparent);border-radius:18px;padding:16px;background:var(--dsw-alias-bg-overlay,#fff);color:var(--dsw-alias-label-primary,#242b42);box-shadow:0 10px 36px #151c3820;font:13px/1.6 system-ui;cursor:default;user-select:text;touch-action:pan-y}
-.owc-hub *{box-sizing:border-box}.owc-hub header{display:flex;gap:10px;align-items:center;margin-bottom:10px}.owc-hub header strong{flex:1;font-size:16px}.owc-hub button{min-height:34px!important;padding:5px 10px!important;border:1px solid color-mix(in srgb,var(--hub-accent) 22%,transparent)!important;border-radius:9px!important;font:inherit!important;background:transparent;color:inherit;cursor:pointer}.owc-hub button:hover{background:color-mix(in srgb,var(--hub-accent) 10%,transparent)}.owc-hub button:disabled{opacity:.5;cursor:wait}.owc-hub button[data-primary=true]{background:var(--hub-accent);color:white}.owc-hub nav{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:14px}.owc-hub nav button[aria-selected=true]{background:color-mix(in srgb,var(--hub-accent) 16%,transparent)}.owc-hub p{margin:8px 0}.owc-hub .hub-muted{font-size:12px;opacity:.72}.owc-hub .hub-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:9px 0}.owc-hub label{display:block;margin:10px 0}.owc-hub input:not([type=checkbox]),.owc-hub select,.owc-hub textarea{width:100%;padding:7px 9px;border:1px solid color-mix(in srgb,var(--hub-accent) 30%,transparent);border-radius:8px;background:var(--dsw-alias-bg-base,#f7f8fb);color:inherit;font:inherit}.owc-hub input[type=checkbox]{margin-right:8px}.owc-hub textarea{min-height:70px;resize:vertical}.owc-hub article{border-top:1px solid color-mix(in srgb,var(--hub-accent) 18%,transparent);padding:10px 0}.owc-hub output{font-variant-numeric:tabular-nums}.owc-hub .hub-error{color:#bd465a}.owc-hub .hub-preview{display:block;width:144px;height:192px;object-fit:contain;margin:auto;background:repeating-conic-gradient(#ddd 0% 25%,#f7f7f7 0% 50%) 50%/16px 16px;border-radius:12px}.owc-hub [role=status]{font-size:12px}.owc-hub small{display:block;opacity:.7}.owc-hub details{margin:10px 0}.owc-hub summary{cursor:pointer}.owc-hub input[type=range]{padding:0!important}.owc-hub-alert{bottom:20px}.owc-hub-alert .hub-row button{flex:1}.owc-hub [data-complete=true]{color:var(--hub-accent)}
+.owc-extra{padding:0 16px 12px;font:inherit;color:inherit;cursor:default;user-select:text;touch-action:pan-y}
+.owc-appearance .owc-extra{padding:0}.owc-extra *{box-sizing:border-box}.owc-extra h3{font-size:12px;font-weight:600;margin:14px 0 8px}.owc-extra p{margin:8px 0;line-height:1.65}.owc-extra .hub-muted,.owc-extra small{font-size:11px;opacity:.72}.owc-extra small{display:block}.owc-extra .hub-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:9px 0}.owc-extra label{display:block;margin:10px 0}.owc-extra input:not([type=checkbox]),.owc-extra select,.owc-extra textarea{width:100%;padding:7px 9px;border:1px solid color-mix(in srgb,var(--owc-accent) 20%,transparent);border-radius:8px;background:var(--dsw-alias-bg-base,#f7f8fb);color:inherit;font:inherit}.owc-extra input[type=checkbox]{margin-right:8px}.owc-extra textarea{min-height:64px;resize:vertical}.owc-extra article{padding:10px 0;border-top:1px solid color-mix(in srgb,var(--owc-accent) 15%,transparent)}.owc-extra output{font-variant-numeric:tabular-nums}.owc-extra button{min-height:32px;padding:5px 10px;border-radius:8px}.owc-extra button[data-primary=true]{background:var(--owc-accent);color:white}.owc-extra details{margin:8px 0}.owc-extra summary{font-size:11px;cursor:pointer}.owc-extra .hub-error{color:#bd465a}.owc-extra .hub-preview{display:block;width:144px;height:192px;object-fit:contain;margin:8px auto;background:repeating-conic-gradient(#ddd 0% 25%,#f7f7f7 0% 50%) 50%/16px 16px;border-radius:10px}.owc-extra-feedback:empty{display:none}.owc-extra-feedback p{font-size:11px}.owc-extra [data-wrap-entry]{width:100%;text-align:left}.owc-wrap-entry{padding-top:12px;border-top:1px solid color-mix(in srgb,var(--owc-accent) 15%,transparent)}
+.owc-v2 button.owc-pet-clock,.owc-v2 button.owc-pet-timer-row{cursor:pointer;color:inherit;min-height:28px;padding:4px 7px;border:0;border-radius:0;background:transparent}.owc-v2 button.owc-pet-clock{width:100%;justify-content:center}.owc-v2 button.owc-pet-timer-row:hover,.owc-v2 button.owc-pet-clock:hover{background:color-mix(in srgb,var(--owc-accent) 9%,transparent)}.owc-quick-actions{display:flex;gap:4px;align-items:center;padding:4px 6px;border-top:1px solid color-mix(in srgb,var(--owc-accent) 12%,transparent)}.owc-v2 .owc-quick-actions button{min-height:28px;padding:3px 7px;font-size:11px;background:transparent;border:0;display:flex;align-items:center;justify-content:center;gap:5px}.owc-quick-actions button:first-child{flex:1}.owc-quick-actions .owc-quick-more{font-size:18px;min-width:30px}.owc-v2 .owc-quick-actions button:hover{background:color-mix(in srgb,var(--owc-accent) 10%,transparent)}.owc-v2 .owc-quick-actions button:focus-visible,.owc-v2 button.owc-pet-timer-row:focus-visible,.owc-v2 button.owc-pet-clock:focus-visible{outline:2px solid var(--owc-accent);outline-offset:-2px}.owc-extra label.owc-check{display:flex;align-items:center;gap:8px;flex:1}.owc-extra .hub-row>.owc-check{margin:0}.owc-extra .owc-appearance-colors,.owc-extra .owc-appearance-custom{border-top:1px solid color-mix(in srgb,var(--owc-accent) 12%,transparent);padding-top:10px;margin-top:12px}.owc-v2 button.owc-inline-timer{width:100%;display:flex;align-items:center;gap:5px;min-height:28px;background:transparent;border:0;border-top:1px solid color-mix(in srgb,var(--owc-accent) 12%,transparent);border-radius:0;padding:4px 8px;font-size:11px}.owc-inline-timer span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:left}.owc-inline-timer strong{font-variant-numeric:tabular-nums}.owc-v2 button.owc-classic-mini-time{padding:0;min-height:24px;border:0;background:transparent;font:inherit;font-weight:600;cursor:pointer}.owc-v2 button.owc-classic-mini-time:hover{color:var(--owc-accent)}@media(pointer:coarse){.owc-v2 .owc-quick-actions button,.owc-v2 button.owc-pet-clock,.owc-v2 button.owc-pet-timer-row{min-height:40px}}
 `;
 
 export function useCompanionFeatures(React, input) {
@@ -13,8 +13,11 @@ export function useCompanionFeatures(React, input) {
   const [ready, setReady] = useState(false),
     [error, setError] = useState(''),
     [notice, setNotice] = useState('');
-  const [screen, setScreen] = useState(null),
-    [busy, setBusy] = useState(false);
+  const screen = input.screen;
+  const [busy, setBusy] = useState(false);
+  const [appearanceDraft, setAppearanceDraft] = useState(null);
+  const appearanceBase = useRef(null);
+  const [addingTimer, setAddingTimer] = useState(false);
   const [tick, setTick] = useState(Date.now());
   const [agentAccess, setAgentAccess] = useState(false);
   const [backup, setBackup] = useState(null),
@@ -24,7 +27,6 @@ export function useCompanionFeatures(React, input) {
     [photoPreview, setPhotoPreview] = useState('');
   const [notes, setNotes] = useState(null),
     [dirty, setDirty] = useState(false);
-  const [confirmLeave, setConfirmLeave] = useState(undefined);
   const [testReminder, setTestReminder] = useState(false);
   const [soundReady, setSoundReady] = useState(false);
   const latest = useRef(input);
@@ -33,14 +35,9 @@ export function useCompanionFeatures(React, input) {
   current.current = state;
   const runtime = useRef(null),
     owner = useRef(null),
-    audio = useRef(null),
-    panel = useRef(null),
-    launcher = useRef(null);
-  const screenRef = useRef(screen);
-  screenRef.current = screen;
+    audio = useRef(null);
   const lastInput = useRef(0),
-    alive = useRef(true),
-    returnFocus = useRef(null);
+    alive = useRef(true);
   if (!owner.current) owner.current = crypto.randomUUID();
   const now = tick;
   const events = ready ? companionEvents(state, input, now) : [];
@@ -52,7 +49,7 @@ export function useCompanionFeatures(React, input) {
   const active = testReminder
     ? { id: 'test', kind: 'test', label: text('测试计时已结束', 'Test timer finished') }
     : owned[0];
-  const showAlert = !!(active && !screen && !document.hidden && !input.editing);
+  const showAlert = !!(active && !screen && !input.menuOpen && !document.hidden && !input.editing);
 
   async function settingsCall(action, extra = {}) {
     const response = await fetch(new URL('offwork-clock/settings', document.baseURI), {
@@ -285,38 +282,72 @@ export function useCompanionFeatures(React, input) {
       if (alive.current) setBusy(false);
     }
   }
+  function setScreen(next) {
+    latest.current.navigate(
+      next === 'settings' ? 'preferences' : next === 'timers' ? 'smoking' : next,
+    );
+  }
   function open(next, event) {
-    if (dirty || photo) {
-      setConfirmLeave(next);
-      return;
-    }
-    returnFocus.current = event?.currentTarget || launcher.current;
-    setNotes(null);
-    setScreen(next);
-    setNotice('');
-    setBackup(null);
+    latest.current.navigate(
+      next === 'settings' ? 'preferences' : next === 'timers' ? 'smoking' : next,
+      event,
+    );
   }
   function close() {
-    if (dirty || photo) {
-      setConfirmLeave(null);
-      return;
-    }
-    setScreen(null);
+    latest.current.navigate(null);
+  }
+  function discardDrafts() {
     setNotes(null);
+    setDirty(false);
     setPhoto(null);
+    setPhotoPreview('');
+    setAppearanceDraft(null);
+    appearanceBase.current = null;
     setBackup(null);
-    returnFocus.current?.isConnected && returnFocus.current.focus();
+    setNotice('');
+    setError('');
+  }
+  function beginAppearance() {
+    const p = current.current.preferences;
+    const next = {
+      theme: p.theme,
+      cardScale: p.cardScale,
+      customEnabled: p.customEnabled,
+      image: p.image,
+    };
+    appearanceBase.current = next;
+    setAppearanceDraft(next);
+    setPhoto(null);
+    setError('');
+  }
+  function changeAppearance(patch) {
+    setAppearanceDraft((p) => ({ ...p, ...patch }));
+  }
+  async function applyAppearance() {
+    if (!appearanceDraft || busy) return false;
+    const patch = changedSettings(
+      appearanceBase.current || current.current.preferences,
+      appearanceDraft,
+    );
+    if (photo) {
+      if (!photoPreview) return false;
+      patch.image = photoPreview;
+      patch.customEnabled = true;
+    }
+    const saved = await act({ type: 'preferences', patch });
+    if (saved) {
+      setPhoto(null);
+      setAppearanceDraft(null);
+      appearanceBase.current = null;
+    }
+    return !!saved;
   }
   useEffect(() => {
-    if (screen === 'settings')
+    if (screen === 'preferences')
       void execute(async () => {
         const r = await settingsCall('get');
         setAgentAccess(r.agentAccess);
       });
-  }, [screen]);
-  useEffect(() => {
-    if (!screen) return;
-    panel.current?.querySelector('header button')?.focus();
   }, [screen]);
   useEffect(() => {
     if (!photo) {
@@ -546,7 +577,7 @@ export function useCompanionFeatures(React, input) {
   const check = (label, checked, onChange) =>
     h(
       'label',
-      null,
+      { className: 'owc-check' },
       h('input', {
         type: 'checkbox',
         checked,
@@ -556,20 +587,19 @@ export function useCompanionFeatures(React, input) {
       label,
     );
   const prefs = (patch) => act({ type: 'preferences', patch });
-  const reminderCard = (e) =>
+  const reminderCard = (e, compact = false) =>
     h(
       'article',
       { key: e.id, 'data-reminder-kind': e.kind },
-      h('strong', null, e.label),
+      !compact && h('strong', null, e.label),
       h(
         'p',
         { className: 'hub-muted' },
         e.kind === 'wrap'
           ? text('留下一件明天要做的事，再结束今天。', 'Leave one next step for tomorrow.')
-          : text(
-              '计时已结束。关闭只收起提示，稍后会在10分钟后再提醒。',
-              'Time is up. Close dismisses the card; snooze reminds you in 10 minutes.',
-            ),
+          : e.kind === 'water'
+            ? text('喝点水，再继续。', 'Time for some water.')
+            : text('计时已结束。', 'Time is up.'),
       ),
       h(
         'div',
@@ -592,20 +622,11 @@ export function useCompanionFeatures(React, input) {
     return h(
       React.Fragment,
       null,
-      h(
-        'p',
-        { className: 'hub-muted' },
-        text(
-          '现有抽烟计时保留原设置；下面可以添加独立计时。',
-          'Your smoking timer keeps its settings. Add independent timers below.',
-        ),
-      ),
-      button(text('打开抽烟计时', 'Open smoking timer'), () => {
-        close();
-        latest.current.openLegacy('smoking');
-      }),
+      state.timers.length > 0 && h('h3', null, text('其他计时', 'Other timers')),
       state.timers.map((timer) => {
         const view = countdownView(timer.clock, now);
+        const snoozedUntil =
+          state.deliveries['timer:' + timer.id + ':' + timer.clock.deadline]?.snoozeUntil || 0;
         return h(
           'article',
           { key: timer.id },
@@ -615,8 +636,10 @@ export function useCompanionFeatures(React, input) {
             'output',
             null,
             view.phase === 'idle'
-              ? text('未开始', 'Not started')
-              : formatDuration(Math.ceil(view.remaining / 1000)),
+              ? timer.clock.minutes + text('分钟 · 未开始', ' min · Not started')
+              : view.phase === 'due' && snoozedUntil > now
+                ? text('稍后 ', 'Snoozed ') + formatDuration(Math.ceil((snoozedUntil - now) / 1000))
+                : formatDuration(Math.ceil(view.remaining / 1000)),
           ),
           h(
             'div',
@@ -643,114 +666,128 @@ export function useCompanionFeatures(React, input) {
                 }),
               true,
             ),
-            button(text('重新计时', 'Restart'), () =>
-              act({
-                type: 'timer',
-                id: timer.id,
-                revision: timer.clock.revision,
-                operation: { type: 'restart' },
-              }),
-            ),
-            button(text('停止', 'Stop'), () =>
-              act({
-                type: 'timer',
-                id: timer.id,
-                revision: timer.clock.revision,
-                operation: { type: 'stop' },
-              }),
-            ),
-            button(text('删除', 'Delete'), () => {
-              if (window.confirm(text('删除此计时？', 'Delete this timer?')))
-                void act({
+            h(
+              'details',
+              null,
+              h('summary', null, text('更多', 'More')),
+              button(text('重新计时', 'Restart'), () =>
+                act({
                   type: 'timer',
                   id: timer.id,
                   revision: timer.clock.revision,
-                  operation: { type: 'delete' },
-                });
-            }),
+                  operation: { type: 'restart' },
+                }),
+              ),
+              button(text('停止', 'Stop'), () =>
+                act({
+                  type: 'timer',
+                  id: timer.id,
+                  revision: timer.clock.revision,
+                  operation: { type: 'stop' },
+                }),
+              ),
+              button(text('删除', 'Delete'), () => {
+                if (window.confirm(text('删除此计时？', 'Delete this timer?')))
+                  void act({
+                    type: 'timer',
+                    id: timer.id,
+                    revision: timer.clock.revision,
+                    operation: { type: 'delete' },
+                  });
+              }),
+            ),
           ),
         );
       }),
-      h(
-        'form',
-        {
-          onSubmit: async (e) => {
-            e.preventDefault();
-            const form = e.currentTarget,
-              data = new FormData(form);
-            const result = await act({
-              type: 'add-timer',
-              id: crypto.randomUUID(),
-              name: String(data.get('name')),
-              minutes: Number(data.get('minutes')),
-            });
-            if (result) form.reset();
+      !addingTimer &&
+        button(text('＋ 添加其他计时', '+ Add another timer'), () => setAddingTimer(true)),
+      addingTimer &&
+        h(
+          'form',
+          {
+            onSubmit: async (e) => {
+              e.preventDefault();
+              const form = e.currentTarget,
+                data = new FormData(form);
+              const result = await act({
+                type: 'add-timer',
+                id: crypto.randomUUID(),
+                name: String(data.get('name')),
+                minutes: Number(data.get('minutes')),
+              });
+              if (result) {
+                form.reset();
+                setAddingTimer(false);
+              }
+            },
           },
-        },
-        h(
-          'label',
-          null,
-          text('计时名称', 'Timer name'),
-          h('input', {
-            name: 'name',
-            maxLength: 40,
-            required: true,
-            placeholder: text('泡茶 / 起身 / 专注', 'Tea / stretch / focus'),
-          }),
+          h(
+            'label',
+            null,
+            text('计时名称', 'Timer name'),
+            h('input', {
+              name: 'name',
+              maxLength: 40,
+              required: true,
+              placeholder: text('泡茶 / 起身 / 专注', 'Tea / stretch / focus'),
+            }),
+          ),
+          h(
+            'label',
+            null,
+            text('时长（1–1440分钟）', 'Duration (1–1440 minutes)'),
+            h('input', {
+              name: 'minutes',
+              type: 'number',
+              min: 1,
+              max: 1440,
+              step: 1,
+              required: true,
+              defaultValue: 25,
+            }),
+          ),
+          h(
+            'button',
+            { type: 'submit', disabled: busy || state.timers.length >= 8 },
+            text('添加计时', 'Add timer'),
+          ),
+          button(text('取消', 'Cancel'), () => setAddingTimer(false)),
         ),
-        h(
-          'label',
-          null,
-          text('时长（1–1440分钟）', 'Duration (1–1440 minutes)'),
-          h('input', {
-            name: 'minutes',
-            type: 'number',
-            min: 1,
-            max: 1440,
-            step: 1,
-            required: true,
-            defaultValue: 25,
-          }),
-        ),
-        h(
-          'button',
-          { type: 'submit', disabled: busy || state.timers.length >= 8 },
-          text('添加计时', 'Add timer'),
-        ),
-      ),
     );
   }
+  function wrapDraft() {
+    const date = input.shift?.shiftDate || new Date(now).toISOString().slice(0, 10);
+    return notes?.date === date
+      ? notes
+      : {
+          date,
+          done: state.journal[date]?.done || '',
+          next: state.journal[date]?.next || '',
+          base: state.journal[date]?.updatedAt || 0,
+        };
+  }
+  async function saveNotes(end = false) {
+    return execute(async () => {
+      const entry = wrapDraft();
+      const result = await runtime.current.update({ type: 'journal', ...entry, end });
+      setNotes({ ...entry, base: result.journal[entry.date].updatedAt });
+      setDirty(false);
+      setNotice(
+        end
+          ? text('今天收尾了，明天接着来。', 'All set for tomorrow.')
+          : text('草稿已保存', 'Draft saved'),
+      );
+      if (end) latest.current.react?.();
+      return result;
+    });
+  }
   function wrapPanel() {
-    const shift = input.shift,
-      date = shift?.shiftDate || new Date(now).toISOString().slice(0, 10);
-    const entry =
-      notes?.date === date
-        ? notes
-        : {
-            date,
-            done: state.journal[date]?.done || '',
-            next: state.journal[date]?.next || '',
-            base: state.journal[date]?.updatedAt || 0,
-          };
+    const entry = wrapDraft(),
+      date = entry.date;
     const summary = companionDaySummary(state, date, input.timezone || 'UTC');
     const previous = Object.entries(state.journal)
       .filter(([key]) => key < date)
       .sort(([a], [b]) => b.localeCompare(a))[0];
-    const save = (end) =>
-      execute(async () => {
-        const result = await runtime.current.update({ type: 'journal', ...entry, end });
-        setNotes({ ...entry, base: result.journal[date].updatedAt });
-        setDirty(false);
-        setNotice(
-          end
-            ? text(
-                '今天收尾了。全天喝水与代理任务照常运行。',
-                'Day wrapped up. All-day water reminders and agent tasks keep running.',
-              )
-            : text('收尾草稿已保存', 'Wrap-up draft saved'),
-        );
-        if (end) latest.current.react?.();
-      });
     return h(
       React.Fragment,
       null,
@@ -802,15 +839,21 @@ export function useCompanionFeatures(React, input) {
         'p',
         { className: 'hub-muted' },
         text(
-          `当天已记录喝水 ${summary.water} 次，确认计时结束 ${summary.timers} 次。只统计新版开始后的实际操作。`,
-          `Recorded today: ${summary.water} drinks, ${summary.timers} timer acknowledgements. Only actions recorded since this update are counted.`,
+          `今天喝水 ${summary.water} 次 · 计时完成 ${summary.timers} 次`,
+          `Today: ${summary.water} drinks · ${summary.timers} timer acknowledgements`,
         ),
       ),
       h(
         'div',
         { className: 'hub-row' },
-        button(text('保存草稿', 'Save draft'), () => save(false)),
-        button(text('结束今天', 'End today'), () => save(true), true),
+        button(text('保存草稿', 'Save draft'), () => saveNotes(false)),
+        button(
+          state.journal[date]?.endedAt
+            ? text('更新收尾', 'Update wrap-up')
+            : text('结束今天', 'End today'),
+          () => saveNotes(true),
+          true,
+        ),
       ),
       !input.configured &&
         h(
@@ -840,6 +883,34 @@ export function useCompanionFeatures(React, input) {
       ),
     );
   }
+  function wrapSettings() {
+    const p = state.preferences;
+    return h(
+      'details',
+      { className: 'owc-context-settings' },
+      h('summary', null, text('下班提醒', 'Offwork reminder')),
+      check(text('下班前提醒收尾', 'Remind me to wrap up'), p.wrapEnabled, (v) =>
+        prefs({ wrapEnabled: v }),
+      ),
+      p.wrapEnabled &&
+        h(
+          'label',
+          null,
+          text('提前多久', 'How early'),
+          h(
+            'select',
+            {
+              'aria-label': text('提前多久', 'How early'),
+              value: p.leadMinutes,
+              onChange: (e) => prefs({ leadMinutes: Number(e.target.value) }),
+            },
+            [0, 5, 10, 15, 30, 60].map((n) =>
+              h('option', { key: n, value: n }, n + text('分钟', ' min')),
+            ),
+          ),
+        ),
+    );
+  }
   function settingsPanel() {
     const p = state.preferences;
     return h(
@@ -849,26 +920,37 @@ export function useCompanionFeatures(React, input) {
         'p',
         { className: 'hub-muted' },
         text(
-          '提醒需要页面保持打开；关闭所有页面后，下次打开恢复到期状态。后台可能被浏览器延迟。',
-          'Keep a page open for reminders. Closed pages restore overdue state on reopening; browsers may delay background delivery.',
+          '声音与系统通知可选。提醒需保持页面打开。',
+          'Sound and system notifications are optional. Keep a page open for reminders.',
         ),
       ),
+      h(
+        'div',
+        { className: 'hub-row' },
+        button(text('作息与薪资', 'Schedule and salary'), (e) => open('schedule', e)),
+        button(text('喝水间隔', 'Water interval'), (e) => open('water', e)),
+      ),
+      h('h3', null, text('声音与通知', 'Sound and notifications')),
       button(text('测试页面提示', 'Test in-page reminder'), () => {
         setTestReminder(true);
         setScreen(null);
       }),
-      check(text('提示音', 'Sound'), p.sound, async (value) => {
-        if (!value) return prefs({ sound: false });
-        await execute(async () => {
-          await unlockSound();
-          await runtime.current.update({ type: 'preferences', patch: { sound: true } });
-        });
-      }),
-      button(text('试听', 'Play sample'), () =>
-        execute(async () => {
-          await unlockSound();
-          chime();
+      h(
+        'div',
+        { className: 'hub-row' },
+        check(text('提示音', 'Sound'), p.sound, async (value) => {
+          if (!value) return prefs({ sound: false });
+          await execute(async () => {
+            await unlockSound();
+            await runtime.current.update({ type: 'preferences', patch: { sound: true } });
+          });
         }),
+        button(text('试听', 'Play sample'), () =>
+          execute(async () => {
+            await unlockSound();
+            chime();
+          }),
+        ),
       ),
       p.sound &&
         !soundReady &&
@@ -908,16 +990,25 @@ export function useCompanionFeatures(React, input) {
       h(
         'small',
         null,
-        text('通知权限：', 'Notification permission: ') +
-          (window.Notification?.permission || 'unavailable'),
+        text('系统通知：', 'System notifications: ') +
+          ({
+            granted: text('已允许', 'Allowed'),
+            denied: text(
+              '未允许，请在浏览器的网站设置中开启',
+              'Blocked; enable in browser site settings',
+            ),
+            default: text('尚未开启', 'Not enabled'),
+          }[window.Notification?.permission] ||
+            text('此浏览器不支持', 'Unavailable in this browser')),
       ),
       h(
         'div',
         { className: 'hub-row' },
-        button(text('全部免打扰30分钟', 'Quiet for 30m'), () =>
-          prefs({ quietUntil: Date.now() + 1800000 }),
-        ),
-        button(text('结束免打扰', 'End quiet mode'), () => prefs({ quietUntil: 0 })),
+        p.quietUntil > now
+          ? button(text('结束免打扰', 'End quiet mode'), () => prefs({ quietUntil: 0 }))
+          : button(text('全部免打扰30分钟', 'Quiet for 30m'), () =>
+              prefs({ quietUntil: Date.now() + 1800000 }),
+            ),
       ),
       p.quietUntil > now &&
         h(
@@ -926,215 +1017,198 @@ export function useCompanionFeatures(React, input) {
           text('免打扰剩余 ', 'Quiet remaining '),
           formatDuration(Math.ceil((p.quietUntil - now) / 1000)),
         ),
-      check(text('下班前提醒收尾', 'Remind me to wrap up'), p.wrapEnabled, (v) =>
-        prefs({ wrapEnabled: v }),
-      ),
       h(
-        'label',
+        'details',
         null,
-        text('提前多久', 'How early'),
-        h(
-          'select',
-          {
-            'aria-label': text('提前多久', 'How early'),
-            value: p.leadMinutes,
-            onChange: (e) => prefs({ leadMinutes: Number(e.target.value) }),
-          },
-          [0, 5, 10, 15, 30, 60].map((n) =>
-            h('option', { key: n, value: n }, n + text('分钟', ' min')),
-          ),
-        ),
-      ),
-      check(
-        text(
-          '输入时暂缓休息与收尾提示（最多2分钟）',
-          'Defer rest/wrap-up while typing (up to 2 min)',
-        ),
-        p.deferTyping,
-        (v) => prefs({ deferTyping: v }),
-      ),
-      h(
-        'label',
-        null,
-        text(
-          '等待这个会话本轮结束再提醒（最多2分钟）',
-          'Defer while this session runs (up to 2 min)',
-        ),
-        h(
-          'select',
-          {
-            'aria-label': text('关联会话', 'Linked session'),
-            value: p.linkedSession,
-            onChange: (e) => prefs({ linkedSession: e.target.value }),
-          },
-          h('option', { value: '' }, text('不关联', 'No linked session')),
-          (input.sessionIds || []).map((id) =>
-            h('option', { key: id, value: id }, id.slice(0, 24)),
-          ),
-        ),
-      ),
-      h(
-        'small',
-        null,
-        text(
-          '只读取运行状态，不读取会话内容。宿主未提供状态时按普通计时提醒。',
-          'Reads status only. Falls back to normal reminders when host status is unavailable.',
-        ),
-      ),
-      h(
-        'article',
-        null,
+        h('summary', null, text('高级设置', 'Advanced settings')),
         check(
-          text('允许代理工具读写作息与薪资', 'Allow agent tools to read/write schedule and salary'),
-          agentAccess,
-          async (allowed) =>
-            execute(async () => {
-              const r = await settingsCall('access', { allowed });
-              setAgentAccess(r.agentAccess);
-            }),
+          text(
+            '输入时暂缓休息与收尾提示（最多2分钟）',
+            'Defer rest/wrap-up while typing (up to 2 min)',
+          ),
+          p.deferTyping,
+          (v) => prefs({ deferTyping: v }),
+        ),
+        h(
+          'label',
+          null,
+          text(
+            '等待这个会话本轮结束再提醒（最多2分钟）',
+            'Defer while this session runs (up to 2 min)',
+          ),
+          h(
+            'select',
+            {
+              'aria-label': text('关联会话', 'Linked session'),
+              value: p.linkedSession,
+              onChange: (e) => prefs({ linkedSession: e.target.value }),
+            },
+            h('option', { value: '' }, text('不关联', 'No linked session')),
+            (input.sessionIds || []).map((id) =>
+              h('option', { key: id, value: id }, input.sessionTitles?.[id] || id.slice(0, 24)),
+            ),
+          ),
         ),
         h(
           'small',
           null,
           text(
-            '默认关闭。开启后，工具返回的数据可能进入会话记录；界面设置始终直接保存。',
-            'Off by default. Tool results may enter conversation history. UI settings save directly.',
+            '只读取运行状态，不读取会话内容。宿主未提供状态时按普通计时提醒。',
+            'Reads status only. Falls back to normal reminders when host status is unavailable.',
+          ),
+        ),
+        h(
+          'article',
+          null,
+          check(
+            text(
+              '允许代理工具读写作息与薪资',
+              'Allow agent tools to read/write schedule and salary',
+            ),
+            agentAccess,
+            async (allowed) =>
+              execute(async () => {
+                const r = await settingsCall('access', { allowed });
+                setAgentAccess(r.agentAccess);
+              }),
+          ),
+          h(
+            'small',
+            null,
+            text(
+              '默认关闭。开启后，工具返回的数据可能进入会话记录；界面设置始终直接保存。',
+              'Off by default. Tool results may enter conversation history. UI settings save directly.',
+            ),
           ),
         ),
       ),
-      button(text('作息与薪资设置', 'Schedule and salary'), () => {
-        close();
-        latest.current.openLegacy('schedule');
-      }),
+      button(text('备份与恢复', 'Backup and restore'), (e) => open('data', e)),
     );
   }
   function appearancePanel() {
-    const p = state.preferences;
+    const p = appearanceDraft || state.preferences;
     return h(
       React.Fragment,
       null,
       h(
-        'label',
-        null,
-        text('主题色', 'Accent theme'),
+        'details',
+        { className: 'owc-appearance-colors' },
+        h('summary', null, text('配色与卡片', 'Color and card size')),
         h(
-          'select',
-          {
-            'aria-label': text('主题色', 'Accent theme'),
-            value: p.theme,
-            onChange: (e) => prefs({ theme: e.target.value }),
-          },
-          Object.keys(COMPANION_THEMES).map((k) =>
-            h(
-              'option',
-              { key: k, value: k },
-              {
-                host: text('跟随宿主', 'Follow host'),
-                lavender: text('雾紫', 'Lavender'),
-                ocean: text('海蓝', 'Ocean'),
-                rose: text('玫瑰', 'Rose'),
-                slate: text('石板灰', 'Slate'),
-              }[k],
-            ),
-          ),
-        ),
-      ),
-      h(
-        'label',
-        null,
-        text('卡片字号与宽度', 'Card text and width'),
-        h(
-          'select',
-          {
-            'aria-label': text('卡片字号与宽度', 'Card text and width'),
-            value: p.cardScale,
-            onChange: (e) => prefs({ cardScale: Number(e.target.value) }),
-          },
-          [0.9, 1, 1.1, 1.2].map((v) =>
-            h('option', { key: v, value: v }, Math.round(v * 100) + '%'),
-          ),
-        ),
-      ),
-      button(text('调整人物大小与内置形象', 'Character size and built-in appearances'), () => {
-        close();
-        latest.current.openLegacy('appearance');
-      }),
-      h(
-        'label',
-        null,
-        text('导入自己的形象（仅本浏览器）', 'Import your image (this browser only)'),
-        h('input', {
-          type: 'file',
-          accept: 'image/png,image/webp,image/jpeg',
-          onChange: (e) => {
-            const f = e.target.files[0];
-            e.target.value = '';
-            void execute(async () => {
-              setPhoto(await loadCompanionImage(f));
-              setCrop({ zoom: 1, x: 50, y: 50 });
-            });
-          },
-        }),
-      ),
-      (photoPreview || p.image) &&
-        h('img', {
-          className: 'hub-preview',
-          src: photoPreview || p.image,
-          alt: text('形象裁切预览', 'Character crop preview'),
-        }),
-      photo &&
-        h(
-          React.Fragment,
+          'label',
           null,
-          ['zoom', 'x', 'y'].map((k) =>
-            h(
-              'label',
-              { key: k },
-              {
-                zoom: text('缩放', 'Zoom'),
-                x: text('水平位置', 'Horizontal position'),
-                y: text('垂直位置', 'Vertical position'),
-              }[k],
-              h('input', {
-                type: 'range',
-                min: k === 'zoom' ? 1 : 0,
-                max: k === 'zoom' ? 3 : 100,
-                step: k === 'zoom' ? 0.05 : 1,
-                value: crop[k],
-                onChange: (e) => setCrop({ ...crop, [k]: Number(e.target.value) }),
-              }),
-            ),
-          ),
+          text('主题色', 'Accent theme'),
           h(
-            'div',
-            { className: 'hub-row' },
-            button(
-              text('应用人物', 'Apply character'),
-              async () => {
-                const r = await prefs({ image: photoPreview, customEnabled: true });
-                if (r) {
-                  setPhoto(null);
-                  latest.current.setView({ companion: true });
-                }
-              },
-              true,
+            'select',
+            {
+              'aria-label': text('主题色', 'Accent theme'),
+              value: p.theme,
+              onChange: (e) => changeAppearance({ theme: e.target.value }),
+            },
+            Object.keys(COMPANION_THEMES).map((k) =>
+              h(
+                'option',
+                { key: k, value: k },
+                {
+                  host: text('跟随宿主', 'Follow host'),
+                  lavender: text('雾紫', 'Lavender'),
+                  ocean: text('海蓝', 'Ocean'),
+                  rose: text('玫瑰', 'Rose'),
+                  slate: text('石板灰', 'Slate'),
+                }[k],
+              ),
             ),
-            button(text('取消预览', 'Cancel preview'), () => setPhoto(null)),
           ),
         ),
-      p.image &&
-        check(text('使用自定义人物', 'Use custom character'), p.customEnabled, (v) =>
-          prefs({ customEnabled: v }),
+        h(
+          'label',
+          null,
+          text('卡片字号与宽度', 'Card text and width'),
+          h(
+            'select',
+            {
+              'aria-label': text('卡片字号与宽度', 'Card text and width'),
+              value: p.cardScale,
+              onChange: (e) => changeAppearance({ cardScale: Number(e.target.value) }),
+            },
+            [0.9, 1, 1.1, 1.2].map((v) =>
+              h('option', { key: v, value: v }, Math.round(v * 100) + '%'),
+            ),
+          ),
         ),
+      ),
+      h(
+        'details',
+        { className: 'owc-appearance-custom', open: photo ? true : undefined },
+        h('summary', null, text('自定义人物', 'Custom character')),
+        h(
+          'label',
+          null,
+          text('导入自己的形象（仅本浏览器）', 'Import your image (this browser only)'),
+          h('input', {
+            type: 'file',
+            accept: 'image/png,image/webp,image/jpeg',
+            onChange: (e) => {
+              const f = e.target.files[0];
+              e.target.value = '';
+              void execute(async () => {
+                setPhoto(await loadCompanionImage(f));
+                setCrop({ zoom: 1, x: 50, y: 50 });
+                latest.current.enableCharacter?.();
+              });
+            },
+          }),
+        ),
+        photo &&
+          photoPreview &&
+          h('img', {
+            className: 'hub-preview',
+            src: photoPreview || p.image,
+            alt: text('形象裁切预览', 'Character crop preview'),
+          }),
+        photo &&
+          h(
+            React.Fragment,
+            null,
+            ['zoom', 'x', 'y'].map((k) =>
+              h(
+                'label',
+                { key: k },
+                {
+                  zoom: text('缩放', 'Zoom'),
+                  x: text('水平位置', 'Horizontal position'),
+                  y: text('垂直位置', 'Vertical position'),
+                }[k],
+                h('input', {
+                  type: 'range',
+                  min: k === 'zoom' ? 1 : 0,
+                  max: k === 'zoom' ? 3 : 100,
+                  step: k === 'zoom' ? 0.05 : 1,
+                  value: crop[k],
+                  onChange: (e) => setCrop({ ...crop, [k]: Number(e.target.value) }),
+                }),
+              ),
+            ),
+            h(
+              'div',
+              { className: 'hub-row' },
+              button(text('取消预览', 'Cancel preview'), () => setPhoto(null)),
+            ),
+          ),
+        p.image &&
+          check(text('使用自定义人物', 'Use custom character'), p.customEnabled, (v) =>
+            changeAppearance({ customEnabled: v }),
+          ),
+      ),
       button(text('恢复内置外观和默认主题', 'Restore built-in appearance and theme'), () =>
-        prefs({ customEnabled: false, theme: 'host', cardScale: 1 }),
+        changeAppearance({ customEnabled: false, theme: 'host', cardScale: 1 }),
       ),
       h(
         'small',
         null,
         text(
-          '静态图片不会自动生成动画。图片会转换为PNG，包含在浏览器备份中。取消预览不会更换已保存人物。',
-          'Static images do not generate animation. Images are converted to PNG and included in browser backups. Cancelling leaves the saved character unchanged.',
+          '调整后点击下方“应用外观”。取消会保留原来的形象和配色。',
+          'Choose Apply appearance below to save. Cancel keeps your previous image and colors.',
         ),
       ),
     );
@@ -1256,182 +1330,121 @@ export function useCompanionFeatures(React, input) {
       ),
     );
   }
-  function render() {
-    const tabs = [
-      ['reminders', text('提醒', 'Reminders')],
-      ['timers', text('计时', 'Timers')],
-      ['wrap', text('收尾', 'Wrap-up')],
-      ['settings', text('设置', 'Settings')],
-      ['appearance', text('外观', 'Appearance')],
-      ['data', text('备份', 'Backup')],
-    ];
-    const panelStyle = {
-      ...(COMPANION_THEMES[state.preferences.theme]
-        ? { '--hub-accent': COMPANION_THEMES[state.preferences.theme] }
-        : {}),
-      fontSize: 13 * state.preferences.cardScale,
-      width: Math.min(370 * state.preferences.cardScale, window.innerWidth - 24),
-    };
-    return h(
-      React.Fragment,
-      null,
-      h('style', null, COMPANION_APP_STYLE),
-      h(
-        'button',
-        {
-          ref: launcher,
-          type: 'button',
-          className: 'owc-hub-launch',
-          'data-companion-launch': true,
-          onClick: (e) => open('reminders', e),
-          'aria-expanded': !!screen,
-        },
-        text('搭子菜单', 'Companion menu'),
-        pending.length ? ' · ' + pending.length : text(' · 计时 / 收尾', ' · Timers / wrap-up'),
-      ),
-      (screen || showAlert || (error && !ready)) &&
-        h(
-          'section',
-          {
-            ref: panel,
-            className: 'owc-hub' + (!screen ? ' owc-hub-alert' : ''),
-            style: panelStyle,
-            'data-companion-screen': screen || 'alert',
-            role: 'region',
-            'aria-label': text('下班搭子', 'Offwork companion'),
-            onPointerDown: (e) => e.stopPropagation(),
-            onContextMenu: (e) => e.stopPropagation(),
-            onKeyDown: (e) => {
-              e.stopPropagation();
-              if (e.key === 'Escape') {
-                e.preventDefault();
-                screen ? close() : active && void handleReminder(active, 'dismiss');
-              }
-            },
-          },
-          h(
-            'header',
-            null,
+  function render(page) {
+    if (!ready)
+      return h(
+        'div',
+        { className: 'owc-extra' },
+        feedback(),
+        h('p', null, text('读取中…', 'Loading…')),
+      );
+    let content;
+    if (page === 'timers') content = timerPanel();
+    else if (page === 'wrap') content = wrapPanel();
+    else if (page === 'settings') content = settingsPanel();
+    else if (page === 'appearance') content = appearancePanel();
+    else if (page === 'data') content = dataPanel();
+    else if (page === 'alert') content = active && reminderCard(active, true);
+    else if (page === 'wrap-entry') {
+      const entry = wrapDraft();
+      content = h(
+        'div',
+        { className: 'owc-wrap-entry' },
+        button(
+          state.journal[entry.date]?.endedAt
+            ? text('查看今日收尾', 'View today’s wrap-up')
+            : text('记下明天第一件事', 'Leave a next step for tomorrow'),
+          (e) => open('wrap', e),
+          false,
+          { 'data-wrap-entry': true },
+        ),
+        wrapSettings(),
+      );
+    } else if (page === 'reminders')
+      content = h(
+        React.Fragment,
+        null,
+        pending.length
+          ? pending.map((e) => reminderCard(e))
+          : h('p', null, text('目前没有待处理提醒', 'No pending reminders')),
+        events
+          .filter((e) => !pending.includes(e))
+          .map((e) =>
             h(
-              'strong',
-              null,
-              screen ? text('下班搭子', 'Offwork companion') : text('到点了', 'Time is up'),
-            ),
-            button(
-              '×',
-              () => (screen ? close() : active && handleReminder(active, 'dismiss')),
-              false,
-              { 'aria-label': text('关闭面板', 'Close panel') },
-            ),
-          ),
-          screen &&
-            h(
-              'nav',
-              { role: 'tablist', 'aria-label': text('搭子功能', 'Companion features') },
-              tabs.map(([id, label]) =>
-                button(label, (e) => open(id, e), false, {
-                  key: id,
-                  role: 'tab',
-                  'aria-selected': screen === id,
-                }),
+              'article',
+              { key: e.id },
+              h('strong', null, e.label),
+              button(text('查看计时', 'View timer'), (ev) =>
+                open(e.kind === 'water' ? 'home' : e.kind === 'wrap' ? 'wrap' : 'smoking', ev),
               ),
             ),
-          error && h('p', { className: 'hub-error', role: 'alert' }, error),
-          (!ready || error) &&
-            button(text('重试读取', 'Retry loading'), () => runtime.current?.retry()),
-          notice && h('p', { role: 'status' }, notice),
-          confirmLeave !== undefined
-            ? h(
-                'article',
-                null,
-                h(
-                  'p',
-                  null,
-                  text(
-                    '有未保存的笔记或外观预览，放弃后离开？',
-                    'Discard unsaved notes or image preview?',
-                  ),
-                ),
-                button(text('继续编辑', 'Keep editing'), () => setConfirmLeave(undefined)),
-                button(text('放弃并离开', 'Discard and leave'), () => {
-                  setDirty(false);
-                  setNotes(null);
-                  setPhoto(null);
-                  setScreen(confirmLeave);
-                  setConfirmLeave(undefined);
-                }),
-              )
-            : !ready
-              ? null
-              : !screen
-                ? reminderCard(active)
-                : screen === 'timers'
-                  ? timerPanel()
-                  : screen === 'wrap'
-                    ? wrapPanel()
-                    : screen === 'settings'
-                      ? settingsPanel()
-                      : screen === 'appearance'
-                        ? appearancePanel()
-                        : screen === 'data'
-                          ? dataPanel()
-                          : h(
-                              React.Fragment,
-                              null,
-                              pending.length
-                                ? pending.map(reminderCard)
-                                : h(
-                                    'p',
-                                    null,
-                                    text(
-                                      '目前没有待处理提醒。计时到点会在这里出现。',
-                                      'No pending reminders. Timers appear here when due.',
-                                    ),
-                                  ),
-                              events.length > pending.length &&
-                                h(
-                                  'details',
-                                  null,
-                                  h(
-                                    'summary',
-                                    null,
-                                    text('已关闭或稍后的到期计时', 'Dismissed or snoozed timers'),
-                                  ),
-                                  events
-                                    .filter((e) => !pending.includes(e))
-                                    .map((e) =>
-                                      h(
-                                        'article',
-                                        { key: e.id },
-                                        h('strong', null, e.label),
-                                        button(text('查看', 'View'), () => {
-                                          close();
-                                          latest.current.openLegacy(
-                                            e.kind === 'water'
-                                              ? 'home'
-                                              : e.kind === 'smoking'
-                                                ? 'smoking'
-                                                : 'income',
-                                          );
-                                        }),
-                                      ),
-                                    ),
-                                ),
-                              button(
-                                text('开一个计时', 'Start a timer'),
-                                (e) => open('timers', e),
-                                true,
-                              ),
-                              button(text('准备下班', 'Wrap up today'), (e) => open('wrap', e)),
-                            ),
-        ),
+          ),
+      );
+    return h('div', { className: 'owc-extra', 'data-companion-content': page }, content);
+  }
+  function feedback() {
+    return h(
+      'div',
+      { className: 'owc-extra owc-extra-feedback' },
+      error && h('p', { className: 'hub-error', role: 'alert' }, error),
+      error && button(text('重试读取', 'Retry loading'), () => runtime.current?.retry()),
+      notice && h('p', { role: 'status' }, notice),
     );
   }
+  const appearanceDirty =
+    !!photo ||
+    !!(
+      appearanceDraft &&
+      appearanceBase.current &&
+      JSON.stringify(appearanceDraft) !== JSON.stringify(appearanceBase.current)
+    );
+  const activeTimers = state.timers
+    .filter((t) => ['running', 'paused'].includes(countdownView(t.clock, now).phase))
+    .sort((a, b) => (a.clock.deadline || Infinity) - (b.clock.deadline || Infinity));
+  const activeTimer = activeTimers[0]
+    ? {
+        name: activeTimers[0].name,
+        ...countdownView(activeTimers[0].clock, now),
+        count: activeTimers.length,
+      }
+    : null;
   return {
     state,
     ready,
     screen,
     render,
+    feedback,
+    busy,
+    activeTimer,
+    previewPreferences: appearanceDraft,
+    dirty: dirty || appearanceDirty,
+    discardDrafts,
+    beginAppearance,
+    applyAppearance,
+    saveNotes,
+    useBuiltin: () => {
+      setPhoto(null);
+      changeAppearance({ customEnabled: false });
+    },
+    previewImage:
+      photoPreview ||
+      ((appearanceDraft || state.preferences).customEnabled
+        ? (appearanceDraft || state.preferences).image
+        : null),
+    hasCustom: !!(state.preferences.image || photo),
+    selectCustom: () => changeAppearance({ customEnabled: true }),
+    cropping: !!photo,
+    alert: showAlert,
+    alertTitle: active?.label,
+    pendingCount: pending.length,
+    dismissAlert: () => active && handleReminder(active, 'dismiss'),
+    snoozeWater: () =>
+      act({ type: 'snooze', id: 'water:' + hydrationView(input.water, now).eventId }),
+    waterCanSnooze: !!state.deliveries['water:' + hydrationView(input.water, now).eventId],
+    waterSnoozedUntil: input.waterReady
+      ? state.deliveries['water:' + hydrationView(input.water, now).eventId]?.snoozeUntil || 0
+      : 0,
+    smokingSnoozedUntil: state.deliveries['smoking:' + input.smoking?.deadline]?.snoozeUntil || 0,
     act,
     open,
     quiet: state.preferences.quietUntil > now,

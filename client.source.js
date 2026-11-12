@@ -493,7 +493,19 @@ window.__ModuleLoader__.load({
         ['path', { d: 'M13.1 3v3.2H9.9' }],
       ],
     };
-    const LOCAL_SCREENS = [null, 'appearance', 'smoking', 'water-countdown', 'water', 'home'];
+    const LOCAL_SCREENS = [
+      null,
+      'appearance',
+      'smoking',
+      'water-countdown',
+      'water',
+      'home',
+      'income',
+      'wrap',
+      'preferences',
+      'data',
+      'reminders',
+    ];
     const iconSvg = (name, size = 15) =>
       h(
         'svg',
@@ -728,6 +740,10 @@ window.__ModuleLoader__.load({
           const safeState = state && !state.error ? state : null;
           const features = useCompanionFeatures(React, {
             language: locale.active,
+            screen: ui.screen,
+            menuOpen: !!ui.menu,
+            navigate: (screen, event) => navigateScreen(screen, event),
+            enableCharacter: () => updateAppearance({ companion: true }),
             configured: !!data?.configured,
             shift: data?.configured ? safeState : null,
             timezone: settings?.timezone,
@@ -739,8 +755,11 @@ window.__ModuleLoader__.load({
             smokingLabel: t('smokingCountdown'),
             waterLabel: t('waterDue'),
             wrapLabel: t('companionDone'),
-            editing: editing || waterEditing || !!ui.pending,
+            editing: editing || waterEditing || ui.screen === 'wrap' || !!ui.pending,
             sessionIds,
+            sessionTitles: Object.fromEntries(
+              sessionIds.map((id) => [id, sessions?.byId?.[id]?.title]),
+            ),
             runningSessions: sessionIds.filter((id) => sessions?.byId?.[id]?.running === true),
             view: savedView,
             setView: (patch) => setPreference(patch),
@@ -754,11 +773,15 @@ window.__ModuleLoader__.load({
             drink: () => waterAction({ type: 'manual-drink', actionId: crypto.randomUUID() }),
             react: () => petMotion.current?.play('greet'),
           });
+          const displayPreferences =
+            appearanceOnly && features.previewPreferences
+              ? features.previewPreferences
+              : features.state.preferences;
           const featureStyle = {
-            ...(COMPANION_THEMES[features.state.preferences.theme]
-              ? { '--owc-accent': COMPANION_THEMES[features.state.preferences.theme] }
+            ...(COMPANION_THEMES[displayPreferences.theme]
+              ? { '--owc-accent': COMPANION_THEMES[displayPreferences.theme] }
               : {}),
-            '--owc-font-size': 13 * features.state.preferences.cardScale + 'px',
+            '--owc-font-size': 13 * displayPreferences.cardScale + 'px',
           };
           const petMode = ready && (appearanceOnly ? appearanceWasPet.current : view.companion);
           const petClockStatus =
@@ -780,11 +803,18 @@ window.__ModuleLoader__.load({
             appearanceOnly ? savedView.petSize : view.petSize,
             420,
             stageModel,
-            72,
+            (window.matchMedia?.('(pointer:coarse)').matches ? 144 : 108) +
+              (features.activeTimer ? 30 : 0),
             196,
           );
           const surfaceScreen = ui.screen || 'reminder';
-          const surfaceWidth = petSurfaceWidth(surfaceScreen, viewport);
+          const surfaceWidth = Math.max(
+            1,
+            Math.min(
+              petSurfaceWidth(surfaceScreen, viewport) * displayPreferences.cardScale,
+              viewport.width - 24,
+            ),
+          );
           const measureKey = [surfaceScreen, surfaceWidth, locale.active].join(':');
           const measured = cardMeasure.key === measureKey;
           const naturalHeight = measured ? cardMeasure.height : 320;
@@ -873,11 +903,11 @@ window.__ModuleLoader__.load({
             ...featureStyle,
             width: ui.screen
               ? Math.min(
-                  petSurfaceWidth(ui.screen, viewport) * features.state.preferences.cardScale,
+                  petSurfaceWidth(ui.screen, viewport) * displayPreferences.cardScale,
                   viewport.width - 24,
                 )
               : Math.min(
-                  (collapsed ? 224 : 320) * features.state.preferences.cardScale,
+                  (collapsed ? 224 : 320) * displayPreferences.cardScale,
                   Math.max(1, viewport.width - 24),
                 ),
             '--owc-alpha': String(view.opacity),
@@ -1493,6 +1523,7 @@ window.__ModuleLoader__.load({
           function performNavigation(screen, root = false) {
             if (root) panelPlacement.current = null;
             if (screen !== ui.screen) {
+              features.discardDrafts();
               if (screen === 'water') {
                 waterPreferencesBase.current = { enabled: water.enabled, interval: water.interval };
                 setWaterInterval(String(water.interval));
@@ -1506,6 +1537,7 @@ window.__ModuleLoader__.load({
                 setError('');
               }
               if (screen === 'appearance') {
+                features.beginAppearance();
                 appearanceBase.current = appearanceValues(savedView);
                 appearanceWasPet.current = !!petMode;
                 setAppearanceDraft(appearanceValues(savedView));
@@ -1520,6 +1552,7 @@ window.__ModuleLoader__.load({
             setWaterConfirm(null);
           }
           function navigateScreen(screen, event) {
+            if (screen === 'water-countdown') screen = 'home';
             if (
               screen !== null &&
               !LOCAL_SCREENS.includes(screen) &&
@@ -1528,6 +1561,7 @@ window.__ModuleLoader__.load({
               return;
             if (
               ui.pending ||
+              features.busy ||
               waterBusy ||
               requestBusy.current ||
               waterPending.current ||
@@ -1543,6 +1577,7 @@ window.__ModuleLoader__.load({
             performNavigation(screen, root);
           }
           function draftChanged() {
+            if (features.dirty) return true;
             if (waterEditing && waterPreferencesBase.current)
               return (
                 waterEnabledDraft !== waterPreferencesBase.current.enabled ||
@@ -1557,10 +1592,7 @@ window.__ModuleLoader__.load({
             return false;
           }
           async function applyAppearance() {
-            if (features.customImage && appearanceDraft?.petModel !== savedView.petModel) {
-              if (!(await features.act({ type: 'preferences', patch: { customEnabled: false } })))
-                return false;
-            }
+            if (!(await features.applyAppearance())) return false;
             panelPlacement.current = null;
             if (appearanceDraft)
               setPreference(changedSettings(appearanceBase.current, appearanceDraft));
@@ -1572,13 +1604,16 @@ window.__ModuleLoader__.load({
             const destination = ui.pending.screen;
             const result = waterEditing
               ? await saveWaterSettings({ preventDefault() {} })
-              : appearanceOnly
-                ? await applyAppearance()
-                : await save({ preventDefault() {} });
+              : ui.screen === 'wrap'
+                ? await features.saveNotes(false)
+                : appearanceOnly
+                  ? await applyAppearance()
+                  : await save({ preventDefault() {} });
             if (result) performNavigation(destination, ui.pending.root);
             else dispatchUI({ type: 'stay' });
           }
           function updateAppearance(patch) {
+            if (patch.petModel) features.useBuiltin();
             setAppearanceDraft((current) => ({ ...current, ...patch }));
           }
           function openAppearance(event) {
@@ -1898,7 +1933,7 @@ window.__ModuleLoader__.load({
               break: 'waterBreak',
               paused: 'waterPaused',
               finished: 'waterFinished',
-              due: waterPrompt ? 'waterDue' : 'waterOther',
+              due: 'waterDue',
             };
             if (waterState.phase === 'quiet')
               return t('waterQuiet') + ' · ' + formatDuration(waterState.quietRemaining / 1000);
@@ -1909,6 +1944,8 @@ window.__ModuleLoader__.load({
           const waterCountdownText = () => {
             if (waterError) return t('timerUnavailable');
             if (!waterReady) return t('timerLoading');
+            if (waterState.phase === 'due' && features.waterSnoozedUntil > now)
+              return formatDuration(Math.ceil((features.waterSnoozedUntil - now) / 1000));
             if (['countdown', 'due', 'break'].includes(waterState.phase))
               return formatDuration(Math.ceil(waterState.remaining / 1000));
             if (waterState.phase === 'quiet')
@@ -1927,25 +1964,34 @@ window.__ModuleLoader__.load({
               ? t(smokingError ? 'timerUnavailable' : 'timerLoading')
               : smokingState.phase === 'idle'
                 ? t('timerIdle')
-                : formatDuration(Math.ceil(smokingState.remaining / 1000));
+                : smokingState.phase === 'due' && features.smokingSnoozedUntil > now
+                  ? formatDuration(Math.ceil((features.smokingSnoozedUntil - now) / 1000))
+                  : formatDuration(Math.ceil(smokingState.remaining / 1000));
           const timerRow = (kind, value, due, title) => {
-            const phase = kind === 'water' ? waterState.phase : smokingState.phase;
+            let phase = kind === 'water' ? waterState.phase : smokingState.phase;
+            if (
+              phase === 'due' &&
+              (kind === 'water' ? features.waterSnoozedUntil : features.smokingSnoozedUntil) > now
+            )
+              phase = 'snoozed';
             const extra = {
+              snoozed: 'timerSnoozed',
               paused: 'timerPaused',
               break: 'timerBreak',
               quiet: 'timerQuiet',
               due: 'timerDue',
             }[phase];
             return h(
-              'div',
+              'button',
               {
+                type: 'button',
+                onClick: (event) => navigateScreen(kind === 'water' ? 'home' : 'smoking', event),
                 className: 'owc-pet-timer-row',
                 'data-countdown': kind,
-                'data-countdown-due': due,
+                'data-countdown-due': due && phase !== 'snoozed',
                 'data-countdown-phase': phase,
-                role: 'timer',
                 'aria-label': t(kind === 'water' ? 'waterCountdown' : 'smokingCountdown'),
-                title,
+                title: phase === 'snoozed' ? t('timerSnoozed') + ' · ' + value : title,
               },
               h(
                 'span',
@@ -1976,11 +2022,13 @@ window.__ModuleLoader__.load({
                 { className: 'owc-detail-kicker', 'data-water-status': true },
                 t(
                   ticking
-                    ? waterState.phase === 'quiet'
-                      ? 'waterQuiet'
-                      : waterState.phase === 'due'
-                        ? 'waterDue'
-                        : 'waterNext'
+                    ? features.waterSnoozedUntil > now
+                      ? 'timerSnoozed'
+                      : waterState.phase === 'quiet'
+                        ? 'waterQuiet'
+                        : waterState.phase === 'due'
+                          ? 'waterDue'
+                          : 'waterNext'
                     : 'waterTitle',
                 ),
               ),
@@ -2058,14 +2106,16 @@ window.__ModuleLoader__.load({
                 { role: 'status' },
                 smokingUnavailable
                   ? t(smokingError ? 'timerUnavailable' : 'timerLoading')
-                  : t(
-                      {
-                        idle: 'timerIdle',
-                        running: 'timerRunning',
-                        paused: 'timerPaused',
-                        due: 'timerDue',
-                      }[smokingState.phase],
-                    ),
+                  : smokingState.phase === 'due' && features.smokingSnoozedUntil > now
+                    ? t('timerSnoozed')
+                    : t(
+                        {
+                          idle: 'timerIdle',
+                          running: 'timerRunning',
+                          paused: 'timerPaused',
+                          due: 'timerDue',
+                        }[smokingState.phase],
+                      ),
               ),
               h(
                 'label',
@@ -2588,11 +2638,12 @@ window.__ModuleLoader__.load({
                   h('span', { className: 'owc-classic-mini-label' }, t(caption)),
                   countdown
                     ? h(
-                        'strong',
+                        'button',
                         {
+                          type: 'button',
+                          onClick: (event) => navigateScreen('income', event),
                           className: 'owc-classic-mini-time',
-                          role: 'timer',
-                          'aria-label': t(classicClock.title),
+                          'aria-label': t('petCountdownCard'),
                         },
                         formatDuration(classicClock.seconds),
                       )
@@ -2753,6 +2804,18 @@ window.__ModuleLoader__.load({
                     onClick: (event) => navigateScreen('home', event),
                   },
                   iconSvg('water'),
+                ),
+              ui.screen &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-icon',
+                    'data-panel-more': true,
+                    'aria-label': t('quickMore'),
+                    onClick: openQuickMenu,
+                  },
+                  '⋯',
                 ),
               !ui.screen &&
                 h(
@@ -3374,10 +3437,19 @@ window.__ModuleLoader__.load({
                   'select',
                   {
                     'aria-label': t('petCharacter'),
-                    value: view.petModel,
+                    value: features.previewImage ? 'custom-image' : view.petModel,
                     disabled: !view.companion,
-                    onChange: (event) => updateAppearance({ petModel: event.target.value }),
+                    onChange: (event) =>
+                      event.target.value === 'custom-image'
+                        ? features.selectCustom()
+                        : updateAppearance({ petModel: event.target.value }),
                   },
+                  features.hasCustom &&
+                    h(
+                      'option',
+                      { value: 'custom-image' },
+                      locale.active.startsWith('en') ? 'Custom image' : '自定义图片',
+                    ),
                   ...Object.values(PET_MODELS).map((model) =>
                     h('option', { key: model.id, value: model.id }, t(model.label)),
                   ),
@@ -3502,6 +3574,7 @@ window.__ModuleLoader__.load({
                   {
                     ref: previewBox,
                     'data-appearance-preview': true,
+                    style: features.cropping ? { display: 'none' } : undefined,
                     className: 'owc-appearance-preview',
                   },
                   view.companion
@@ -3510,14 +3583,15 @@ window.__ModuleLoader__.load({
                         { pose: 'calm', animate: false },
                         view.petSize * (petModel(view.petModel).renderer === 'svg' ? 1 : 0.65),
                         '',
-                        view.petModel,
-                        PET_SPRITES,
-                        petModel(view.petModel).renderer === 'video',
+                        features.previewImage ? 'custom-image' : view.petModel,
+                        { ...PET_SPRITES, 'custom-image': features.previewImage },
+                        !features.previewImage && petModel(view.petModel).renderer === 'video',
                       )
                     : h('p', null, t('petClassicPreview')),
                 ),
-                previewActions(),
+                !features.previewImage && previewActions(),
                 appearanceFields(),
+                features.render('appearance'),
                 h(
                   'div',
                   { className: 'owc-save' },
@@ -3807,7 +3881,7 @@ window.__ModuleLoader__.load({
             if (scroll) scroll.scrollTop = 0;
           }, [ready, petMode, ui.screen]);
           const petShowing = petOpen;
-          const petFloating = petShowing || autoWaterPrompt;
+          const petFloating = petShowing || autoWaterPrompt || features.alert;
           React.useLayoutEffect(() => {
             if (!petMode || !petFloating || !cardContent.current) return;
             const content = cardContent.current,
@@ -3896,20 +3970,38 @@ window.__ModuleLoader__.load({
             return () => window.removeEventListener('blur', blur);
           }, [ui.menu]);
           React.useEffect(() => {
-            if (!petMode || (!petShowing && !ui.menu)) return;
+            if (!petShowing && !ui.menu) return;
             const outside = (event) => {
+              if (ui.menu && event.target.closest?.('[data-quick-more],[data-panel-more]')) return;
               if (ui.menu && !menuBox.current?.contains(event.target)) {
                 dispatchUI({ type: 'dismiss-menu' });
                 return;
               }
               if (box.current?.contains(event.target)) return;
               if (ui.menu) dispatchUI({ type: 'dismiss-menu' });
-              else if (!editing && !waterEditing && !waterBusy)
-                dispatchUI({ type: 'navigate', screen: null });
+              else if (
+                petMode &&
+                !editing &&
+                !waterEditing &&
+                !waterBusy &&
+                !features.dirty &&
+                !features.busy
+              )
+                navigateScreen(null);
             };
             document.addEventListener('pointerdown', outside);
             return () => document.removeEventListener('pointerdown', outside);
-          }, [petMode, petShowing, ui.menu, editing, waterEditing, waterBusy]);
+          }, [
+            petMode,
+            petShowing,
+            ui.menu,
+            ui.screen,
+            editing,
+            waterEditing,
+            waterBusy,
+            features.dirty,
+            features.busy,
+          ]);
           React.useEffect(() => {
             if (!ui.menu) return;
             const waterEntry = menuTrigger.current?.classList.contains('owc-pet-water-alert')
@@ -4027,6 +4119,10 @@ window.__ModuleLoader__.load({
             water: 'petWaterSettings',
             appearance: 'petAppearance',
             schedule: 'petWorkSettings',
+            wrap: 'companionWrapTitle',
+            preferences: 'companionPreferencesTitle',
+            data: 'companionDataTitle',
+            reminders: 'companionRemindersTitle',
           };
           const petHeader = () =>
             h(
@@ -4069,6 +4165,17 @@ window.__ModuleLoader__.load({
                 {
                   type: 'button',
                   className: 'owc-icon',
+                  'data-panel-more': true,
+                  'aria-label': t('quickMore'),
+                  onClick: openQuickMenu,
+                },
+                '⋯',
+              ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'owc-icon',
                   'aria-label': t('petCloseAll'),
                   disabled: busy || waterBusy || !!ui.pending,
                   onClick: closePetPanel,
@@ -4085,6 +4192,23 @@ window.__ModuleLoader__.load({
                 'data-water-event': waterPrompt ? waterState.eventId : undefined,
               },
               waterHero(),
+              waterState.phase === 'due' &&
+                features.waterSnoozedUntil > now &&
+                h(
+                  'p',
+                  { className: 'owc-hint' },
+                  t('waterSnooze') +
+                    ' · ' +
+                    formatDuration(Math.ceil((features.waterSnoozedUntil - now) / 1000)),
+                ),
+              features.quiet &&
+                h(
+                  'p',
+                  { className: 'owc-hint' },
+                  t('waterQuiet') +
+                    ' · ' +
+                    formatDuration(Math.ceil((features.state.preferences.quietUntil - now) / 1000)),
+                ),
               h(
                 'div',
                 { className: 'owc-detail-primary-actions' },
@@ -4098,14 +4222,15 @@ window.__ModuleLoader__.load({
                   },
                   t('petRecord'),
                 ),
-                waterPrompt &&
+                waterState.phase === 'due' &&
+                  features.waterSnoozedUntil <= now &&
                   h(
                     'button',
                     {
                       type: 'button',
                       className: 'owc-text',
-                      disabled: waterBusy,
-                      onClick: () => waterAction({ type: 'snooze', eventId: waterState.eventId }),
+                      disabled: waterBusy || features.busy || !features.waterCanSnooze,
+                      onClick: () => features.snoozeWater(),
                     },
                     t('waterSnooze'),
                   ),
@@ -4118,10 +4243,15 @@ window.__ModuleLoader__.load({
                   {
                     type: 'button',
                     className: 'owc-text',
-                    disabled: !water.enabled || busy || waterBusy || waterError || !waterReady,
-                    onClick: () => waterAction({ type: water.paused ? 'resume' : 'pause' }),
+                    disabled: busy || waterBusy || waterError || !waterReady,
+                    onClick: () =>
+                      waterAction(
+                        water.enabled
+                          ? { type: water.paused ? 'resume' : 'pause' }
+                          : { type: 'preferences', enabled: true },
+                      ),
                   },
-                  t(water.paused ? 'waterResume' : 'waterPause'),
+                  t(!water.enabled ? 'waterEnable' : water.paused ? 'waterResume' : 'waterPause'),
                 ),
                 waterState.phase === 'quiet' &&
                   h(
@@ -4175,6 +4305,113 @@ window.__ModuleLoader__.load({
                   t('waterRetry'),
                 ),
             );
+          function openQuickMenu(event) {
+            if (ui.pending || busy || waterBusy || features.busy) return;
+            if (ui.menu) {
+              closePetMenu();
+              return;
+            }
+            menuTrigger.current = event.currentTarget;
+            const rect = event.currentTarget.getBoundingClientRect();
+            dispatchUI({ type: 'menu', position: { x: rect.right, y: rect.top } });
+          }
+          const activeCustomTimer = () =>
+            features.activeTimer &&
+            h(
+              'button',
+              {
+                type: 'button',
+                className: 'owc-inline-timer',
+                'data-active-custom-timer': true,
+                onClick: (event) => navigateScreen('smoking', event),
+                title: features.activeTimer.name,
+              },
+              iconSvg('alarm', 12),
+              h('span', null, features.activeTimer.name),
+              h(
+                'strong',
+                null,
+                (features.activeTimer.phase === 'paused' ? 'Ⅱ ' : '') +
+                  formatDuration(Math.ceil(features.activeTimer.remaining / 1000)).replace(
+                    /^00:/,
+                    '',
+                  ),
+              ),
+              features.activeTimer.count > 1 ? ' +' + (features.activeTimer.count - 1) : null,
+            );
+          const quickActions = () =>
+            h(
+              'div',
+              { className: 'owc-quick-actions' },
+              h(
+                'button',
+                {
+                  type: 'button',
+                  'data-quick-drink': true,
+                  disabled: !waterCanRecord || waterBusy,
+                  onClick: recordWater,
+                },
+                iconSvg('water', 13),
+                waterNotice?.kind === 'drink' ? t('waterRecorded') : t('petRecord'),
+              ),
+              features.pendingCount > 0 &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    'aria-label': t('companionRemindersTitle'),
+                    onClick: (event) => navigateScreen('reminders', event),
+                  },
+                  iconSvg('alarm', 13),
+                  String(features.pendingCount),
+                ),
+              h(
+                'button',
+                {
+                  type: 'button',
+                  className: 'owc-quick-more',
+                  'data-quick-more': true,
+                  'aria-label': t('quickMore'),
+                  'aria-expanded': !!ui.menu,
+                  onClick: openQuickMenu,
+                },
+                '⋯',
+              ),
+            );
+          const contentForScreen = () => {
+            if (ui.pending) return draftGuard();
+            if (waterEditing) return waterSettings();
+            if (editing) return editor();
+            if (ui.screen === 'income')
+              return h(
+                React.Fragment,
+                null,
+                panelBody('clock'),
+                features.render('wrap-entry'),
+                h(
+                  'div',
+                  { className: 'owc-extra' },
+                  h(
+                    'button',
+                    {
+                      type: 'button',
+                      onClick: (event) => navigateScreen('earnings', event),
+                      disabled: !data?.configured,
+                    },
+                    t('petEarningsCard'),
+                  ),
+                ),
+              );
+            if (ui.screen === 'smoking')
+              return h(React.Fragment, null, smokingCountdownCard(), features.render('timers'));
+            if (ui.screen === 'water-countdown' || ui.screen === 'home') return petHome();
+            if (ui.screen === 'earnings') return panelBody('earnings');
+            if (ui.screen === 'wrap') return features.render('wrap');
+            if (ui.screen === 'preferences') return features.render('settings');
+            if (ui.screen === 'data') return features.render('data');
+            if (ui.screen === 'reminders') return features.render('reminders');
+            return collapsed ? classicMini() : classicOverview();
+          };
           const contextMenu = () =>
             ui.menu &&
             h(
@@ -4228,11 +4465,9 @@ window.__ModuleLoader__.load({
                 [
                   ['income', 'petCountdownCard'],
                   ['home', 'petWaterCard'],
-                  ['water-countdown', 'waterCountdown'],
                   ['smoking', 'smokingCountdown'],
-                  ['earnings', 'petEarningsCard'],
                   ['appearance', 'petAppearance'],
-                  ['schedule', 'petWorkSettings'],
+                  ['preferences', 'companionPreferencesTitle'],
                 ].map(([screen, label]) =>
                   h(
                     'button',
@@ -4328,10 +4563,11 @@ window.__ModuleLoader__.load({
                   else if (ui.pending) dispatchUI({ type: 'stay' });
                   else if (editing || waterEditing) navigateScreen(ui.back);
                   else if (petShowing) closePetPanel();
+                  else if (features.alert) features.dismissAlert();
                   else if (autoWaterPrompt) dismissWaterPopup();
                 },
               },
-              h('style', null, STYLE),
+              h('style', null, STYLE + COMPANION_APP_STYLE),
               liveFeedback(),
               h(
                 'div',
@@ -4368,11 +4604,13 @@ window.__ModuleLoader__.load({
                     'aria-label': t('petCountdownGroup'),
                   },
                   h(
-                    'div',
+                    'button',
                     {
+                      type: 'button',
+                      onClick: (event) =>
+                        navigateScreen(data?.configured ? 'income' : 'schedule', event),
                       className: 'owc-pet-clock',
-                      role: data?.configured && safeState ? 'timer' : 'status',
-                      'aria-label': t('petClock'),
+                      'aria-label': t('petCountdownCard'),
                       title: error || state?.error ? t('petRetryHint') : undefined,
                     },
                     iconSvg('alarm', 12),
@@ -4415,6 +4653,8 @@ window.__ModuleLoader__.load({
                             )),
                     ),
                   ),
+                  activeCustomTimer(),
+                  quickActions(),
                 ),
               ),
               waterPrompt &&
@@ -4441,7 +4681,6 @@ window.__ModuleLoader__.load({
                   h('span', { className: 'owc-pet-water-label' }, t('petWaterBadge')),
                   iconSvg('chevronUp', 10),
                 ),
-              features.render(),
               contextMenu(),
               !petShowing &&
                 !waterPrompt &&
@@ -4470,7 +4709,10 @@ window.__ModuleLoader__.load({
                     'data-pet-screen': ui.screen || 'reminder',
                     'data-side': floatingPanel.side,
                     role: 'region',
-                    'aria-label': t(petPageTitle[ui.screen] || 'waterTitle'),
+                    'aria-label':
+                      features.alert && !petShowing
+                        ? features.alertTitle
+                        : t(petPageTitle[ui.screen] || 'waterTitle'),
                     style: {
                       left: floatingPanel.left,
                       top: floatingPanel.top,
@@ -4485,7 +4727,11 @@ window.__ModuleLoader__.load({
                     : h(
                         'div',
                         { className: 'owc-head' },
-                        h('strong', { style: { flex: 1, fontSize: 12 } }, t('waterTitle')),
+                        h(
+                          'strong',
+                          { style: { flex: 1, fontSize: 12 } },
+                          features.alert ? features.alertTitle : t('waterTitle'),
+                        ),
                         h(
                           'button',
                           {
@@ -4494,7 +4740,8 @@ window.__ModuleLoader__.load({
                             'aria-label': t('petDismissReminder'),
                             title: t('petDismissReminder'),
                             disabled: waterBusy,
-                            onClick: dismissWaterPopup,
+                            onClick: () =>
+                              features.alert ? features.dismissAlert() : dismissWaterPopup(),
                           },
                           iconSvg('close', 14),
                         ),
@@ -4509,24 +4756,16 @@ window.__ModuleLoader__.load({
                         ? h(
                             React.Fragment,
                             null,
-                            ui.pending
-                              ? draftGuard()
-                              : waterEditing
-                                ? waterSettings()
-                                : editing
-                                  ? editor()
-                                  : petDetails
-                                    ? panelBody('clock')
-                                    : ui.screen === 'water-countdown'
-                                      ? waterCountdownCard()
-                                      : ui.screen === 'smoking'
-                                        ? smokingCountdownCard()
-                                        : ui.screen === 'earnings'
-                                          ? panelBody('earnings')
-                                          : petHome(),
+                            contentForScreen(),
                             notices(),
+                            features.feedback(),
                           )
-                        : waterReminder(),
+                        : h(
+                            React.Fragment,
+                            null,
+                            features.alert ? features.render('alert') : waterReminder(),
+                            features.feedback(),
+                          ),
                     ),
                   ),
                 ),
@@ -4568,7 +4807,7 @@ window.__ModuleLoader__.load({
                 else setPreference({ mini: true });
               },
             },
-            h('style', null, STYLE),
+            h('style', null, STYLE + COMPANION_APP_STYLE),
             h('div', { className: 'owc-glass', 'aria-hidden': 'true' }),
             h(
               'div',
@@ -4587,28 +4826,13 @@ window.__ModuleLoader__.load({
                 ),
               ),
               !collapsed && classicHeader(),
-              ui.pending
-                ? draftGuard()
-                : waterEditing
-                  ? waterSettings()
-                  : editing
-                    ? editor()
-                    : ui.screen === 'water-countdown'
-                      ? waterCountdownCard()
-                      : ui.screen === 'smoking'
-                        ? smokingCountdownCard()
-                        : ui.screen === 'home'
-                          ? petHome()
-                          : ui.screen === 'earnings'
-                            ? panelBody('earnings')
-                            : ui.screen === 'income'
-                              ? panelBody('clock')
-                              : collapsed
-                                ? classicMini()
-                                : classicOverview(),
+              contentForScreen(),
               notices(ui.screen !== null),
-              ui.screen === null && waterReminder(),
-              features.render(),
+              features.feedback(),
+              ui.screen === null && (features.alert ? features.render('alert') : waterReminder()),
+              ui.screen === null && activeCustomTimer(),
+              ui.screen === null && quickActions(),
+              contextMenu(),
             ),
           );
         }

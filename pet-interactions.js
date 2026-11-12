@@ -1,5 +1,13 @@
 // Ephemeral UI navigation only. Business data stays in its existing stores.
-export const PET_EDITOR_SCREENS = ['water', 'schedule', 'appearance'];
+export const PET_EDITOR_SCREENS = [
+  'water',
+  'schedule',
+  'appearance',
+  'wrap',
+  'preferences',
+  'data',
+  'reminders',
+];
 export const initialPetUI = { screen: null, back: null, menu: null, pending: null };
 export function petUIReducer(state, action) {
   switch (action.type) {
@@ -32,11 +40,22 @@ export function petUIReducer(state, action) {
         };
       const back = action.root
         ? null
-        : PET_EDITOR_SCREENS.includes(action.screen)
-          ? PET_EDITOR_SCREENS.includes(state.screen)
-            ? state.back
-            : state.screen
-          : state.back;
+        : action.screen === state.back
+          ? null
+          : action.screen === 'data'
+            ? 'preferences'
+            : action.screen === 'wrap'
+              ? 'income'
+              : state.screen === 'preferences' &&
+                  ['schedule', 'water', 'appearance'].includes(action.screen)
+                ? 'preferences'
+                : action.screen === 'preferences'
+                  ? state.screen
+                  : PET_EDITOR_SCREENS.includes(action.screen)
+                    ? PET_EDITOR_SCREENS.includes(state.screen)
+                      ? state.back
+                      : state.screen
+                    : state.back;
       return { screen: action.screen, back, menu: null, pending: null };
     }
     default:
@@ -54,6 +73,11 @@ export function appearanceValues(view) {
 }
 export const PET_INTERACTION_MESSAGES = {
   zh: {
+    companionPreferencesTitle: '设置',
+    companionDataTitle: '备份与恢复',
+    companionWrapTitle: '今日收尾',
+    companionRemindersTitle: '待处理提醒',
+    quickMore: '更多',
     petHome: '喝水',
     petWaterCard: '喝水',
     waterCountdown: '喝水倒计时',
@@ -64,6 +88,7 @@ export const PET_INTERACTION_MESSAGES = {
     timerIdle: '未开始',
     timerRunning: '计时中',
     timerPaused: '已暂停',
+    timerSnoozed: '稍后提醒',
     timerDue: '已到时',
     timerStart: '开始计时',
     timerPause: '暂停计时',
@@ -112,6 +137,11 @@ export const PET_INTERACTION_MESSAGES = {
     petDismissReminder: '收起提醒',
   },
   en: {
+    companionPreferencesTitle: 'Settings',
+    companionDataTitle: 'Backup and restore',
+    companionWrapTitle: 'Wrap up today',
+    companionRemindersTitle: 'Pending reminders',
+    quickMore: 'More',
     petHome: 'Water',
     petWaterCard: 'Water',
     waterCountdown: 'Water countdown',
@@ -122,6 +152,7 @@ export const PET_INTERACTION_MESSAGES = {
     timerIdle: 'Not started',
     timerRunning: 'Running',
     timerPaused: 'Paused',
+    timerSnoozed: 'Snoozed',
     timerDue: 'Time is up',
     timerStart: 'Start timer',
     timerPause: 'Pause timer',
