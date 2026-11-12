@@ -43,7 +43,7 @@ export function createSettingsAccess(directory) {
 // Served under the Harness host's existing access boundary. Never enables CORS.
 // A custom header is required even for GET; cross-origin browsers cannot send it
 // without a successful preflight. Same-site subdomains are not trusted.
-export function createSettingsHandler(operate, access) {
+export function createSettingsHandler(operate, access, authorize = () => 401) {
   return async (req, res) => {
     const send = (status, body) => {
       if (res.destroyed || res.writableEnded) return;
@@ -71,6 +71,8 @@ export function createSettingsHandler(operate, access) {
       !originOK
     )
       return send(403, { ok: false, error: 'Same-origin client required' });
+    const rejection = authorize(req);
+    if (rejection) return send(rejection, { ok: false, error: 'Authenticated owner required' });
     try {
       if (req.method === 'GET') {
         const result = await operate('get');
@@ -109,8 +111,14 @@ export function createSettingsHandler(operate, access) {
   };
 }
 export function registerSettingsRoute(ctx, operate, access) {
-  ctx.inject?.(['webServer'], (webCtx) => {
-    const handler = createSettingsHandler(operate, access);
+  ctx.inject?.(['webServer', 'connection'], (webCtx) => {
+    const authorize = (request) => {
+      if (typeof webCtx.connection?.admit !== 'function') return 503;
+      const admission = webCtx.connection.admit(request);
+      if ('rejection' in admission) return admission.rejection;
+      return admission.peer.principal.kind === 'owner' ? undefined : 403;
+    };
+    const handler = createSettingsHandler(operate, access, authorize);
     webCtx.effect(() =>
       webCtx.webServer.register({ kind: 'exact', path: SETTINGS_ROUTE, handler }),
     );

@@ -44,7 +44,7 @@ test('UI settings API rejects cross-origin, missing header and non-JSON writes',
   const dir = await fixture(t),
     operate = createOperations(join(dir, 'settings.json')),
     access = createSettingsAccess(dir);
-  const server = createServer(createSettingsHandler(operate, access));
+  const server = createServer(createSettingsHandler(operate, access, () => undefined));
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   t.after(() => new Promise((r) => server.close(r)));
   const url = `http://127.0.0.1:${server.address().port}/offwork-clock/settings`;
@@ -84,6 +84,24 @@ test('UI settings API rejects cross-origin, missing header and non-JSON writes',
     413,
   );
 });
+test('private settings default to unauthenticated denial before reading data', async (t) => {
+  const dir = await fixture(t);
+  let reads = 0;
+  const server = createServer(
+    createSettingsHandler(async () => {
+      reads++;
+      return { ok: true };
+    }, createSettingsAccess(dir)),
+  );
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  t.after(() => new Promise((r) => server.close(r)));
+  const response = await fetch(`http://127.0.0.1:${server.address().port}/offwork-clock/settings`, {
+    headers: { 'x-offwork-client': '1' },
+  });
+  assert.equal(response.status, 401);
+  assert.equal(reads, 0);
+});
+
 test('agent salary access defaults off, can be explicitly enabled and revoked', async (t) => {
   const dir = await fixture(t),
     operate = createOperations(join(dir, 'settings.json')),
