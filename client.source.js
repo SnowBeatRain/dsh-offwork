@@ -4343,17 +4343,18 @@ window.__ModuleLoader__.load({
             h(
               'div',
               { className: 'owc-quick-actions' },
-              h(
-                'button',
-                {
-                  type: 'button',
-                  'data-quick-drink': true,
-                  disabled: !waterCanRecord || waterBusy,
-                  onClick: recordWater,
-                },
-                iconSvg('water', 13),
-                waterNotice?.kind === 'drink' ? t('waterRecorded') : t('petRecord'),
-              ),
+              waterState.phase === 'due' &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    'data-quick-drink': true,
+                    disabled: !waterCanRecord || waterBusy,
+                    onClick: recordWater,
+                  },
+                  iconSvg('water', 13),
+                  waterNotice?.kind === 'drink' ? t('waterRecorded') : t('petRecord'),
+                ),
               features.pendingCount > 0 &&
                 h(
                   'button',
