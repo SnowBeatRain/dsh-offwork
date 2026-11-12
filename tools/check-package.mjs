@@ -71,6 +71,10 @@ assert.equal(packed.version, pkg.version);
 for (const path of [
   'package.json',
   'index.js',
+  'settings-api.js',
+  'companion-state.js',
+  'companion-image.js',
+  'companion-app.js',
   'media-server.js',
   'media-manifest.js',
   'client.js',

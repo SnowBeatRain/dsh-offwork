@@ -83,7 +83,7 @@ window.__ModuleLoader__.load({
         error: '操作失败，请重试。',
         saved: '设置已保存',
         days: '日一二三四五六',
-        privacy: '配置保存在 Harness 所在机器；读写结果进入所选会话记录。',
+        privacy: '配置保存在 Harness 所在机器；界面直接保存，不写入会话。代理访问默认关闭。',
         drag: '按住可拖动；方向键微调，Home 复位',
         setup: '先设好你的作息',
         setupHint: '示例数值不是你的收入，保存后才开始计时。',
@@ -240,7 +240,8 @@ window.__ModuleLoader__.load({
         error: 'Operation failed. Please retry.',
         saved: 'Settings saved',
         days: 'SMTWTFS',
-        privacy: 'Settings are saved on the Harness host; results enter the selected session log.',
+        privacy:
+          'Settings stay on the Harness host. UI saves directly without conversation logs; agent access is off by default.',
         drag: 'Drag to move; arrow keys to adjust; Home resets',
         setup: 'Set up your schedule',
         setupHint: 'These are example values, not your income. Save to start.',
@@ -330,7 +331,7 @@ window.__ModuleLoader__.load({
     };
     const STYLE =
       `
-.owc-v2{--owc-accent:color-mix(in srgb,var(--dsw-alias-brand-primary) 65%,#2563eb);pointer-events:auto;position:fixed;top:96px;right:24px;z-index:40;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);border-radius:20px;color:var(--dsw-alias-label-primary);font:13px/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;cursor:grab;touch-action:manipulation;user-select:none;-webkit-user-select:none}
+.owc-v2{--owc-accent:color-mix(in srgb,var(--dsw-alias-brand-primary) 65%,#2563eb);pointer-events:auto;position:fixed;top:96px;right:24px;z-index:40;max-width:calc(100vw - 24px);max-height:calc(100dvh - 24px);border-radius:20px;color:var(--dsw-alias-label-primary);font:var(--owc-font-size,13px)/1.45 -apple-system,BlinkMacSystemFont,'Segoe UI','PingFang SC',sans-serif;cursor:grab;touch-action:manipulation;user-select:none;-webkit-user-select:none}
 .owc-v2:active{cursor:grabbing}
 .owc-v2.owc-compact{touch-action:none;border-radius:18px}
 .owc-v2.owc-compact.owc-quick{width:296px;touch-action:manipulation}
@@ -658,6 +659,7 @@ window.__ModuleLoader__.load({
                 } catch {
                   /* Polling also synchronizes. */
                 }
+                return changedElsewhere ? null : next;
               } catch {
                 if (alive) setSmokingError('timerStorageError');
               } finally {
@@ -724,17 +726,54 @@ window.__ModuleLoader__.load({
           const state = settings ? safeCalculate(settings) : null;
           const preview = workingDraft ? safeCalculate(workingDraft) : null;
           const safeState = state && !state.error ? state : null;
+          const features = useCompanionFeatures(React, {
+            language: locale.active,
+            configured: !!data?.configured,
+            shift: data?.configured ? safeState : null,
+            timezone: settings?.timezone,
+            smoking,
+            smokingReady: smokingReady && !smokingError,
+            water,
+            waterReady: waterReady && !waterError,
+            waterOwner: waterOwner.current,
+            smokingLabel: t('smokingCountdown'),
+            waterLabel: t('waterDue'),
+            wrapLabel: t('companionDone'),
+            editing: editing || waterEditing || !!ui.pending,
+            sessionIds,
+            runningSessions: sessionIds.filter((id) => sessions?.byId?.[id]?.running === true),
+            view: savedView,
+            setView: (patch) => setPreference(patch),
+            openLegacy: (screen) => navigateScreen(screen),
+            reload,
+            refreshLegacy: () => {
+              waterRuntime.current?.tick();
+              smokingRuntime.current?.run({ type: 'retry' });
+            },
+            restartSmoking: () => smokingAction({ type: 'restart' }),
+            drink: () => waterAction({ type: 'manual-drink', actionId: crypto.randomUUID() }),
+            react: () => petMotion.current?.play('greet'),
+          });
+          const featureStyle = {
+            ...(COMPANION_THEMES[features.state.preferences.theme]
+              ? { '--owc-accent': COMPANION_THEMES[features.state.preferences.theme] }
+              : {}),
+            '--owc-font-size': 13 * features.state.preferences.cardScale + 'px',
+          };
           const petMode = ready && (appearanceOnly ? appearanceWasPet.current : view.companion);
-          const petClockStatus = !sessionId
-            ? 'petNeedsSession'
-            : error || state?.error
+          const petClockStatus =
+            error || state?.error
               ? 'petLoadFailed'
               : !data
                 ? 'loading'
                 : !data.configured
                   ? 'petNeedsSetup'
                   : safeState?.status || 'loading';
-          const stageModel = appearanceOnly ? savedView.petModel : view.petModel;
+          const stageModel = features.customImage
+            ? 'custom-image'
+            : appearanceOnly
+              ? savedView.petModel
+              : view.petModel;
           const petGeometry = petLayout(
             dragPosition ?? view.petPosition,
             viewport,
@@ -797,7 +836,7 @@ window.__ModuleLoader__.load({
           });
           const collapsed = !petMode && ui.screen === null && view.mini;
           const classicClock = classicClockPresentation({
-            hasSession: !!sessionId,
+            hasSession: true,
             loaded: !!data,
             configured: !!data?.configured,
             failed: !!error || !!state?.error,
@@ -831,9 +870,16 @@ window.__ModuleLoader__.load({
             classicSize,
           );
           const cardStyle = {
+            ...featureStyle,
             width: ui.screen
-              ? petSurfaceWidth(ui.screen, viewport)
-              : Math.min(collapsed ? 224 : 320, Math.max(1, viewport.width - 24)),
+              ? Math.min(
+                  petSurfaceWidth(ui.screen, viewport) * features.state.preferences.cardScale,
+                  viewport.width - 24,
+                )
+              : Math.min(
+                  (collapsed ? 224 : 320) * features.state.preferences.cardScale,
+                  Math.max(1, viewport.width - 24),
+                ),
             '--owc-alpha': String(view.opacity),
             '--owc-viewport-height': Math.max(1, viewport.height - 24) + 'px',
             left: classicPosition.x,
@@ -1102,6 +1148,13 @@ window.__ModuleLoader__.load({
               const outcome = await waterRuntime.current?.update(action);
               const result = outcome?.state;
               if (result) {
+                if (outcome.recorded)
+                  void features.record({
+                    id: 'water-record:' + result.revision,
+                    type: 'water',
+                    at: Date.now(),
+                    label: 'Water',
+                  });
                 setWaterConfirm(null);
                 setNow(Date.now());
                 if (action.type === 'preferences')
@@ -1166,12 +1219,11 @@ window.__ModuleLoader__.load({
           }
 
           React.useEffect(() => {
-            if (sessionId) reload();
-            else setError(t('noSession'));
+            reload();
             return () => {
               generation.current++;
             };
-          }, [sessionId]);
+          }, []);
 
           React.useEffect(() => {
             let timer;
@@ -1257,13 +1309,19 @@ window.__ModuleLoader__.load({
           );
 
           async function request(action, patch) {
-            if (!sessionId) throw new Error(t('noSession'));
-            const rpc = await ctx.remote.commands.execute(
-              sessionId,
-              '/offwork-clock ' + action + (patch ? ' ' + JSON.stringify(patch) : ''),
-              [],
-            );
-            return decodeCommand(rpc);
+            const response = await fetch(new URL('offwork-clock/settings', document.baseURI), {
+              method: action === 'get' ? 'GET' : 'POST',
+              credentials: 'same-origin',
+              cache: 'no-store',
+              headers: {
+                'X-Offwork-Client': '1',
+                ...(action === 'get' ? {} : { 'Content-Type': 'application/json' }),
+              },
+              ...(action === 'get' ? {} : { body: JSON.stringify({ action, settings: patch }) }),
+            });
+            const result = await response.json();
+            if (!response.ok || !result.ok) throw new Error(result.error || t('error'));
+            return result;
           }
 
           async function reload(explicit = false) {
@@ -1498,7 +1556,11 @@ window.__ModuleLoader__.load({
               );
             return false;
           }
-          function applyAppearance() {
+          async function applyAppearance() {
+            if (features.customImage && appearanceDraft?.petModel !== savedView.petModel) {
+              if (!(await features.act({ type: 'preferences', patch: { customEnabled: false } })))
+                return false;
+            }
             panelPlacement.current = null;
             if (appearanceDraft)
               setPreference(changedSettings(appearanceBase.current, appearanceDraft));
@@ -1511,7 +1573,7 @@ window.__ModuleLoader__.load({
             const result = waterEditing
               ? await saveWaterSettings({ preventDefault() {} })
               : appearanceOnly
-                ? applyAppearance()
+                ? await applyAppearance()
                 : await save({ preventDefault() {} });
             if (result) performNavigation(destination, ui.pending.root);
             else dispatchUI({ type: 'stay' });
@@ -1607,6 +1669,7 @@ window.__ModuleLoader__.load({
           const waterState = hydrationView(water, now);
           const waterClaim = water.claim;
           const waterPrompt =
+            !features.ready &&
             waterReady &&
             !waterError &&
             !editing &&
@@ -2792,7 +2855,7 @@ window.__ModuleLoader__.load({
                     'button',
                     {
                       type: 'button',
-                      disabled: hostBusy || !sessionId,
+                      disabled: hostBusy,
                       onClick: () => reload(true),
                     },
                     iconSvg('refresh', 12),
@@ -3128,7 +3191,6 @@ window.__ModuleLoader__.load({
                   h('span', { className: 'owc-dot' }),
                   t('loading'),
                 ),
-                !sessionId && h('p', { className: 'owc-hint' }, t('noSession')),
                 h(
                   'div',
                   { className: 'owc-row-actions' },
@@ -3138,7 +3200,7 @@ window.__ModuleLoader__.load({
                       type: 'button',
                       className: 'owc-text',
                       onClick: () => reload(true),
-                      disabled: hostBusy || !sessionId,
+                      disabled: hostBusy,
                     },
                     iconSvg('refresh', 12),
                     t('retry'),
@@ -3668,8 +3730,6 @@ window.__ModuleLoader__.load({
                 { className: 'owc-advanced' },
                 h('summary', null, t('advanced')),
                 timezoneField(),
-                h('p', { className: 'owc-hint' }, t('sessionHint')),
-                label(t('session'), sessionSelect()),
               ),
               h('p', { className: 'owc-hint' }, t('privacy')),
               h(
@@ -4200,7 +4260,7 @@ window.__ModuleLoader__.load({
                       type: 'button',
                       role: 'menuitem',
                       tabIndex: -1,
-                      disabled: hostBusy || !sessionId,
+                      disabled: hostBusy,
                       onClick: () => {
                         closePetMenu();
                         void reload(true);
@@ -4232,7 +4292,7 @@ window.__ModuleLoader__.load({
               {
                 ref: box,
                 className: 'owc-v2 owc-pet-shell',
-                'data-version': '1.1.2',
+                'data-version': '1.2.0',
                 'data-pet-model': stageModel,
                 'data-status':
                   error || state?.error
@@ -4244,6 +4304,7 @@ window.__ModuleLoader__.load({
                         : 'loading',
                 'aria-label': t('companionLabel'),
                 style: {
+                  ...featureStyle,
                   '--owc-alpha': String(view.opacity),
                   left: petGeometry.x,
                   top: petGeometry.y,
@@ -4295,7 +4356,7 @@ window.__ModuleLoader__.load({
                     petGeometry.artworkSize,
                     waterNotice?.token,
                     stageModel,
-                    PET_SPRITES,
+                    { ...PET_SPRITES, 'custom-image': features.customImage },
                     true,
                   ),
                 ),
@@ -4312,12 +4373,7 @@ window.__ModuleLoader__.load({
                       className: 'owc-pet-clock',
                       role: data?.configured && safeState ? 'timer' : 'status',
                       'aria-label': t('petClock'),
-                      title:
-                        error || state?.error
-                          ? t('petRetryHint')
-                          : !sessionId
-                            ? t('noSession')
-                            : undefined,
+                      title: error || state?.error ? t('petRetryHint') : undefined,
                     },
                     iconSvg('alarm', 12),
                     h(
@@ -4328,7 +4384,6 @@ window.__ModuleLoader__.load({
                     data?.configured &&
                       safeState &&
                       !error &&
-                      sessionId &&
                       !['done', 'rest'].includes(safeState.status)
                       ? h('strong', null, duration)
                       : null,
@@ -4386,6 +4441,7 @@ window.__ModuleLoader__.load({
                   h('span', { className: 'owc-pet-water-label' }, t('petWaterBadge')),
                   iconSvg('chevronUp', 10),
                 ),
+              features.render(),
               contextMenu(),
               !petShowing &&
                 !waterPrompt &&
@@ -4487,7 +4543,7 @@ window.__ModuleLoader__.load({
                 (collapsed && waterQuickOpen ? ' owc-quick' : '') +
                 (editing || waterEditing ? ' owc-editing' : ''),
               'aria-label': t('title'),
-              'data-version': '1.1.2',
+              'data-version': '1.2.0',
               'data-status': classicClock.phase,
               style: cardStyle,
               onPointerDown: dragDown,
@@ -4552,6 +4608,7 @@ window.__ModuleLoader__.load({
                                 : classicOverview(),
               notices(ui.screen !== null),
               ui.screen === null && waterReminder(),
+              features.render(),
             ),
           );
         }

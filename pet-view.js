@@ -33,6 +33,8 @@ export const PET_MODELS = Object.freeze({
   'xiaoxie-original': { ...PET_MODEL, widthScale: 1, heightScale: 1.1, label: 'petDroplet' },
 });
 export function petModel(id) {
+  if (id === 'custom-image')
+    return { id, renderer: 'image', widthScale: 1.3125, heightScale: 1.75, label: 'petCharacter' };
   return Object.hasOwn(PET_MODELS, id) ? PET_MODELS[id] : PET_MODELS['whale-dress'];
 }
 

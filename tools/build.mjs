@@ -16,6 +16,9 @@ const moduleNames = [
   'hydration.js',
   'hydration-store.js',
   'countdown.js',
+  'companion-state.js',
+  'companion-image.js',
+  'companion-app.js',
 ];
 const [entry, ...modules] = await Promise.all(
   moduleNames.map((name) => readFile(new URL(name, root), 'utf8')),
@@ -30,7 +33,10 @@ if (entry.split(marker).length !== 2) {
 const pure = modules
   .map((source) =>
     source
-      .replace(/^import\s+\{[^}]+\}\s+from '\.\/(?:hydration|clock)\.js';\n/gm, '')
+      .replace(
+        /^import\s+\{[^}]+\}\s+from '\.\/(?:hydration|clock|countdown|ui-utils)\.js';\n/gm,
+        '',
+      )
       .replace(/^export /gm, ''),
   )
   .join('\n');

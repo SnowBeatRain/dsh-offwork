@@ -125,7 +125,10 @@ test('Client uses the exact tested engine and a single surface', async () => {
   assert.match(source, /removeEventListener\('storage'/);
   assert.match(source, /ro\?\.disconnect/);
   assert.match(source, /generation\.current/);
-  assert.doesNotMatch(source, /document\.body|window\.open|fetch\(/);
+  assert.doesNotMatch(source, /document\.body|window\.open/);
+  assert.match(source, /offwork-clock\/settings/);
+  assert.match(source, /credentials: 'same-origin'/);
+  assert.doesNotMatch(source, /remote\.commands\.execute/);
   assert.match(source, /money\(safeState\.earned\)/);
   assert.match(source, /owc-glass/);
   assert.match(source, /--owc-alpha/);

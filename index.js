@@ -1,8 +1,10 @@
-import { readFile, writeFile, rename, unlink, chmod } from 'node:fs/promises';
+import { readFile, writeFile, rename, unlink, chmod, mkdir, link } from 'node:fs/promises';
+import { homedir } from 'node:os';
 import { randomUUID } from 'node:crypto';
 import { dirname, join, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { registerMediaRoute } from './media-server.js';
+import { createSettingsAccess, registerSettingsRoute } from './settings-api.js';
 
 export const inject = ['commands', 'tools'];
 
@@ -19,7 +21,11 @@ export const DEFAULT_SETTINGS = Object.freeze({
   timezone: 'Asia/Shanghai',
 });
 
-const dataFile = new URL('./data.json', import.meta.url);
+export function settingsPath() {
+  const home = process.env.DSH_HOME?.trim() || join(homedir(), '.dsh');
+  return join(resolve(home), 'storages', 'dsh-offwork', 'settings.json');
+}
+const legacyDataFile = new URL('./data.json', import.meta.url);
 const keys = Object.keys(DEFAULT_SETTINGS);
 const isObject = (value) => value !== null && typeof value === 'object' && !Array.isArray(value);
 const fail = (error) => ({
@@ -110,10 +116,48 @@ export function validateSettings(value) {
 
 // One local persistence owner, shared by the command and tool adapters.
 // Reads never persist defaults. Writes are serialized and atomically replace a 0600 file.
-export function createOperations(dataFileArg = dataFile) {
-  const target = dataFileArg instanceof URL ? fileURLToPath(dataFileArg) : resolve(dataFileArg);
+export function createOperations(dataFileArg, options = {}) {
+  const chosen = dataFileArg ?? settingsPath();
+  const target = chosen instanceof URL ? fileURLToPath(chosen) : resolve(chosen);
+  const legacy = options.legacyFile ?? (dataFileArg === undefined ? legacyDataFile : null);
   let queue = Promise.resolve();
+  async function migrate() {
+    if (!legacy) return;
+    try {
+      await readFile(target);
+      return;
+    } catch (error) {
+      if (error.code !== 'ENOENT') throw error;
+    }
+    let text;
+    try {
+      text = await readFile(legacy, 'utf8');
+    } catch (error) {
+      if (error.code === 'ENOENT') return;
+      throw error;
+    }
+    const stored = JSON.parse(text);
+    validatePatch(stored);
+    const settings = validateSettings({
+      payMode: DEFAULT_SETTINGS.payMode,
+      dailySalary: DEFAULT_SETTINGS.dailySalary,
+      ...stored,
+    });
+    await mkdir(dirname(target), { recursive: true, mode: 0o700 });
+    const temp = join(dirname(target), `.data-${randomUUID()}.tmp`);
+    try {
+      await writeFile(temp, JSON.stringify(settings, null, 2) + '\n', { mode: 0o600, flag: 'wx' });
+      try {
+        await link(temp, target);
+      } catch (error) {
+        if (error.code !== 'EEXIST') throw error;
+      }
+    } finally {
+      await unlink(temp).catch(() => {});
+    }
+  }
   async function read() {
+    await migrate();
     let text;
     try {
       text = await readFile(target, 'utf8');
@@ -133,12 +177,13 @@ export function createOperations(dataFileArg = dataFile) {
       });
       return { settings, configured: true };
     } catch {
-      throw new Error('本机配置损坏或无效；请检查插件目录 data.json。');
+      throw new Error('本机配置损坏或无效；原文件已保留，请检查设置存储。');
     }
   }
   async function write(settings) {
     const temp = join(dirname(target), `.data-${randomUUID()}.tmp`);
     try {
+      await mkdir(dirname(target), { recursive: true, mode: 0o700 });
       await writeFile(temp, `${JSON.stringify(settings, null, 2)}\n`, { mode: 0o600, flag: 'wx' });
       await chmod(temp, 0o600);
       await rename(temp, target);
@@ -201,8 +246,12 @@ const settingsSchema = {
 };
 
 export function apply(ctx) {
+  return installOperations(ctx, createOperations(), createSettingsAccess(dirname(settingsPath())));
+}
+
+export function installOperations(ctx, operate, access) {
   registerMediaRoute(ctx);
-  const operate = createOperations();
+  registerSettingsRoute(ctx, operate, access);
   ctx.effect(() =>
     ctx.commands.register({
       name: 'offwork-clock',
@@ -269,6 +318,8 @@ export function apply(ctx) {
         ) {
           return fail('参数必须是仅含 action 和可选 settings 的对象。');
         }
+        if (!(await access.get()))
+          return fail('代理访问作息与薪资尚未开启，请在下班搭子的提醒与数据设置中显式开启。');
         return operate(args.action, args.settings);
       },
     }),

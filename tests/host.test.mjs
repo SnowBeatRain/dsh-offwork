@@ -4,6 +4,7 @@ import { mkdtemp, readFile, writeFile, stat, readdir, rm } from 'node:fs/promise
 import { tmpdir } from 'node:os';
 import { join, resolve, dirname, basename } from 'node:path';
 import { pathToFileURL } from 'node:url';
+import { createSettingsAccess } from '../settings-api.js';
 import { createOperations, DEFAULT_SETTINGS, validateSettings } from '../index.js';
 
 const source = new URL('../index.js', import.meta.url);
@@ -149,7 +150,7 @@ async function adapters(t) {
   const moduleFile = join(fixtureData.dir, 'host.mjs');
   await writeFile(moduleFile, await readFile(source, 'utf8'));
   await writeFile(join(fixtureData.dir, 'package.json'), '{"type":"module"}');
-  for (const name of ['media-server.js', 'media-manifest.js'])
+  for (const name of ['media-server.js', 'media-manifest.js', 'settings-api.js'])
     await writeFile(
       join(fixtureData.dir, name),
       await readFile(new URL('../' + name, import.meta.url)),
@@ -157,28 +158,34 @@ async function adapters(t) {
   const module = await import(pathToFileURL(moduleFile).href);
   let command;
   let tool;
-  module.apply({
-    effect: (effect) => effect(),
-    commands: {
-      register(definition) {
-        command = definition;
-        return () => {};
+  const access = createSettingsAccess(fixtureData.dir);
+  await access.set(true);
+  module.installOperations(
+    {
+      effect: (effect) => effect(),
+      commands: {
+        register(definition) {
+          command = definition;
+          return () => {};
+        },
+      },
+      tools: {
+        register(definition) {
+          tool = definition;
+          return () => {};
+        },
       },
     },
-    tools: {
-      register(definition) {
-        tool = definition;
-        return () => {};
-      },
-    },
-  });
+    fixtureData.operate,
+    access,
+  );
   const runCommand = async (rawInput) => {
     const response = await command.handler({ rawInput });
     const result = JSON.parse(response.text);
     assert.equal(response.kind, result.ok ? 'success' : 'error');
     return result;
   };
-  return { ...fixtureData, tool, command, runCommand };
+  return { ...fixtureData, tool, command, runCommand, access };
 }
 
 test('command and tool share results, validation, storage and a write queue', async (t) => {
