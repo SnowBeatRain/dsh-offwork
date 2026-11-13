@@ -1,263 +1,102 @@
 # 下班计时器 · Offwork Clock
 
-> **1.2.4（已发布）**：收拢提醒、计时、收尾和外观交互，直接接入人物脚下与原有卡片。喝水和抽烟时间可直接点击，自定义计时并入抽烟卡片，外观统一一次应用。详见 [1.2.4 发布说明](docs/RELEASE-1.2.4.md)。
->
-> 1.1.2 的全天喝水、独立计时、动作试播和按需视频继续保留。
+> **1.2.5（已发布）**：轻量的工作日陪伴插件。看下班、记喝水、用计时，顺手写下明天第一件事。 [更新记录](https://github.com/SnowBeatRain/dsh-offwork/blob/main/CHANGELOG.md) · [发布说明](https://github.com/SnowBeatRain/dsh-offwork/blob/main/docs/RELEASE-1.2.5.md)
 
-在 DeepSeek Harness 中查看下班倒计时、记录喝水，通过独立卡片查看收入，也可以使用手动开始的抽烟倒计时。角色模式把三项计时汇总在脚下；非宠物模式默认使用224×94像素的小卡片。
+在 DeepSeek Harness 页面内显示一个可拖动的陪伴角色或紧凑小卡片。点击脚下的时间即可打开对应功能；角色关闭后，纯卡片模式仍可使用全部核心功能。
 
-喝水按自然时间运行，午休、下班和休息日均可提醒，不依赖薪资配置或会话。喝水、提醒设置、计时、收入、外观与薪资页使用统一的简洁布局；常用操作直接在人物和原有卡片上完成，低频选项按需展开。
-
-**升级提示：请刷新所有已打开的Harness标签页。** 喝水数据会迁移并保留开关、间隔、次数和暂停状态；旧页面不能覆盖新格式记录。详见 [喝水规则与迁移](docs/HYDRATION.md)。
-
-外观页可试播已有动作，不记录喝水、不更换已保存角色；视频按实际播放读取并复用缓存。正常计时到点会自动提示，刷新时已逾期先显示提示入口；收起不打卡、不延期。
-
-提供 **长裙动态** 和 **短裙动态**：长裙支持点击挥手、打卡喝茶，短裙增加眨眼摆尾待机循环；支持动作开关、后台暂停和静态回退。在“右键 → 外观 → 角色形象”中预览并应用。
-
-`dsh-offwork` 提供可拖动的页面陪伴角色与计时卡片，支持月薪 / 日薪、跨午夜班次、无薪休息扣除和工资隐藏。角色可关闭，使用非宠物模式的今日概览。
-
-[GitHub 仓库](https://github.com/SnowBeatRain/dsh-offwork) · [npm 包](https://www.npmjs.com/package/dsh-offwork) · [问题反馈](https://github.com/SnowBeatRain/dsh-offwork/issues) · [迭代路线图](https://github.com/SnowBeatRain/dsh-offwork/blob/main/ROADMAP.md)
+[GitHub](https://github.com/SnowBeatRain/dsh-offwork) · [npm](https://www.npmjs.com/package/dsh-offwork) · [问题反馈](https://github.com/SnowBeatRain/dsh-offwork/issues) · [路线图](https://github.com/SnowBeatRain/dsh-offwork/blob/main/ROADMAP.md)
 
 ## 功能
 
-- **统一提醒**：抽烟、喝水、自定义计时与下班收尾使用同一提醒投递层；关闭不记完成，稍后10分钟，多标签页协调显示。声音和后台浏览器通知默认关闭。
-- **下班收尾**：可选的下班前提醒、今天完成的一行记录、明日第一件事；结束今天不停止代理任务或全天喝水。
-- **自定义计时**：最多8个具名计时，各自开始、暂停、继续、停止和重开。
-- **自定义外观与备份**：PNG/WebP/JPEG本地导入、裁切预览、主题及独立卡片缩放；浏览器记录和薪资分别导出，恢复前保存回退备份。
-- **页面陪伴角色**：两套动态视频形象、长裙/礼裙两款静态立绘及原创水滴，支持预览、大小调整、拖动和动作反馈。
-- **喝水提醒**：默认关闭，可设置5–240自然分钟间隔；午休、下班和休息日均可提醒，支持随时打卡、稍后10分钟、手动暂停和30/60分钟免打扰。
-- **独立功能卡片**：下班、喝水、抽烟和收入继续使用原有卡片；自定义计时并入抽烟计时卡片，外观与设置从上下文菜单进入；自适应窗口并保护未保存修改。
-- **抽烟倒计时**：默认60分钟，手动开始，可暂停/继续、重新计时或停止；刷新和多标签页同步进度。
-- **动作试播与按需加载**：在外观页查看已有动作，只有应用才保存形象，试播不增加喝水记录。
-- **下班倒计时**：根据作息显示待开工、工作中、休息中、班次完成和休息日状态。
-- **实时工资**：显示本班已赚金额、计薪进度、日薪和有效时薪，支持月薪或日薪输入。
-- **灵活作息**：自定义上下班时间、工作日、时区，以及一段可选的无薪休息；支持跨午夜夜班。
-- **悬浮小条**：拖动调整位置，按需展开详情；支持方向键微调和 Home 复位。
-- **工资隐藏**：默认遮住金额，支持一键显示 / 隐藏；设置中的薪资输入和折算预览也会同步遮蔽。
-- **外观与记忆**：背景透明度可在 30%–100% 之间调整，位置、展开状态和显示偏好可在刷新后恢复。
-- **中文 / English**：提供中英文界面，并响应系统的减少动态效果设置。
-- **页面入口**：点击人物脚下的下班、喝水或抽烟时间进入对应卡片；喝水提醒到期时才在人物卡片上显示“喝了一杯”，平时手动记录从喝水卡片完成，右侧“…”打开上下文菜单。
-- **代理工具**：可通过 Harness 命令或 `offwork_clock` 工具读取和更新配置。
+- **下班计时与收入**：月薪/日薪、跨午夜班次、无薪休息、时区、工资隐藏。
+- **喝水提醒**：5–240 分钟自然时间提醒，随时打卡、稍后、暂停和免打扰。
+- **抽烟与其他计时**：手动开始、暂停、重开；可添加最多 8 个具名计时。
+- **到点提醒**：可选提示音和后台浏览器通知，多标签页只提示一次。
+- **下班收尾**：写下今天完成的事和明天第一件事；不影响代理任务或喝水提醒。
+- **人物与外观**：内置动态/静态角色，也支持本地图片、主题和卡片缩放。
+- **两种形态**：陪伴角色或非宠物紧凑卡片，位置和偏好保存在浏览器。
 
-## 效果预览
+## 环境
 
-以下截图来自隔离的 Harness 测试配置，使用示例数据。
-
-**紧凑小卡片与简洁详情页**
-
-<img src="https://raw.githubusercontent.com/SnowBeatRain/dsh-offwork/main/docs/design-review/working.png" alt="非宠物模式的紧凑计时卡片" width="224">
-
-<img src="https://raw.githubusercontent.com/SnowBeatRain/dsh-offwork/main/docs/detail-pages/water.png" alt="喝水倒计时与打卡" width="320">
-
-<img src="https://raw.githubusercontent.com/SnowBeatRain/dsh-offwork/main/docs/detail-pages/settings.png" alt="全天自然时间提醒设置" width="360">
-
-**角色与外观选择**
-
-<img src="https://raw.githubusercontent.com/SnowBeatRain/dsh-offwork/main/docs/countdown-preview/timer-layout-detail.png" alt="页面角色及三项计时概览" width="196">
-
-<img src="https://raw.githubusercontent.com/SnowBeatRain/dsh-offwork/main/docs/detail-pages/appearance.png" alt="角色选择、预览与外观设置" width="340">
-
-角色图片随客户端加载，视频素材随插件安装并从Harness Host按需读取。短裙支持眨眼摆尾循环待机，两套动态形象均支持挥手和喝茶。本版客户端脚本约0.9MB、安装包约8MiB，相比1.1.1约15MiB的安装包减少了重复嵌入资源；五段视频原素材合计仍约7MiB。长裙独立待机视频、Live2D和外部模型包导入尚未提供。
-
-## 运行环境
-
-- DeepSeek Harness：`>=0.2.2-rc.1 <0.3.0-0`（1.2.4使用宿主认证接口，当前在0.2.2-rc.1验证）。
-- 使用 Harness 的 Web 界面，安装后刷新页面以加载客户端。
-
-悬浮窗显示在 Harness 页面内，切换到其他应用后不会作为桌面置顶窗口显示。
+- DeepSeek Harness：`>=0.2.1-rc.5 <0.3.0-0`。已在 **0.2.1-rc.5** 和 **0.2.2-rc.1** 验证。
+- 使用 Harness Web 界面；安装或升级后刷新所有标签页。
 
 ## 安装
 
-### 从 npm 安装
-
-在 Harness 中使用 `plugin_manager` 的 `install_bundle` 操作，将 `target` 填为 `dsh-offwork`：
+在 Harness 插件管理器中安装：
 
 ```text
 plugin_manager → install_bundle → target: dsh-offwork
 ```
 
-这是 Harness 插件，请通过 Harness 插件管理器安装，以加载 Host 配置和 Web 悬浮窗。使用命令行管理 Web 配置时，也可以运行：
+或使用命令行：
 
 ```sh
 dsh plugin --profile web add dsh-offwork
 ```
 
-`web` 是配置名称，使用其他配置时请替换为实际名称。
+<details>
+<summary>从 GitHub 或本地源码安装</summary>
 
-### 从 GitHub 安装
+GitHub：
 
 ```text
 plugin_manager → install_bundle → target: github:SnowBeatRain/dsh-offwork
 ```
 
-### 从本地源码安装
+本地源码：
 
 ```sh
 git clone https://github.com/SnowBeatRain/dsh-offwork.git
 cd dsh-offwork
+npm ci --ignore-scripts
 npm run build
 ```
 
-随后在 Harness 中将 `target` 填为克隆目录的绝对路径：
+然后把克隆目录的绝对路径填入 `install_bundle` 的 `target`。
+</details>
 
-```text
-plugin_manager → install_bundle → target: /绝对路径/dsh-offwork
-```
+## 快速使用
 
-## 首次使用
+1. 安装后刷新页面。
+2. 点击人物脚下的下班、喝水或抽烟时间进入对应卡片。
+3. 首次使用先设置作息与薪资；喝水提醒可独立开启。
+4. 人物卡片右侧 `…` 打开菜单，可进入计时、外观、设置和备份。
+5. 到点后使用“稍后/关闭/重新计时”，关闭不会修改原计时。
 
-1. 安装或更新后刷新所有Harness标签页。
-2. 如需下班计时和收入，从人物脚下或小卡片的下班时间进入；作息与薪资入口位于上下文菜单。无需先建立会话。
-3. 填写月薪或日薪、上下班时间、工作日、时区及可选无薪休息，保存后开始计薪。初始示例数值不会作为已配置收入展示。
-4. 喝水提醒可独立使用：进入喝水页，点击右上角提醒设置，开启并保存间隔；无需先配置薪资。
-5. 抽烟计时需手动开始；外观页可试播已有动作，点击“应用”才保存角色选择。
-
-界面配置通过同源插件接口直接保存，不再通过会话命令。代理工具默认不可读取或修改薪资；如有需要，在上下文菜单的设置中显式开启代理访问。
-
-### 常用操作
-
-| 操作                   | 使用方式                                  |
-| ---------------------- | ----------------------------------------- |
-| 移动角色               | 按住角色拖动；方向键微调，Home 复位       |
-| 与角色互动             | 左键点击，或聚焦角色后按 Enter / Space    |
-| 打开喝水卡片           | 右键菜单 → 喝水                           |
-| 查看下班倒计时卡片     | 右键菜单 → 下班倒计时；脚下徽标仅显示计时 |
-| 打开其他卡片           | 右键角色，或使用 Shift+F10 / 菜单键       |
-| 修改形象、大小与透明度 | 右键 → 外观，预览后点击“应用外观”         |
-| 修改薪资和作息         | 右键 → 作息与薪资                         |
-| 设置喝水间隔           | 喝水页右上角 → 提醒设置                   |
-| 使用非宠物概览         | 在外观中关闭“宠物模式”并应用              |
-| 显示 / 隐藏工资        | 收入卡片中的眼睛按钮                      |
-
-喝水提醒默认关闭；开启后按自然时间计时，不受工作、午休或休息日限制。修改作息或薪资不会重排提醒；暂停需要手动恢复，免打扰到期自动结束。需要保持Harness页面打开才能显示页面内提醒；关闭后重新打开会保留截止时间和一个待处理事件，不补发多条。
-
-同一浏览器、同一站点下的多个标签页会同步显示偏好。薪资与作息配置由 Harness Host 共享，其他页面保存后可手动读取最新配置。
-
-## 计薪规则
-
-所有金额以人民币（CNY）显示，表示按配置估算的税前收入。
-
-| 项目           | 计算方式                        |
-| -------------- | ------------------------------- |
-| 月薪模式的日薪 | 月薪 ÷ 月计薪天数               |
-| 日薪模式的日薪 | 直接使用填写的日薪              |
-| 有效时薪       | 日薪 ÷ 扣除无薪休息后的班次时长 |
-| 本班已赚       | 日薪 × 已完成的有效计薪比例     |
-
-例如，月薪为 10,000 元、月计薪天数为 21.75 天，上班时间为 09:00–18:00，并扣除 12:00–13:00 的无薪休息时，日薪约为 459.77 元，有效时薪约为 57.47 元。
-
-- 金额按分截断，不四舍五入；计薪比例使用十进制有理数计算，减少浮点误差导致的丢分。
-- 无薪休息期间收入暂停增长，下班倒计时继续。关闭「扣除无薪休息」即可按整段班次计薪。
-- 下班时间早于上班时间时视为次日下班；工作日按**班次开始日**判断。例如周五 22:00–周六 06:00 的班次归属周五。
-- 夜班完成后，上一班金额会保留到新一班开始。
-- 时间使用配置中的时区，不依赖操作系统时区。夏令时按实际经过的秒数计算；重复的本地时间取较早一次，不存在的本地时间向后移动。
-
-当前支持每班一段可选的无薪休息，不包含税费、加班费、法定节假日调班、多段休息或复杂轮班规则。显示金额用于个人参考。
+| 操作          | 方式                                   |
+| ------------- | -------------------------------------- |
+| 移动角色      | 拖动；方向键微调，Home 复位            |
+| 喝水          | 点击脚下喝水时间；提醒到期时可直接打卡 |
+| 吸烟计时      | 点击脚下抽烟时间                       |
+| 收尾          | 点击下班卡片里的“明天第一件事”         |
+| 外观          | `…` → 外观；修改后点“应用”             |
+| 设置          | `…` → 设置                             |
+| 工资显示/隐藏 | 收入明细中的眼睛按钮                   |
 
 ## 数据与隐私
 
-薪资和作息保存在**运行 Harness Host 的机器**上的 `$DSH_HOME/storages/dsh-offwork/settings.json` 中。未设置 `DSH_HOME` 时使用 `~/.dsh`。保存采用原子替换，文件权限为 `0600`；首次读取时，从旧插件目录 `data.json` 校验迁移，保留原文件。现有稳定配置不会被旧文件覆盖；损坏文件不会被默认值重置。
+- 作息和薪资保存在 Harness Host：`$DSH_HOME/storages/dsh-offwork/settings.json`，权限 `0600`；旧 `data.json` 首次迁移后保留。
+- 喝水、计时、收尾笔记和外观保存在当前浏览器；不上传服务器。
+- 界面读写不进入会话记录。插件不注册斜杠命令。
+- 代理工具 `offwork_clock` 默认关闭，开启后调用结果可能进入会话记录。
+- 浏览器备份不含薪资；薪资需单独导出。详见 [数据与隐私](https://github.com/SnowBeatRain/dsh-offwork/blob/main/docs/DATA.md)。
 
-悬浮窗位置、角色、展开状态、工资隐藏和透明度保存在浏览器本地存储。1.1.2继续使用v7外观偏好并迁移保留旧版选择。浏览器禁止存储时，这些偏好仅在本次页面访问期间有效。
+## 兼容与边界
 
-抽烟倒计时另存在浏览器 IndexedDB，按自然时间计算，与喝水和Host薪资独立。多个标签页同步，存储失败时可重试恢复；清除站点数据会清除此计时。
+- 需要保持 Harness 页面打开才能显示页面内提醒、声音和浏览器通知；后台可能被浏览器节流。
+- 关闭所有页面后不保证准点通知，重开会恢复到期状态。
+- 这是页面内插件，不是独立桌面宠物；不提供 Live2D 或外部模型包导入。
+- 当前金额为个人参考估算，不包含税费或复杂假期规则。
 
-喝水设置与饮水计数保存在浏览器 IndexedDB，不写入 Host 薪资文件或 Harness 会话。计数不再随班次或日期自动清零；同源标签页共享提醒并去重。存储不可用时停止自动提醒，界面提供重试入口。schema3迁移在事务中完成并保留原记录快照，旧标签页需刷新。清除浏览器站点数据会清除这些本地记录。
+## 详细文档
 
-**界面读写不进入会话记录。** 插件不再注册斜杠命令，配置只通过界面或显式开启的代理工具访问；代理工具调用及结果可能进入会话记录。工资隐藏只控制界面显示，不会删除历史记录。浏览器备份包含个人笔记与图片，薪资需单独导出，均由用户自行保管。
+- [计薪规则](https://github.com/SnowBeatRain/dsh-offwork/blob/main/docs/PAY.md)
+- [代理工具](https://github.com/SnowBeatRain/dsh-offwork/blob/main/docs/TOOL.md)
+- [喝水规则与迁移](https://github.com/SnowBeatRain/dsh-offwork/blob/main/docs/HYDRATION.md)
+- [开发与发布](https://github.com/SnowBeatRain/dsh-offwork/blob/main/CONTRIBUTING.md)
+- [路线图](https://github.com/SnowBeatRain/dsh-offwork/blob/main/ROADMAP.md)
 
-## 代理工具
+## 许可
 
-代理访问默认关闭。在上下文菜单的设置中显式开启后，代理可调用 `offwork_clock` 工具。读取配置的参数为：
-
-```json
-{ "action": "get" }
-```
-
-更新配置时仅需传入要修改的字段，其他字段会保留：
-
-```json
-{
-  "action": "set",
-  "settings": {
-    "payMode": "monthly",
-    "monthlySalary": 10000,
-    "workdaysPerMonth": 21.75,
-    "start": "09:00",
-    "end": "18:00",
-    "breakStart": "12:00",
-    "breakEnd": "13:00",
-    "weekdays": [1, 2, 3, 4, 5],
-    "timezone": "Asia/Shanghai"
-  }
-}
-```
-
-`weekdays` 使用 `0`–`6` 表示周日到周六；日薪模式使用 `"payMode": "daily"` 和 `dailySalary`。将 `breakStart` 与 `breakEnd` 设为相同时间可关闭休息扣除。
-
-成功返回 `{ "ok": true, "settings": { ... }, "configured": true }`；尚未保存配置时，读取结果中的 `configured` 为 `false`。失败返回 `{ "ok": false, "error": "..." }`。界面、命令与工具共用配置校验和持久化逻辑。
-
-## 开发
-
-建议使用 Node.js 22，与仓库 CI 保持一致。运行时无第三方依赖；开发依赖用于格式检查和 IndexedDB 事务回归测试，通过锁文件固定版本。
-
-```sh
-git clone https://github.com/SnowBeatRain/dsh-offwork.git
-cd dsh-offwork
-npm ci --ignore-scripts
-npm run format
-npm run check
-```
-
-`npm run format` 统一源码格式并重新生成客户端；`npm run check` 检查格式、生成物一致性、自动化测试、JavaScript 语法及 npm 打包内容。单独构建使用 `npm run build`，单独运行测试使用 `npm test`。代码约定和人工验证步骤见 [贡献指南](https://github.com/SnowBeatRain/dsh-offwork/blob/main/CONTRIBUTING.md)。
-
-| 文件               | 用途                                 |
-| ------------------ | ------------------------------------ |
-| `client.source.js` | Web 界面源码                         |
-| `clock.js`         | 班次、时区和工资计算                 |
-| `ui-utils.js`      | 界面状态与显示辅助函数               |
-| `client.js`        | 构建生成的客户端文件，请通过构建更新 |
-| `index.js`         | Host 命令、代理工具、配置校验与保存  |
-| `tests/`           | 计算、持久化与界面辅助逻辑测试       |
-
-`npm run build` 将业务和界面模块、角色图片内联到 `client.js`。`npm test` 先检查生成物是否与源码一致，再运行测试，覆盖计薪、时区、持久化、喝水状态机、跨标签事务、导航和布局。1.1.2的检查及隔离浏览器验证见 [发布验证记录](docs/RELEASE-1.1.2.md)。
-
-## 发布到 npm（维护者）
-
-包名为 `dsh-offwork`，版本以 `package.json` 为准。发布前确认 npm 账号拥有该包的发布权限，并完成检查：
-
-```sh
-npm ci --ignore-scripts
-npm run build
-npm run check
-```
-
-检查打包清单，确认包含 README、客户端、Host 入口和语言文件，且不包含 `data.json`、`.env` 或其他本地配置。
-
-### 本地发布
-
-```sh
-npm login
-npm publish --access public
-```
-
-`npm publish` 会通过 `prepublishOnly` 自动执行构建和完整检查。npm 不允许覆盖已发布的同名版本，后续发布需先更新版本，例如 `npm version patch` 或 `npm version minor`。
-
-### GitHub Actions 发布
-
-仓库已配置 [Test and publish 工作流](https://github.com/SnowBeatRain/dsh-offwork/blob/main/.github/workflows/publish.yml)：推送 `main` 或向 `main` 提交 PR 时运行检查；推送 `v*` 标签时，检查通过后发布到 npm。
-
-1. 在 GitHub 仓库的 **Settings → Secrets and variables → Actions** 中配置 `NPM_TOKEN`，使用具备该包发布权限并满足 npm 发布认证要求的 npm 令牌。GitHub 登录使用的 `ghp_…` 令牌不能用于 npm 发布。
-2. 确认代码已提交，且标签版本与 `package.json` 中的版本完全一致。
-3. 通过 `npm version patch`、`npm version minor` 或 `npm version major` 创建版本提交和标签，再推送到 GitHub。例如发布修订版本：
-
-```sh
-npm version patch
-git push origin main --follow-tags
-```
-
-在 [Actions 页面](https://github.com/SnowBeatRain/dsh-offwork/actions) 确认发布结果。本地发布和 Actions 发布任选一种，避免重复发布同一版本。
-
-## 许可与反馈
-
-代码采用 [MIT License](https://github.com/SnowBeatRain/dsh-offwork/blob/main/LICENSE)。用户提供的鲸系少女图片随插件分发，单独使用图片请参阅 [素材说明](assets/characters/NOTICE.md)。欢迎通过 [GitHub Issues](https://github.com/SnowBeatRain/dsh-offwork/issues) 反馈问题或建议；反馈时请说明 Harness 版本、浏览器和复现步骤，薪资信息可使用示例数值代替。
+代码采用 [MIT License](https://github.com/SnowBeatRain/dsh-offwork/blob/main/LICENSE)。用户提供的角色图片单独授权，详见 [素材说明](https://github.com/SnowBeatRain/dsh-offwork/blob/main/assets/characters/NOTICE.md)。

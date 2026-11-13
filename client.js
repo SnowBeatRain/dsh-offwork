@@ -8877,7 +8877,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               {
                 ref: box,
                 className: 'owc-v2 owc-pet-shell',
-                'data-version': '1.2.4',
+                'data-version': '1.2.5',
                 'data-pet-model': stageModel,
                 'data-status':
                   error || state?.error
@@ -9132,7 +9132,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 (collapsed && waterQuickOpen ? ' owc-quick' : '') +
                 (editing || waterEditing ? ' owc-editing' : ''),
               'aria-label': t('title'),
-              'data-version': '1.2.4',
+              'data-version': '1.2.5',
               'data-status': classicClock.phase,
               style: cardStyle,
               onPointerDown: dragDown,
