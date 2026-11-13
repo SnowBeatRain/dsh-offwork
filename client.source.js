@@ -2182,7 +2182,8 @@ window.__ModuleLoader__.load({
                     t('timerStop'),
                   ),
               ),
-              h('p', { className: 'owc-hint' }, t('detailNextInterval')),
+              smokingState.phase !== 'idle' &&
+                h('p', { className: 'owc-hint' }, t('detailNextInterval')),
               h(
                 'details',
                 { className: 'owc-detail-more' },
@@ -2776,7 +2777,7 @@ window.__ModuleLoader__.load({
               h(
                 'strong',
                 { className: 'owc-title', tabIndex: 0, title: t('drag'), onKeyDown: gripKeys },
-                t(ui.screen ? petPageTitle[ui.screen] || 'classicOverview' : 'classicOverview'),
+                t(ui.screen ? pageTitle(ui.screen) : 'classicOverview'),
               ),
               ['home', 'water-countdown'].includes(ui.screen) &&
                 h(
@@ -3369,38 +3370,6 @@ window.__ModuleLoader__.load({
                   ),
                 ),
               ),
-              h(
-                'div',
-                { className: 'owc-row-actions' },
-                h(
-                  'button',
-                  {
-                    type: 'button',
-                    className: 'owc-text',
-                    onClick: () => reload(true),
-                    disabled: hostBusy,
-                  },
-                  iconSvg('refresh', 12),
-                  t('refresh'),
-                ),
-                petMode &&
-                  h(
-                    'button',
-                    { type: 'button', className: 'owc-text', onClick: openEditor },
-                    t('petWorkSettings'),
-                  ),
-                !petMode &&
-                  h(
-                    'button',
-                    {
-                      type: 'button',
-                      className: 'owc-text',
-                      onClick: () =>
-                        setPreference(petMode ? { petPosition: null } : { position: null }),
-                    },
-                    t('reset'),
-                  ),
-              ),
             );
           };
 
@@ -3419,17 +3388,6 @@ window.__ModuleLoader__.load({
                   onChange: (event) => updateAppearance({ companion: event.target.checked }),
                 }),
                 t('petMode'),
-              ),
-              h(
-                'label',
-                { className: 'owc-check' },
-                h('input', {
-                  type: 'checkbox',
-                  checked: view.companionMotion,
-                  disabled: !view.companion,
-                  onChange: (event) => updateAppearance({ companionMotion: event.target.checked }),
-                }),
-                t('companionMotion'),
               ),
               label(
                 t('petCharacter'),
@@ -3455,40 +3413,61 @@ window.__ModuleLoader__.load({
                   ),
                 ),
               ),
-              label(
-                t('petSize'),
-                h('input', {
-                  type: 'range',
-                  min: '80',
-                  max: '180',
-                  step: '4',
-                  value: view.petSize,
-                  'aria-label': t('petSize'),
-                  disabled: !view.companion,
-                  onChange: (event) => updateAppearance({ petSize: event.target.valueAsNumber }),
-                }),
-              ),
-              label(
-                t('opacity'),
+              h(
+                'details',
+                { className: 'owc-appearance-display' },
                 h(
-                  React.Fragment,
+                  'summary',
                   null,
+                  locale.active.startsWith('en') ? 'Display and motion' : '显示与动作',
+                ),
+                h(
+                  'label',
+                  { className: 'owc-check' },
                   h('input', {
-                    className: 'owc-range',
-                    type: 'range',
-                    min: '30',
-                    max: '100',
-                    step: '1',
-                    value: String(Math.round(view.opacity * 100)),
-                    disabled: busy,
-                    'aria-label': t('opacity'),
+                    type: 'checkbox',
+                    checked: view.companionMotion,
+                    disabled: !view.companion,
                     onChange: (event) =>
-                      updateAppearance({ opacity: event.target.valueAsNumber / 100 }),
+                      updateAppearance({ companionMotion: event.target.checked }),
                   }),
+                  t('companionMotion'),
+                ),
+                label(
+                  t('petSize'),
+                  h('input', {
+                    type: 'range',
+                    min: '80',
+                    max: '180',
+                    step: '4',
+                    value: view.petSize,
+                    'aria-label': t('petSize'),
+                    disabled: !view.companion,
+                    onChange: (event) => updateAppearance({ petSize: event.target.valueAsNumber }),
+                  }),
+                ),
+                label(
+                  t('opacity'),
                   h(
-                    'span',
-                    { className: 'owc-range-value', title: t('opacityHint') },
-                    Math.round(view.opacity * 100) + '%',
+                    React.Fragment,
+                    null,
+                    h('input', {
+                      className: 'owc-range',
+                      type: 'range',
+                      min: '30',
+                      max: '100',
+                      step: '1',
+                      value: String(Math.round(view.opacity * 100)),
+                      disabled: busy,
+                      'aria-label': t('opacity'),
+                      onChange: (event) =>
+                        updateAppearance({ opacity: event.target.valueAsNumber / 100 }),
+                    }),
+                    h(
+                      'span',
+                      { className: 'owc-range-value', title: t('opacityHint') },
+                      Math.round(view.opacity * 100) + '%',
+                    ),
                   ),
                 ),
               ),
@@ -4124,6 +4103,16 @@ window.__ModuleLoader__.load({
             data: 'companionDataTitle',
             reminders: 'companionRemindersTitle',
           };
+          const pageTitle = (screen) =>
+            screen === 'income' && safeState
+              ? safeState.status === 'before'
+                ? t('petCountdownBefore')
+                : safeState.status === 'done'
+                  ? t('classicMiniFinished')
+                  : safeState.status === 'rest'
+                    ? t('classicMiniRest')
+                    : t('petCountdownCard')
+              : t(petPageTitle[screen] || 'waterTitle');
           const petHeader = () =>
             h(
               'div',
@@ -4145,8 +4134,22 @@ window.__ModuleLoader__.load({
               h(
                 'strong',
                 { 'data-pet-page-title': true, tabIndex: -1, style: { flex: 1 } },
-                t(petPageTitle[ui.screen] || 'waterTitle'),
+                pageTitle(ui.screen),
               ),
+              ui.screen === 'income' &&
+                data?.configured &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-icon',
+                    'aria-label': t('petWorkSettings'),
+                    title: t('petWorkSettings'),
+                    disabled: busy || !!ui.pending,
+                    onClick: openEditor,
+                  },
+                  iconSvg('sliders', 14),
+                ),
               ['home', 'water-countdown'].includes(ui.screen) &&
                 h(
                   'button',
@@ -4242,7 +4245,7 @@ window.__ModuleLoader__.load({
                   'button',
                   {
                     type: 'button',
-                    className: 'owc-text',
+                    className: 'owc-text owc-secondary',
                     disabled: busy || waterBusy || waterError || !waterReady,
                     onClick: () =>
                       waterAction(
@@ -4265,33 +4268,34 @@ window.__ModuleLoader__.load({
                     t('waterQuietEnd'),
                   ),
               ),
-              h(
-                'details',
-                { className: 'owc-detail-more' },
-                h('summary', null, t('waterQuiet')),
+              water.enabled &&
                 h(
-                  'div',
-                  { className: 'owc-detail-options' },
-                  [30, 60].map((minutes) =>
-                    h(
-                      'button',
-                      {
-                        type: 'button',
-                        key: minutes,
-                        disabled: !waterCanQuiet || waterBusy,
-                        onClick: (event) => {
-                          const menu = event.currentTarget.closest('details');
-                          menu.open = false;
-                          menu.querySelector('summary')?.focus();
-                          void waterAction({ type: 'quiet', minutes });
+                  'details',
+                  { className: 'owc-detail-more' },
+                  h('summary', null, t('waterQuiet')),
+                  h(
+                    'div',
+                    { className: 'owc-detail-options' },
+                    [30, 60].map((minutes) =>
+                      h(
+                        'button',
+                        {
+                          type: 'button',
+                          key: minutes,
+                          disabled: !waterCanQuiet || waterBusy,
+                          onClick: (event) => {
+                            const menu = event.currentTarget.closest('details');
+                            menu.open = false;
+                            menu.querySelector('summary')?.focus();
+                            void waterAction({ type: 'quiet', minutes });
+                          },
                         },
-                      },
-                      t(minutes === 30 ? 'petQuiet30' : 'petQuiet60'),
+                        t(minutes === 30 ? 'petQuiet30' : 'petQuiet60'),
+                      ),
                     ),
                   ),
+                  h('p', { className: 'owc-hint' }, t('petQuietHint')),
                 ),
-                h('p', { className: 'owc-hint' }, t('petQuietHint')),
-              ),
               waterError &&
                 h('p', { className: 'owc-error', role: 'alert' }, t('waterUnavailable')),
               waterError &&
@@ -4396,6 +4400,7 @@ window.__ModuleLoader__.load({
                     'button',
                     {
                       type: 'button',
+                      className: 'owc-link-row',
                       onClick: (event) => navigateScreen('earnings', event),
                       disabled: !data?.configured,
                     },
@@ -4528,7 +4533,7 @@ window.__ModuleLoader__.load({
               {
                 ref: box,
                 className: 'owc-v2 owc-pet-shell',
-                'data-version': '1.2.1',
+                'data-version': '1.2.2',
                 'data-pet-model': stageModel,
                 'data-status':
                   error || state?.error
@@ -4783,7 +4788,7 @@ window.__ModuleLoader__.load({
                 (collapsed && waterQuickOpen ? ' owc-quick' : '') +
                 (editing || waterEditing ? ' owc-editing' : ''),
               'aria-label': t('title'),
-              'data-version': '1.2.1',
+              'data-version': '1.2.2',
               'data-status': classicClock.phase,
               style: cardStyle,
               onPointerDown: dragDown,

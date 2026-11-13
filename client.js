@@ -1481,8 +1481,9 @@ const PET_INTERACTION_MESSAGES = {
     timerFinished: '已结束',
     timerUnavailable: '暂不可用',
     petCountdownCard: '下班倒计时',
+    petCountdownBefore: '上班倒计时',
     petCountdownGroup: '计时概览',
-    petEarningsCard: '收入',
+    petEarningsCard: '收入明细',
     petWaterAlert: '查看喝水提醒',
     petPausedHint: '提醒已暂停，手动恢复后重新计时。',
     petMenu: '宠物菜单',
@@ -1546,8 +1547,9 @@ const PET_INTERACTION_MESSAGES = {
     timerFinished: 'Finished',
     timerUnavailable: 'Unavailable',
     petCountdownCard: 'Shift countdown',
+    petCountdownBefore: 'Until work starts',
     petCountdownGroup: 'Timer overview',
-    petEarningsCard: 'Earnings',
+    petEarningsCard: 'Earnings details',
     petWaterAlert: 'View water reminder',
     petPausedHint: 'Reminders paused. Resume manually to start a fresh interval.',
     petMenu: 'Pet menu',
@@ -1787,7 +1789,7 @@ const PET_SURFACE_STYLE = `
 .owc-v2 .owc-pet-natural>.owc-form:last-child,.owc-v2 .owc-pet-natural>.owc-water-form:last-child{padding-bottom:0}
 .owc-v2 .owc-pet-scroll .owc-save{background:var(--owc-surface);padding:12px 0;border-top:1px solid var(--owc-border);gap:8px;flex-wrap:wrap}
 .owc-v2 .owc-save button{min-width:72px}
-.owc-v2 .owc-appearance-preview{height:260px;display:flex;align-items:center;justify-content:center;border-radius:12px;background:var(--owc-subtle);margin-bottom:16px;overflow:hidden}
+.owc-v2 .owc-appearance-preview{height:190px;display:flex;align-items:center;justify-content:center;border-radius:12px;background:var(--owc-subtle);margin-bottom:16px;overflow:hidden}
 .owc-v2 .owc-appearance-preview .owc-pet-art{flex:none;animation:none}
 .owc-v2 .owc-appearance-preview .owc-pet-art *{animation:none!important}
 .owc-v2 .owc-preview-actions{display:flex;gap:6px;flex-wrap:wrap}
@@ -2917,7 +2919,7 @@ function cropCompanionImage(image, { zoom = 1, x = 50, y = 50 } = {}, doc = docu
 const COMPANION_APP_STYLE = `
 .owc-extra{padding:0 16px 12px;font:inherit;color:inherit;cursor:default;user-select:text;touch-action:pan-y}
 .owc-appearance .owc-extra{padding:0}.owc-extra *{box-sizing:border-box}.owc-extra h3{font-size:12px;font-weight:600;margin:14px 0 8px}.owc-extra p{margin:8px 0;line-height:1.65}.owc-extra .hub-muted,.owc-extra small{font-size:11px;opacity:.72}.owc-extra small{display:block}.owc-extra .hub-row{display:flex;gap:7px;align-items:center;flex-wrap:wrap;margin:9px 0}.owc-extra label{display:block;margin:10px 0}.owc-extra input:not([type=checkbox]),.owc-extra select,.owc-extra textarea{width:100%;padding:7px 9px;border:1px solid color-mix(in srgb,var(--owc-accent) 20%,transparent);border-radius:8px;background:var(--dsw-alias-bg-base,#f7f8fb);color:inherit;font:inherit}.owc-extra input[type=checkbox]{margin-right:8px}.owc-extra textarea{min-height:64px;resize:vertical}.owc-extra article{padding:10px 0;border-top:1px solid color-mix(in srgb,var(--owc-accent) 15%,transparent)}.owc-extra output{font-variant-numeric:tabular-nums}.owc-extra button{min-height:32px;padding:5px 10px;border-radius:8px}.owc-extra button[data-primary=true]{background:var(--owc-accent);color:white}.owc-extra details{margin:8px 0}.owc-extra summary{font-size:11px;cursor:pointer}.owc-extra .hub-error{color:#bd465a}.owc-extra .hub-preview{display:block;width:144px;height:192px;object-fit:contain;margin:8px auto;background:repeating-conic-gradient(#ddd 0% 25%,#f7f7f7 0% 50%) 50%/16px 16px;border-radius:10px}.owc-extra-feedback:empty{display:none}.owc-extra-feedback p{font-size:11px}.owc-extra [data-wrap-entry]{width:100%;text-align:left}.owc-wrap-entry{padding-top:12px;border-top:1px solid color-mix(in srgb,var(--owc-accent) 15%,transparent)}
-.owc-v2 button.owc-pet-clock,.owc-v2 button.owc-pet-timer-row{cursor:pointer;color:inherit;min-height:28px;padding:4px 7px;border:0;border-radius:0;background:transparent}.owc-v2 button.owc-pet-clock{width:100%;justify-content:center}.owc-v2 button.owc-pet-timer-row:hover,.owc-v2 button.owc-pet-clock:hover{background:color-mix(in srgb,var(--owc-accent) 9%,transparent)}.owc-quick-actions{display:flex;gap:4px;align-items:center;padding:4px 6px;border-top:1px solid color-mix(in srgb,var(--owc-accent) 12%,transparent)}.owc-v2 .owc-quick-actions button{min-height:28px;padding:3px 7px;font-size:11px;background:transparent;border:0;display:flex;align-items:center;justify-content:center;gap:5px}.owc-quick-actions button:first-child{flex:1}.owc-quick-actions .owc-quick-more{font-size:18px;min-width:30px}.owc-v2 .owc-quick-actions button:hover{background:color-mix(in srgb,var(--owc-accent) 10%,transparent)}.owc-v2 .owc-quick-actions button:focus-visible,.owc-v2 button.owc-pet-timer-row:focus-visible,.owc-v2 button.owc-pet-clock:focus-visible{outline:2px solid var(--owc-accent);outline-offset:-2px}.owc-extra label.owc-check{display:flex;align-items:center;gap:8px;flex:1}.owc-extra .hub-row>.owc-check{margin:0}.owc-extra .owc-appearance-colors,.owc-extra .owc-appearance-custom{border-top:1px solid color-mix(in srgb,var(--owc-accent) 12%,transparent);padding-top:10px;margin-top:12px}.owc-v2 button.owc-inline-timer{width:100%;display:flex;align-items:center;gap:5px;min-height:28px;background:transparent;border:0;border-top:1px solid color-mix(in srgb,var(--owc-accent) 12%,transparent);border-radius:0;padding:4px 8px;font-size:11px}.owc-inline-timer span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:left}.owc-inline-timer strong{font-variant-numeric:tabular-nums}.owc-v2 button.owc-classic-mini-time{padding:0;min-height:24px;border:0;background:transparent;font:inherit;font-weight:600;cursor:pointer}.owc-v2 button.owc-classic-mini-time:hover{color:var(--owc-accent)}@media(pointer:coarse){.owc-v2 .owc-quick-actions button,.owc-v2 button.owc-pet-clock,.owc-v2 button.owc-pet-timer-row{min-height:40px}}
+.owc-v2 button.owc-pet-clock,.owc-v2 button.owc-pet-timer-row{cursor:pointer;color:inherit;min-height:28px;padding:4px 7px;border:0;border-radius:0;background:transparent}.owc-v2 button.owc-pet-clock{width:100%;justify-content:center}.owc-v2 button.owc-pet-timer-row:hover,.owc-v2 button.owc-pet-clock:hover{background:color-mix(in srgb,var(--owc-accent) 9%,transparent)}.owc-quick-actions{display:flex;gap:4px;align-items:center;padding:4px 6px;border-top:1px solid color-mix(in srgb,var(--owc-accent) 12%,transparent)}.owc-v2 .owc-quick-actions button{min-height:28px;padding:3px 7px;font-size:11px;background:transparent;border:0;display:flex;align-items:center;justify-content:center;gap:5px}.owc-quick-actions button:first-child{flex:1}.owc-quick-actions .owc-quick-more{font-size:18px;min-width:30px}.owc-v2 .owc-quick-actions button:hover{background:color-mix(in srgb,var(--owc-accent) 10%,transparent)}.owc-v2 .owc-quick-actions button:focus-visible,.owc-v2 button.owc-pet-timer-row:focus-visible,.owc-v2 button.owc-pet-clock:focus-visible{outline:2px solid var(--owc-accent);outline-offset:-2px}.owc-extra label.owc-check{display:flex;align-items:center;gap:8px;flex:1}.owc-extra .hub-row>.owc-check{margin:0}.owc-extra button.owc-link-row{width:100%;display:flex;align-items:center;justify-content:space-between;padding:9px 0;border:0;border-bottom:1px solid color-mix(in srgb,var(--owc-accent) 12%,transparent);border-radius:0;background:transparent;text-align:left}.owc-extra button.owc-link-row>span:last-child{opacity:.5;font-size:16px}.owc-extra button.owc-secondary{background:transparent;border:1px solid color-mix(in srgb,var(--owc-accent) 25%,transparent);padding:5px 10px}.owc-v2 .owc-quick-actions .owc-quick-more:only-child{flex:none;margin-left:auto;min-height:24px;padding:0 6px;font-size:16px}.owc-extra details>summary{font-weight:500}.owc-extra .owc-setting-links{margin:4px 0 12px}.owc-extra .owc-appearance-colors,.owc-extra .owc-appearance-custom{border-top:1px solid color-mix(in srgb,var(--owc-accent) 12%,transparent);padding-top:10px;margin-top:12px}.owc-v2 button.owc-inline-timer{width:100%;display:flex;align-items:center;gap:5px;min-height:28px;background:transparent;border:0;border-top:1px solid color-mix(in srgb,var(--owc-accent) 12%,transparent);border-radius:0;padding:4px 8px;font-size:11px}.owc-inline-timer span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;text-align:left}.owc-inline-timer strong{font-variant-numeric:tabular-nums}.owc-v2 button.owc-classic-mini-time{padding:0;min-height:24px;border:0;background:transparent;font:inherit;font-weight:600;cursor:pointer}.owc-v2 button.owc-classic-mini-time:hover{color:var(--owc-accent)}@media(pointer:coarse){.owc-v2 .owc-quick-actions button,.owc-v2 button.owc-pet-clock,.owc-v2 button.owc-pet-timer-row{min-height:40px}}
 `;
 
 function useCompanionFeatures(React, input) {
@@ -3799,14 +3801,98 @@ function useCompanionFeatures(React, input) {
       ),
     );
   }
-  function wrapSettings() {
+  function settingsPanel() {
     const p = state.preferences;
+    const nav = (label, target) =>
+      button(
+        h(React.Fragment, null, h('span', null, label), h('span', { 'aria-hidden': true }, '›')),
+        (e) => open(target, e),
+        false,
+        { className: 'owc-link-row' },
+      );
+    const permission = window.Notification?.permission;
     return h(
-      'details',
-      { className: 'owc-context-settings' },
-      h('summary', null, text('下班提醒', 'Offwork reminder')),
-      check(text('下班前提醒收尾', 'Remind me to wrap up'), p.wrapEnabled, (v) =>
-        prefs({ wrapEnabled: v }),
+      React.Fragment,
+      null,
+      h(
+        'div',
+        { className: 'owc-setting-links' },
+        nav(text('作息与薪资', 'Schedule and salary'), 'schedule'),
+        nav(text('喝水间隔', 'Water interval'), 'water'),
+        nav(text('备份与恢复', 'Backup and restore'), 'data'),
+      ),
+      h('h3', null, text('提醒', 'Reminders')),
+      h(
+        'div',
+        { className: 'hub-row' },
+        check(text('提示音', 'Sound'), p.sound, async (value) => {
+          if (!value) return prefs({ sound: false });
+          await execute(async () => {
+            await unlockSound();
+            await runtime.current.update({ type: 'preferences', patch: { sound: true } });
+          });
+        }),
+        button(text('试听', 'Play sample'), () =>
+          execute(async () => {
+            await unlockSound();
+            chime();
+          }),
+        ),
+      ),
+      check(
+        text('后台浏览器通知', 'Background browser notifications'),
+        p.notifications,
+        async (value) => {
+          if (!value) return prefs({ notifications: false });
+          await execute(async () => {
+            if (!window.Notification || !window.isSecureContext)
+              throw new Error(
+                text(
+                  '需要HTTPS和支持通知的浏览器',
+                  'HTTPS and a browser with notifications are required',
+                ),
+              );
+            const result = await Notification.requestPermission();
+            if (result !== 'granted')
+              throw new Error(
+                text(
+                  '通知权限未授予；页面提示仍可用',
+                  'Permission not granted; in-page reminders remain available',
+                ),
+              );
+            await runtime.current.update({ type: 'preferences', patch: { notifications: true } });
+          });
+        },
+      ),
+      p.notifications &&
+        permission === 'denied' &&
+        h(
+          'small',
+          null,
+          text(
+            '浏览器已阻止通知，请在网站设置中重新允许。',
+            'Notifications are blocked; allow them in site settings.',
+          ),
+        ),
+      p.quietUntil > now
+        ? h(
+            'div',
+            { className: 'hub-row' },
+            h(
+              'output',
+              null,
+              text('免打扰 ', 'Quiet ') + formatDuration(Math.ceil((p.quietUntil - now) / 1000)),
+            ),
+            button(text('结束免打扰', 'End quiet mode'), () => prefs({ quietUntil: 0 })),
+          )
+        : button(
+            text('全部免打扰30分钟', 'Quiet for 30m'),
+            () => prefs({ quietUntil: Date.now() + 1800000 }),
+            false,
+            { className: 'owc-secondary' },
+          ),
+      check(text('下班前提醒收尾', 'Remind me to wrap up'), p.wrapEnabled, (value) =>
+        prefs({ wrapEnabled: value }),
       ),
       p.wrapEnabled &&
         h(
@@ -3825,125 +3911,21 @@ function useCompanionFeatures(React, input) {
             ),
           ),
         ),
-    );
-  }
-  function settingsPanel() {
-    const p = state.preferences;
-    return h(
-      React.Fragment,
-      null,
-      h(
-        'p',
-        { className: 'hub-muted' },
-        text(
-          '声音与系统通知可选。提醒需保持页面打开。',
-          'Sound and system notifications are optional. Keep a page open for reminders.',
-        ),
-      ),
-      h(
-        'div',
-        { className: 'hub-row' },
-        button(text('作息与薪资', 'Schedule and salary'), (e) => open('schedule', e)),
-        button(text('喝水间隔', 'Water interval'), (e) => open('water', e)),
-      ),
-      h('h3', null, text('声音与通知', 'Sound and notifications')),
-      button(text('测试页面提示', 'Test in-page reminder'), () => {
-        setTestReminder(true);
-        setScreen(null);
-      }),
-      h(
-        'div',
-        { className: 'hub-row' },
-        check(text('提示音', 'Sound'), p.sound, async (value) => {
-          if (!value) return prefs({ sound: false });
-          await execute(async () => {
-            await unlockSound();
-            await runtime.current.update({ type: 'preferences', patch: { sound: true } });
-          });
-        }),
-        button(text('试听', 'Play sample'), () =>
-          execute(async () => {
-            await unlockSound();
-            chime();
-          }),
-        ),
-      ),
-      p.sound &&
-        !soundReady &&
-        h(
-          'small',
-          null,
-          text(
-            '提示音等待页面交互解锁；先点击试听。',
-            'Sound needs a page interaction. Play the sample first.',
-          ),
-        ),
-      check(
-        text('后台浏览器通知', 'Background browser notifications'),
-        p.notifications,
-        async (value) => {
-          if (!value) return prefs({ notifications: false });
-          await execute(async () => {
-            if (!window.Notification || !window.isSecureContext)
-              throw new Error(
-                text(
-                  '需要HTTPS和支持通知的浏览器',
-                  'HTTPS and a browser with notifications are required',
-                ),
-              );
-            const permission = await Notification.requestPermission();
-            if (permission !== 'granted')
-              throw new Error(
-                text(
-                  '通知权限未授予；页面提示仍可用',
-                  'Permission not granted; in-page reminders remain available',
-                ),
-              );
-            await runtime.current.update({ type: 'preferences', patch: { notifications: true } });
-          });
-        },
-      ),
-      h(
-        'small',
-        null,
-        text('系统通知：', 'System notifications: ') +
-          ({
-            granted: text('已允许', 'Allowed'),
-            denied: text(
-              '未允许，请在浏览器的网站设置中开启',
-              'Blocked; enable in browser site settings',
-            ),
-            default: text('尚未开启', 'Not enabled'),
-          }[window.Notification?.permission] ||
-            text('此浏览器不支持', 'Unavailable in this browser')),
-      ),
-      h(
-        'div',
-        { className: 'hub-row' },
-        p.quietUntil > now
-          ? button(text('结束免打扰', 'End quiet mode'), () => prefs({ quietUntil: 0 }))
-          : button(text('全部免打扰30分钟', 'Quiet for 30m'), () =>
-              prefs({ quietUntil: Date.now() + 1800000 }),
-            ),
-      ),
-      p.quietUntil > now &&
-        h(
-          'output',
-          null,
-          text('免打扰剩余 ', 'Quiet remaining '),
-          formatDuration(Math.ceil((p.quietUntil - now) / 1000)),
-        ),
       h(
         'details',
         null,
         h('summary', null, text('高级设置', 'Advanced settings')),
+        button(text('测试页面提示', 'Test in-page reminder'), () => {
+          setTestReminder(true);
+          setScreen(null);
+        }),
         check(
           text(
             '输入时暂缓休息与收尾提示（最多2分钟）',
             'Defer rest/wrap-up while typing (up to 2 min)',
           ),
           p.deferTyping,
-          (v) => prefs({ deferTyping: v }),
+          (value) => prefs({ deferTyping: value }),
         ),
         h(
           'label',
@@ -3973,32 +3955,24 @@ function useCompanionFeatures(React, input) {
             'Reads status only. Falls back to normal reminders when host status is unavailable.',
           ),
         ),
+        check(
+          text('允许代理工具读写作息与薪资', 'Allow agent tools to read/write schedule and salary'),
+          agentAccess,
+          async (allowed) =>
+            execute(async () => {
+              const r = await settingsCall('access', { allowed });
+              setAgentAccess(r.agentAccess);
+            }),
+        ),
         h(
-          'article',
+          'small',
           null,
-          check(
-            text(
-              '允许代理工具读写作息与薪资',
-              'Allow agent tools to read/write schedule and salary',
-            ),
-            agentAccess,
-            async (allowed) =>
-              execute(async () => {
-                const r = await settingsCall('access', { allowed });
-                setAgentAccess(r.agentAccess);
-              }),
-          ),
-          h(
-            'small',
-            null,
-            text(
-              '默认关闭。开启后，工具返回的数据可能进入会话记录；界面设置始终直接保存。',
-              'Off by default. Tool results may enter conversation history. UI settings save directly.',
-            ),
+          text(
+            '默认关闭。开启后，工具返回的数据可能进入会话记录。',
+            'Off by default. Tool results may enter conversation history.',
           ),
         ),
       ),
-      button(text('备份与恢复', 'Backup and restore'), (e) => open('data', e)),
     );
   }
   function appearancePanel() {
@@ -4269,12 +4243,13 @@ function useCompanionFeatures(React, input) {
         button(
           state.journal[entry.date]?.endedAt
             ? text('查看今日收尾', 'View today’s wrap-up')
-            : text('记下明天第一件事', 'Leave a next step for tomorrow'),
+            : input.shift?.status === 'done'
+              ? text('收尾今天', 'Wrap up today')
+              : text('记下明天第一件事', 'Leave a next step for tomorrow'),
           (e) => open('wrap', e),
           false,
           { 'data-wrap-entry': true },
         ),
-        wrapSettings(),
       );
     } else if (page === 'reminders')
       content = h(
@@ -6551,7 +6526,8 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                     t('timerStop'),
                   ),
               ),
-              h('p', { className: 'owc-hint' }, t('detailNextInterval')),
+              smokingState.phase !== 'idle' &&
+                h('p', { className: 'owc-hint' }, t('detailNextInterval')),
               h(
                 'details',
                 { className: 'owc-detail-more' },
@@ -7145,7 +7121,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               h(
                 'strong',
                 { className: 'owc-title', tabIndex: 0, title: t('drag'), onKeyDown: gripKeys },
-                t(ui.screen ? petPageTitle[ui.screen] || 'classicOverview' : 'classicOverview'),
+                t(ui.screen ? pageTitle(ui.screen) : 'classicOverview'),
               ),
               ['home', 'water-countdown'].includes(ui.screen) &&
                 h(
@@ -7738,38 +7714,6 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   ),
                 ),
               ),
-              h(
-                'div',
-                { className: 'owc-row-actions' },
-                h(
-                  'button',
-                  {
-                    type: 'button',
-                    className: 'owc-text',
-                    onClick: () => reload(true),
-                    disabled: hostBusy,
-                  },
-                  iconSvg('refresh', 12),
-                  t('refresh'),
-                ),
-                petMode &&
-                  h(
-                    'button',
-                    { type: 'button', className: 'owc-text', onClick: openEditor },
-                    t('petWorkSettings'),
-                  ),
-                !petMode &&
-                  h(
-                    'button',
-                    {
-                      type: 'button',
-                      className: 'owc-text',
-                      onClick: () =>
-                        setPreference(petMode ? { petPosition: null } : { position: null }),
-                    },
-                    t('reset'),
-                  ),
-              ),
             );
           };
 
@@ -7788,17 +7732,6 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   onChange: (event) => updateAppearance({ companion: event.target.checked }),
                 }),
                 t('petMode'),
-              ),
-              h(
-                'label',
-                { className: 'owc-check' },
-                h('input', {
-                  type: 'checkbox',
-                  checked: view.companionMotion,
-                  disabled: !view.companion,
-                  onChange: (event) => updateAppearance({ companionMotion: event.target.checked }),
-                }),
-                t('companionMotion'),
               ),
               label(
                 t('petCharacter'),
@@ -7824,40 +7757,61 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   ),
                 ),
               ),
-              label(
-                t('petSize'),
-                h('input', {
-                  type: 'range',
-                  min: '80',
-                  max: '180',
-                  step: '4',
-                  value: view.petSize,
-                  'aria-label': t('petSize'),
-                  disabled: !view.companion,
-                  onChange: (event) => updateAppearance({ petSize: event.target.valueAsNumber }),
-                }),
-              ),
-              label(
-                t('opacity'),
+              h(
+                'details',
+                { className: 'owc-appearance-display' },
                 h(
-                  React.Fragment,
+                  'summary',
                   null,
+                  locale.active.startsWith('en') ? 'Display and motion' : '显示与动作',
+                ),
+                h(
+                  'label',
+                  { className: 'owc-check' },
                   h('input', {
-                    className: 'owc-range',
-                    type: 'range',
-                    min: '30',
-                    max: '100',
-                    step: '1',
-                    value: String(Math.round(view.opacity * 100)),
-                    disabled: busy,
-                    'aria-label': t('opacity'),
+                    type: 'checkbox',
+                    checked: view.companionMotion,
+                    disabled: !view.companion,
                     onChange: (event) =>
-                      updateAppearance({ opacity: event.target.valueAsNumber / 100 }),
+                      updateAppearance({ companionMotion: event.target.checked }),
                   }),
+                  t('companionMotion'),
+                ),
+                label(
+                  t('petSize'),
+                  h('input', {
+                    type: 'range',
+                    min: '80',
+                    max: '180',
+                    step: '4',
+                    value: view.petSize,
+                    'aria-label': t('petSize'),
+                    disabled: !view.companion,
+                    onChange: (event) => updateAppearance({ petSize: event.target.valueAsNumber }),
+                  }),
+                ),
+                label(
+                  t('opacity'),
                   h(
-                    'span',
-                    { className: 'owc-range-value', title: t('opacityHint') },
-                    Math.round(view.opacity * 100) + '%',
+                    React.Fragment,
+                    null,
+                    h('input', {
+                      className: 'owc-range',
+                      type: 'range',
+                      min: '30',
+                      max: '100',
+                      step: '1',
+                      value: String(Math.round(view.opacity * 100)),
+                      disabled: busy,
+                      'aria-label': t('opacity'),
+                      onChange: (event) =>
+                        updateAppearance({ opacity: event.target.valueAsNumber / 100 }),
+                    }),
+                    h(
+                      'span',
+                      { className: 'owc-range-value', title: t('opacityHint') },
+                      Math.round(view.opacity * 100) + '%',
+                    ),
                   ),
                 ),
               ),
@@ -8493,6 +8447,16 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
             data: 'companionDataTitle',
             reminders: 'companionRemindersTitle',
           };
+          const pageTitle = (screen) =>
+            screen === 'income' && safeState
+              ? safeState.status === 'before'
+                ? t('petCountdownBefore')
+                : safeState.status === 'done'
+                  ? t('classicMiniFinished')
+                  : safeState.status === 'rest'
+                    ? t('classicMiniRest')
+                    : t('petCountdownCard')
+              : t(petPageTitle[screen] || 'waterTitle');
           const petHeader = () =>
             h(
               'div',
@@ -8514,8 +8478,22 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               h(
                 'strong',
                 { 'data-pet-page-title': true, tabIndex: -1, style: { flex: 1 } },
-                t(petPageTitle[ui.screen] || 'waterTitle'),
+                pageTitle(ui.screen),
               ),
+              ui.screen === 'income' &&
+                data?.configured &&
+                h(
+                  'button',
+                  {
+                    type: 'button',
+                    className: 'owc-icon',
+                    'aria-label': t('petWorkSettings'),
+                    title: t('petWorkSettings'),
+                    disabled: busy || !!ui.pending,
+                    onClick: openEditor,
+                  },
+                  iconSvg('sliders', 14),
+                ),
               ['home', 'water-countdown'].includes(ui.screen) &&
                 h(
                   'button',
@@ -8611,7 +8589,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                   'button',
                   {
                     type: 'button',
-                    className: 'owc-text',
+                    className: 'owc-text owc-secondary',
                     disabled: busy || waterBusy || waterError || !waterReady,
                     onClick: () =>
                       waterAction(
@@ -8634,33 +8612,34 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                     t('waterQuietEnd'),
                   ),
               ),
-              h(
-                'details',
-                { className: 'owc-detail-more' },
-                h('summary', null, t('waterQuiet')),
+              water.enabled &&
                 h(
-                  'div',
-                  { className: 'owc-detail-options' },
-                  [30, 60].map((minutes) =>
-                    h(
-                      'button',
-                      {
-                        type: 'button',
-                        key: minutes,
-                        disabled: !waterCanQuiet || waterBusy,
-                        onClick: (event) => {
-                          const menu = event.currentTarget.closest('details');
-                          menu.open = false;
-                          menu.querySelector('summary')?.focus();
-                          void waterAction({ type: 'quiet', minutes });
+                  'details',
+                  { className: 'owc-detail-more' },
+                  h('summary', null, t('waterQuiet')),
+                  h(
+                    'div',
+                    { className: 'owc-detail-options' },
+                    [30, 60].map((minutes) =>
+                      h(
+                        'button',
+                        {
+                          type: 'button',
+                          key: minutes,
+                          disabled: !waterCanQuiet || waterBusy,
+                          onClick: (event) => {
+                            const menu = event.currentTarget.closest('details');
+                            menu.open = false;
+                            menu.querySelector('summary')?.focus();
+                            void waterAction({ type: 'quiet', minutes });
+                          },
                         },
-                      },
-                      t(minutes === 30 ? 'petQuiet30' : 'petQuiet60'),
+                        t(minutes === 30 ? 'petQuiet30' : 'petQuiet60'),
+                      ),
                     ),
                   ),
+                  h('p', { className: 'owc-hint' }, t('petQuietHint')),
                 ),
-                h('p', { className: 'owc-hint' }, t('petQuietHint')),
-              ),
               waterError &&
                 h('p', { className: 'owc-error', role: 'alert' }, t('waterUnavailable')),
               waterError &&
@@ -8765,6 +8744,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                     'button',
                     {
                       type: 'button',
+                      className: 'owc-link-row',
                       onClick: (event) => navigateScreen('earnings', event),
                       disabled: !data?.configured,
                     },
@@ -8897,7 +8877,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
               {
                 ref: box,
                 className: 'owc-v2 owc-pet-shell',
-                'data-version': '1.2.1',
+                'data-version': '1.2.2',
                 'data-pet-model': stageModel,
                 'data-status':
                   error || state?.error
@@ -9152,7 +9132,7 @@ PET_CLIPS.models = petClipUrls(PET_CLIPS.models, document.baseURI);
                 (collapsed && waterQuickOpen ? ' owc-quick' : '') +
                 (editing || waterEditing ? ' owc-editing' : ''),
               'aria-label': t('title'),
-              'data-version': '1.2.1',
+              'data-version': '1.2.2',
               'data-status': classicClock.phase,
               style: cardStyle,
               onPointerDown: dragDown,

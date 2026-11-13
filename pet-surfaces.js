@@ -175,7 +175,7 @@ export const PET_SURFACE_STYLE = `
 .owc-v2 .owc-pet-natural>.owc-form:last-child,.owc-v2 .owc-pet-natural>.owc-water-form:last-child{padding-bottom:0}
 .owc-v2 .owc-pet-scroll .owc-save{background:var(--owc-surface);padding:12px 0;border-top:1px solid var(--owc-border);gap:8px;flex-wrap:wrap}
 .owc-v2 .owc-save button{min-width:72px}
-.owc-v2 .owc-appearance-preview{height:260px;display:flex;align-items:center;justify-content:center;border-radius:12px;background:var(--owc-subtle);margin-bottom:16px;overflow:hidden}
+.owc-v2 .owc-appearance-preview{height:190px;display:flex;align-items:center;justify-content:center;border-radius:12px;background:var(--owc-subtle);margin-bottom:16px;overflow:hidden}
 .owc-v2 .owc-appearance-preview .owc-pet-art{flex:none;animation:none}
 .owc-v2 .owc-appearance-preview .owc-pet-art *{animation:none!important}
 .owc-v2 .owc-preview-actions{display:flex;gap:6px;flex-wrap:wrap}
