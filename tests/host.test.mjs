@@ -156,7 +156,6 @@ async function adapters(t) {
       await readFile(new URL('../' + name, import.meta.url)),
     );
   const module = await import(pathToFileURL(moduleFile).href);
-  let command;
   let tool;
   const access = createSettingsAccess(fixtureData.dir);
   await access.set(true);
@@ -164,9 +163,8 @@ async function adapters(t) {
     {
       effect: (effect) => effect(),
       commands: {
-        register(definition) {
-          command = definition;
-          return () => {};
+        register() {
+          throw new Error('The slash command must not be registered');
         },
       },
       tools: {
@@ -179,37 +177,33 @@ async function adapters(t) {
     fixtureData.operate,
     access,
   );
-  const runCommand = async (rawInput) => {
-    const response = await command.handler({ rawInput });
-    const result = JSON.parse(response.text);
-    assert.equal(response.kind, result.ok ? 'success' : 'error');
-    return result;
-  };
-  return { ...fixtureData, tool, command, runCommand, access };
+  return { ...fixtureData, tool, access };
 }
 
-test('command and tool share results, validation, storage and a write queue', async (t) => {
-  const { tool, command, runCommand, file } = await adapters(t);
-  assert.equal(command.recordInput, false);
-  assert.deepEqual(await runCommand('get'), await tool.execute({ action: 'get' }));
-  const written = await runCommand('set {"payMode":"daily","dailySalary":600}');
-  assert.deepEqual(await tool.execute({ action: 'get' }), written);
+test('the opt-in tool persists validated settings without a slash command', async (t) => {
+  const { tool, file } = await adapters(t);
+  assert.equal((await tool.execute({ action: 'get' })).configured, false);
+  const written = await tool.execute({
+    action: 'set',
+    settings: { payMode: 'daily', dailySalary: 600 },
+  });
+  assert.equal(written.ok, true);
+  assert.equal(written.settings.dailySalary, 600);
   const second = await tool.execute({ action: 'set', settings: { monthlySalary: 25000 } });
-  assert.deepEqual(await runCommand('get'), second);
-  assert.deepEqual(
-    await runCommand('set {"unknown":1}'),
-    await tool.execute({ action: 'set', settings: { unknown: 1 } }),
-  );
+  assert.equal(second.settings.monthlySalary, 25000);
   await Promise.all([
-    runCommand('set {"dailySalary":750}'),
+    tool.execute({ action: 'set', settings: { dailySalary: 750 } }),
     tool.execute({ action: 'set', settings: { timezone: 'UTC' } }),
   ]);
   const stored = JSON.parse(await readFile(file, 'utf8'));
   assert.equal(stored.dailySalary, 750);
   assert.equal(stored.timezone, 'UTC');
-  for (const raw of ['get {}', 'set', 'set {bad', 'wat'])
-    assert.equal((await runCommand(raw)).ok, false);
-  for (const args of [null, [], { action: 'get', unknown: true }])
+  for (const args of [
+    null,
+    [],
+    { action: 'get', unknown: true },
+    { action: 'set', settings: { unknown: 1 } },
+  ])
     assert.equal((await tool.execute(args)).ok, false);
 });
 

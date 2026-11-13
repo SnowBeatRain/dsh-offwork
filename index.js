@@ -6,7 +6,7 @@ import { fileURLToPath } from 'node:url';
 import { registerMediaRoute } from './media-server.js';
 import { createSettingsAccess, registerSettingsRoute } from './settings-api.js';
 
-export const inject = ['commands', 'tools'];
+export const inject = ['tools'];
 
 export const DEFAULT_SETTINGS = Object.freeze({
   payMode: 'monthly',
@@ -252,28 +252,6 @@ export function apply(ctx) {
 export function installOperations(ctx, operate, access) {
   registerMediaRoute(ctx);
   registerSettingsRoute(ctx, operate, access);
-  ctx.effect(() =>
-    ctx.commands.register({
-      name: 'offwork-clock',
-      description: '读取或保存本机下班时钟配置：get 或 set JSON。',
-      input: { hint: 'get | set {"monthlySalary":10000}' },
-      recordInput: false,
-      async handler({ rawInput }) {
-        let result;
-        try {
-          const match = /^(get|set)(?:\s+([\s\S]*))?$/.exec(rawInput.trim());
-          if (!match) throw new Error('用法：/offwork-clock get 或 /offwork-clock set JSON');
-          const [, action, json] = match;
-          if (action === 'get' && json !== undefined) throw new Error('get 不接受参数。');
-          if (action === 'set' && !json?.trim()) throw new Error('set 需要 JSON 配置对象。');
-          result = await operate(action, action === 'set' ? JSON.parse(json) : undefined);
-        } catch (error) {
-          result = fail(error);
-        }
-        return { kind: result.ok ? 'success' : 'error', text: JSON.stringify(result) };
-      },
-    }),
-  );
   ctx.effect(() =>
     ctx.tools.register({
       name: 'offwork_clock',

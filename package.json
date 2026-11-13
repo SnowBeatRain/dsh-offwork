@@ -1,6 +1,6 @@
 {
   "name": "dsh-offwork",
-  "version": "1.2.3",
+  "version": "1.2.4",
   "description": "Harness 页面角色与小卡片、下班倒计时、全天喝水提醒、独立抽烟计时和收入展示。A Harness companion with clock-out, all-day hydration and smoking timers, earnings and action previews.",
   "type": "module",
   "license": "MIT",
@@ -23,7 +23,7 @@
     "overlay"
   ],
   "engines": {
-    "dsh": ">=0.2.2-rc.1 <0.3.0-0"
+    "dsh": ">=0.2.1-rc.5 <0.3.0-0"
   },
   "exports": {
     ".": "./index.js",
@@ -63,7 +63,7 @@
     "README.md",
     "CHANGELOG.md",
     "ROADMAP.md",
-    "docs/RELEASE-1.2.3.md",
+    "docs/RELEASE-1.2.4.md",
     "tests/*.mjs",
     "tools/*.mjs"
   ],
